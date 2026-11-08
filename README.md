@@ -19,6 +19,8 @@ you already have installed.
 - Accounts on GitHub, GitHub Enterprise, GitLab, Gitea (Forgejo, Codeberg), Bitbucket and Bitbucket Server,
   with tokens in the system's credential store: profile pictures, pull requests (list, check out, create),
   notifications, and cloning your repositories
+- Sign in to GitHub and GitLab through the browser, like GitHub Desktop, once an OAuth app is registered
+  ([docs/oauth.md](docs/oauth.md)); a personal access token works until then
 - Stage, unstage or discard single lines or whole hunks: select lines in the diff and right-click
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved
