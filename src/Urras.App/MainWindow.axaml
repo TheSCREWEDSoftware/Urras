@@ -247,7 +247,7 @@
                     <ListBox.ItemTemplate>
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                          <local:ChangeKindBadge Change="{Binding}" />
                           <TextBlock Text="⚠" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
                                      ToolTip.Tip="{Binding Warning}" />
                           <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
@@ -267,7 +267,7 @@
                     <ListBox.ItemTemplate>
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                          <local:ChangeKindBadge Change="{Binding}" />
                           <TextBlock Text="⚠" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
                                      ToolTip.Tip="{Binding Warning}" />
                           <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
@@ -421,7 +421,7 @@
                 <ListBox.ItemTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                      <local:ChangeKindBadge Change="{Binding}" />
                       <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                   </DataTemplate>

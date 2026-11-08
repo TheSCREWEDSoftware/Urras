@@ -81,6 +81,9 @@ Desktop) for ideas is fine; copying their code is not.
 41. [ ] Fully editable merge resolver
 42. [ ] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
 43. [ ] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
+    - Profile pictures in History and the commit details for the author and every co-author (from
+      `Co-authored-by:` lines), looked up by email through the signed-in accounts (GitHub, GitLab, Gitea), with
+      Gravatar as an optional fallback and coloured initials when there is no picture; cached on disk
 44. [ ] GitHub Enterprise Server (GitHub plus a server address)
 45. [ ] GitLab and GitLab Server
 46. [ ] Gitea

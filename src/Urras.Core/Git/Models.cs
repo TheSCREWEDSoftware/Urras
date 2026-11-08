@@ -38,6 +38,33 @@ public sealed class FileChange
         _ => " "
     };
 
+    public string KindName => Kind switch
+    {
+        ChangeKind.Modified => "Modified",
+        ChangeKind.TypeChanged => "Type changed",
+        ChangeKind.Added => "Added",
+        ChangeKind.Deleted => "Deleted",
+        ChangeKind.Renamed => "Renamed",
+        ChangeKind.Copied => "Copied",
+        ChangeKind.Untracked => "Untracked",
+        ChangeKind.Conflicted => "Conflicted",
+        _ => "Unchanged"
+    };
+
+    // Shown when hovering the letter
+    public string KindDescription => KindLetter + " = " + KindName + Kind switch
+    {
+        ChangeKind.Modified => ": the file's contents changed",
+        ChangeKind.TypeChanged => ": for example a file became a symbolic link",
+        ChangeKind.Added => ": a new file",
+        ChangeKind.Deleted => ": the file was removed",
+        ChangeKind.Renamed => " from " + (OriginalPath ?? "another path"),
+        ChangeKind.Copied => " from " + (OriginalPath ?? "another file"),
+        ChangeKind.Untracked => ": a new file Git is not tracking yet",
+        ChangeKind.Conflicted => ": resolve it before the merge or rebase can continue",
+        _ => string.Empty
+    };
+
     public string DisplayPath => OriginalPath == null ? Path : OriginalPath + " → " + Path;
 
     // A line-ending problem to show next to the file, filled in by the change list

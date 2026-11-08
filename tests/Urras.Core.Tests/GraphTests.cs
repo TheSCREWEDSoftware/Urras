@@ -98,4 +98,13 @@ public static class GraphTests
         Assert.Equal(new RefBadge("HEAD (detached)", RefKind.Head), RefBadge.Parse("HEAD")[0], "detached");
         Assert.Equal(0, RefBadge.Parse("").Count, "no refs");
     }
+
+    public static void DescribesChangeKinds()
+    {
+        FileChange renamed = new FileChange("new.cs", ChangeKind.Renamed, "old.cs");
+        Assert.Equal("Renamed", renamed.KindName, "name");
+        Assert.Equal("R = Renamed from old.cs", renamed.KindDescription, "tooltip");
+        Assert.Equal("M = Modified: the file's contents changed",
+                     new FileChange("a.cs", ChangeKind.Modified).KindDescription, "modified");
+    }
 }
