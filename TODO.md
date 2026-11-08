@@ -41,14 +41,14 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 3: Everyday Git actions
 
-18. [ ] Tags: create, delete, push
-19. [ ] Check out a specific commit
-20. [ ] Revert a commit
-21. [ ] Cherry-pick a commit
-22. [ ] Stashes: save, apply, pop, drop, and shown in the history
-23. [ ] Merge a branch, with a conflict helper (take ours, take theirs, open in editor, mark resolved)
-24. [ ] Rebase onto a branch
-25. [ ] Repository settings: write .gitattributes and .editorconfig (LF, CRLF, or CRLF for Windows scripts and LF
+18. [x] Tags: create, delete, push
+19. [x] Check out a specific commit
+20. [x] Revert a commit
+21. [x] Cherry-pick a commit
+22. [x] Stashes: save, apply, pop, drop and show (listing them inside the history is still to do)
+23. [x] Merge a branch, with a conflict helper (take ours, take theirs, open in editor, mark resolved)
+24. [x] Rebase onto a branch
+25. [x] Repository settings: write .gitattributes and .editorconfig (LF, CRLF, or CRLF for Windows scripts and LF
     elsewhere), normalize existing files with a preview, optional check before committing
 
 ## Phase 4: Look into the past

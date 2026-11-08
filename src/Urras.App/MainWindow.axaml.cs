@@ -56,8 +56,6 @@ public partial class MainWindow : Window
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
         BranchBox.SelectionChanged += async (_, _) => await OnBranchSelectedAsync();
-        NewBranchButton.Click += async (_, _) => await CreateBranchAsync();
-        DeleteBranchButton.Click += async (_, _) => await DeleteBranchAsync();
 
         UnstagedList.SelectionChanged += async (_, _) => await OnFileSelectedAsync(UnstagedList, StagedList, false);
         StagedList.SelectionChanged += async (_, _) => await OnFileSelectedAsync(StagedList, UnstagedList, true);
@@ -92,6 +90,7 @@ public partial class MainWindow : Window
 
         InitializeBasics();
         InitializeDiffOptions();
+        InitializeActions();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -144,6 +143,7 @@ public partial class MainWindow : Window
             List<BranchInfo> branches = await _repository.GetBranchesAsync();
             List<CommitInfo> history = await _repository.GetHistoryAsync();
             await ApplyLineEndingWarningsAsync(status);
+            await UpdateOperationBannerAsync(status);
             _status = status;
             _history = history;
 
@@ -200,6 +200,7 @@ public partial class MainWindow : Window
         _status = null;
         _history = new List<CommitInfo>();
         ClearCommitFiles();
+        OperationBanner.IsVisible = false;
         RepositoryTitle.Text = "No repository";
         ToolTip.SetTip(RepositoryTitle, null);
         UnstagedList.ItemsSource = null;
@@ -338,7 +339,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!await ConfirmLineEndingsAsync())
+        if (!await ConfirmLineEndingsAsync() || !await ConfirmWhitespaceAsync())
             return;
 
         string message = description.Length == 0 ? summary : summary + "\n\n" + description;
@@ -572,7 +573,7 @@ public partial class MainWindow : Window
         bool ready = _repository != null && !_busy;
         foreach (Control control in new Control[]
                  {
-                     FetchButton, PullButton, PushButton, RefreshButton, BranchBox, NewBranchButton, DeleteBranchButton,
+                     FetchButton, PullButton, PushButton, RefreshButton, BranchBox, BranchMenuButton, StashMenuButton,
                      StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton, DiscardButton,
                      CommitButton
                  })

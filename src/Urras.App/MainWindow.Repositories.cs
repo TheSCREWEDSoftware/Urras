@@ -360,6 +360,8 @@ public partial class MainWindow
         AddMenuItem(menu, "Move down", () => MoveAsync(node, 1));
         AddMenuItem(menu, "Move to group…", () => MoveToGroupAsync(node));
         menu.Items.Add(new Separator());
+        if (node.Path != null)
+            AddMenuItem(menu, "Repository settings…", () => RepositorySettingsAsync(node.Path));
         AddMenuItem(menu, node.IsGroup ? "Remove group" : "Remove from list",
                     () => node.IsGroup ? RemoveGroupAsync(node) : RemoveRepositoryAsync(node));
     }

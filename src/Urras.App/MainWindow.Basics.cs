@@ -245,6 +245,7 @@ public partial class MainWindow
                 return;
 
             string fullPath = Path.Combine(_repository.Path, change.Path);
+            AddConflictItems(menu, change);
             if (change.Kind != ChangeKind.Deleted)
             {
                 AddMenuItem(menu, "Open file", () => Report(SystemShell.OpenFile(fullPath)));
@@ -272,6 +273,7 @@ public partial class MainWindow
             AddMenuItem(menu, "Copy short SHA", () => CopyAsync(commit.ShortHash));
             AddMenuItem(menu, "Copy summary", () => CopyAsync(commit.Subject));
             AddMenuItem(menu, "Use this message", () => UseMessageOfAsync(commit.Hash));
+            AddCommitActions(menu, commit);
         };
         return menu;
     }
@@ -321,14 +323,18 @@ public partial class MainWindow
 
     private async Task OpenSettingsAsync()
     {
-        int? minutes = await Dialogs.SettingsAsync(this, _settings.AutoFetchMinutes);
-        if (minutes == null)
+        (int Minutes, bool CheckWhitespace)? result =
+            await Dialogs.SettingsAsync(this, _settings.AutoFetchMinutes, _settings.CheckWhitespaceBeforeCommit);
+        if (result == null)
             return;
 
-        _settings.AutoFetchMinutes = minutes.Value;
+        int minutes = result.Value.Minutes;
+        _settings.AutoFetchMinutes = minutes;
+        _settings.CheckWhitespaceBeforeCommit = result.Value.CheckWhitespace;
         _settings.Save();
         RestartAutoFetch();
-        SetStatus(minutes.Value == 0 ? "Background fetching is off." : $"Fetching every {minutes} minutes.", false);
+        SetStatus(minutes == 0 ? "Settings saved. Background fetching is off."
+                               : $"Settings saved. Fetching every {minutes} minutes.", false);
     }
 
     private void RestartAutoFetch()

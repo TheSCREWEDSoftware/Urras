@@ -127,8 +127,9 @@ public static class Dialogs
         await dialog.ShowDialog<object?>(owner);
     }
 
-    // Returns the chosen background fetch interval in minutes (0 for off), or null when cancelled
-    public static async Task<int?> SettingsAsync(Window owner, int autoFetchMinutes)
+    // Returns the chosen background fetch interval in minutes (0 for off) and the whitespace check, or null
+    public static async Task<(int Minutes, bool CheckWhitespace)?> SettingsAsync(Window owner, int autoFetchMinutes,
+                                                                                 bool checkWhitespace)
     {
         int[] intervals = { 0, 5, 10, 15, 30, 60 };
         Window dialog = CreateWindow("Settings");
@@ -139,15 +140,125 @@ public static class Dialogs
             SelectedIndex = Math.Max(0, Array.IndexOf(intervals, autoFetchMinutes)),
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
+        CheckBox whitespace = new CheckBox
+        {
+            Content = "Check for whitespace problems, such as trailing spaces, before committing",
+            IsChecked = checkWhitespace
+        };
         Button save = new Button { Content = "Save", IsDefault = true };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
-        save.Click += (_, _) => dialog.Close(intervals[Math.Max(0, fetch.SelectedIndex)]);
+        save.Click += (_, _) => dialog.Close(((int, bool)?)(intervals[Math.Max(0, fetch.SelectedIndex)],
+                                                           whitespace.IsChecked == true));
         cancel.Click += (_, _) => dialog.Close(null);
 
+        StackPanel input = new StackPanel { Spacing = 12 };
+        input.Children.Add(fetch);
+        input.Children.Add(whitespace);
         TextBlock label = Paragraph("Fetch every repository in the background. Fetching never changes your files; " +
                                     "it only updates the commits to pull shown next to each repository.");
-        dialog.Content = Layout(label, fetch, save, cancel);
-        return await dialog.ShowDialog<int?>(owner);
+        dialog.Content = Layout(label, input, save, cancel);
+        return await dialog.ShowDialog<(int, bool)?>(owner);
+    }
+
+    // A list with a button per action; returns the selected item and the action clicked, or nulls when closed
+    public static async Task<(T? Item, string? Action)> ListActionsAsync<T>(Window owner, string title, string label,
+                                                                           IReadOnlyList<T> items,
+                                                                           params string[] actions)
+        where T : class
+    {
+        Window dialog = CreateWindow(title);
+        ListBox list = new ListBox
+        {
+            ItemsSource = items,
+            Height = LIST_HEIGHT,
+            SelectedIndex = items.Count > 0 ? 0 : -1
+        };
+        WrapPanel buttons = new WrapPanel();
+        foreach (string action in actions)
+        {
+            Button button = new Button { Content = action, Margin = new Thickness(0, 0, 6, 6) };
+            button.Click += (_, _) => dialog.Close((list.SelectedItem as T, (string?)action));
+            buttons.Children.Add(button);
+        }
+
+        Button close = new Button { Content = "Close", IsCancel = true };
+        Button unused = new Button { IsVisible = false };
+        close.Click += (_, _) => dialog.Close(((T?)null, (string?)null));
+
+        StackPanel input = new StackPanel { Spacing = 8 };
+        input.Children.Add(list);
+        input.Children.Add(buttons);
+        dialog.Content = Layout(Paragraph(label), input, close, unused);
+        return await dialog.ShowDialog<(T?, string?)>(owner);
+    }
+
+    // Asks for a stash message and whether untracked files are included; null when cancelled
+    public static async Task<(string Message, bool IncludeUntracked)?> StashAsync(Window owner)
+    {
+        Window dialog = CreateWindow("Stash changes");
+        TextBox message = new TextBox { Watermark = "Message (optional)" };
+        CheckBox untracked = new CheckBox { Content = "Include untracked files", IsChecked = true };
+        Button stash = new Button { Content = "Stash", IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        stash.Click += (_, _) => dialog.Close(((string, bool)?)(message.Text?.Trim() ?? string.Empty,
+                                                               untracked.IsChecked == true));
+        cancel.Click += (_, _) => dialog.Close(null);
+        dialog.Opened += (_, _) => message.Focus();
+
+        StackPanel input = new StackPanel { Spacing = 8 };
+        input.Children.Add(message);
+        input.Children.Add(untracked);
+        dialog.Content = Layout(Paragraph("Put your uncommitted changes aside, to bring them back later."), input,
+                                stash, cancel);
+        return await dialog.ShowDialog<(string, bool)?>(owner);
+    }
+
+    public sealed record RepositorySettingsResult(Urras.Core.Git.LineEndingPolicy Policy, bool EditorConfig,
+                                                  bool Normalize);
+
+    public static async Task<RepositorySettingsResult?> RepositorySettingsAsync(Window owner, string name,
+                                                                                Urras.Core.Git.LineEndingPolicy current)
+    {
+        Urras.Core.Git.LineEndingPolicy[] policies =
+        {
+            Urras.Core.Git.LineEndingPolicy.Custom, Urras.Core.Git.LineEndingPolicy.LfWithWindowsScripts,
+            Urras.Core.Git.LineEndingPolicy.Lf, Urras.Core.Git.LineEndingPolicy.Crlf,
+            Urras.Core.Git.LineEndingPolicy.Auto
+        };
+        string[] labels =
+        {
+            "Keep the current rules", "LF, with CRLF for Windows scripts (.bat, .cmd)", "LF everywhere",
+            "CRLF everywhere", "Automatic (stored as LF, checked out with the system's endings)"
+        };
+
+        Window dialog = CreateWindow("Repository settings: " + name);
+        ComboBox policy = new ComboBox
+        {
+            ItemsSource = labels,
+            SelectedIndex = Math.Max(0, Array.IndexOf(policies, current)),
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        CheckBox editorConfig = new CheckBox { Content = "Also set end_of_line in .editorconfig", IsChecked = true };
+        CheckBox normalize = new CheckBox
+        {
+            Content = "Normalize files already in the repository (shows the list first)",
+            IsChecked = false
+        };
+        Button save = new Button { Content = "Save", IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        save.Click += (_, _) => dialog.Close(new RepositorySettingsResult(policies[Math.Max(0, policy.SelectedIndex)],
+                                                                          editorConfig.IsChecked == true,
+                                                                          normalize.IsChecked == true));
+        cancel.Click += (_, _) => dialog.Close(null);
+
+        StackPanel input = new StackPanel { Spacing = 10 };
+        input.Children.Add(policy);
+        input.Children.Add(editorConfig);
+        input.Children.Add(normalize);
+        TextBlock label = Paragraph("Line endings for this repository. Urras writes the rule to .gitattributes, and " +
+                                    "optionally .editorconfig; commit those files to share the rule.");
+        dialog.Content = Layout(label, input, save, cancel);
+        return await dialog.ShowDialog<RepositorySettingsResult?>(owner);
     }
 
     private static TextBlock Paragraph(string text)

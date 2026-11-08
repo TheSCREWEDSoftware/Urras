@@ -24,6 +24,11 @@ you already have installed.
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template
 - Open repositories and files in the file explorer, a terminal or VS Code; copy paths and commit SHAs
 - Background fetching of every repository (Settings)
+- Tags, checking out a commit, revert, cherry-pick, stashes, merge and rebase
+- Conflict helper: a banner while a merge, rebase, cherry-pick or revert is stopped, taking one side or marking
+  files resolved, then Continue or Abort
+- Repository settings: line-ending rules written to `.gitattributes` and `.editorconfig`, and normalizing
+  existing files after previewing them
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements
