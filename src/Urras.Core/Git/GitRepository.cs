@@ -242,12 +242,16 @@ public sealed partial class GitRepository
         return null;
     }
 
-    public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT)
+    public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT, HistoryFilter? filter = null)
     {
         if (await IsUnbornAsync())
             return new List<CommitInfo>();
 
-        GitResult result = await Run("log", "-n", limit.ToString(), "--format=" + GitParsers.LOG_FORMAT);
+        List<string> arguments = Arguments("log", "-n", limit.ToString(), "--format=" + GitParsers.LOG_FORMAT);
+        if (filter != null)
+            arguments.AddRange(filter.ToArguments(Path));
+
+        GitResult result = await Run(arguments);
         if (!result.Success)
             throw new GitException(result.Message);
 

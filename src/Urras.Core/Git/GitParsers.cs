@@ -103,6 +103,87 @@ public static class GitParsers
             status.Unstaged.Add(new FileChange(path, ToKind(xy[1]), xy[0] == '.' ? originalPath : null));
     }
 
+    // Parses `git blame --porcelain`: a header per line ("<hash> <old> <new> [<count>]"), commit details the first
+    // time a commit appears, then the line itself after a tab
+    public static List<BlameLine> ParseBlame(string output)
+    {
+        List<BlameLine> lines = new List<BlameLine>();
+        Dictionary<string, (string Author, DateTimeOffset Date, string Summary)> commits =
+            new Dictionary<string, (string, DateTimeOffset, string)>();
+
+        string hash = string.Empty;
+        int number = 0;
+        string author = string.Empty;
+        long time = 0;
+        string zone = "+0000";
+        string summary = string.Empty;
+
+        foreach (string rawLine in output.Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            if (line.StartsWith('\t'))
+            {
+                if (!commits.ContainsKey(hash))
+                    commits[hash] = (author, ToDate(time, zone), summary);
+
+                (string Author, DateTimeOffset Date, string Summary) commit = commits[hash];
+                lines.Add(new BlameLine(number, hash, commit.Author, commit.Date, commit.Summary, line.Substring(1)));
+                continue;
+            }
+
+            string[] parts = line.Split(' ', 2);
+            string key = parts[0];
+            string value = parts.Length > 1 ? parts[1] : string.Empty;
+
+            if (key.Length >= 40 && key.All(Uri.IsHexDigit))
+            {
+                hash = key;
+                string[] numbers = value.Split(' ');
+                number = numbers.Length > 1 ? int.Parse(numbers[1], CultureInfo.InvariantCulture) : number + 1;
+                continue;
+            }
+
+            switch (key)
+            {
+                case "author":
+                    author = value;
+                    break;
+                case "author-time":
+                    time = long.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "author-tz":
+                    zone = value;
+                    break;
+                case "summary":
+                    summary = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // Shade alternate blocks of consecutive lines from the same commit
+        bool shaded = false;
+        for (int i = 0; i < lines.Count; ++i)
+        {
+            if (i > 0 && lines[i].Hash != lines[i - 1].Hash)
+                shaded = !shaded;
+            lines[i].IsShaded = shaded;
+        }
+
+        return lines;
+    }
+
+    private static DateTimeOffset ToDate(long unixSeconds, string zone)
+    {
+        TimeSpan offset = TimeSpan.Zero;
+        if (zone.Length == 5 && int.TryParse(zone.AsSpan(1, 2), out int hours) &&
+            int.TryParse(zone.AsSpan(3, 2), out int minutes))
+            offset = new TimeSpan(hours, minutes, 0) * (zone[0] == '-' ? -1 : 1);
+
+        return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToOffset(offset);
+    }
+
     // Parses `--name-status -z`: "M\0path\0", or "R100\0old\0new\0" for renames and copies
     public static List<FileChange> ParseNameStatus(string output)
     {
