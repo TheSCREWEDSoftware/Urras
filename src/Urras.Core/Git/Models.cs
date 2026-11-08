@@ -83,7 +83,18 @@ public sealed class CommitInfo
 
     // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
     public string Refs { get; init; } = string.Empty;
-    public bool HasRefs => Refs.Length > 0;
+    public bool HasRefs => RefBadges.Count > 0;
+
+    // Refs split into badges: the checked-out branch, other local branches, remote branches and tags
+    public IReadOnlyList<RefBadge> RefBadges => _refBadges ??= RefBadge.Parse(Refs);
+    private List<RefBadge>? _refBadges;
+
+    // Full hashes of the parent commits: none for the first commit, two or more for a merge
+    public IReadOnlyList<string> Parents { get; init; } = Array.Empty<string>();
+    public bool IsMerge => Parents.Count > 1;
+
+    // Lanes and lines drawn beside the commit; set by the history view
+    public GraphRow? Graph { get; set; }
 }
 
 public sealed class BranchInfo
@@ -106,5 +117,57 @@ public sealed class BranchInfo
     public override string ToString()
     {
         return Name;
+    }
+}
+
+public enum RefKind
+{
+    Head,
+    Local,
+    Remote,
+    Tag
+}
+
+public sealed record RefBadge(string Name, RefKind Kind)
+{
+    public bool IsHead => Kind == RefKind.Head;
+    public bool IsRemote => Kind == RefKind.Remote;
+    public bool IsTag => Kind == RefKind.Tag;
+    public string Text => Kind == RefKind.Head ? "✓ " + Name : Name;
+
+    // git log's %D with --decorate=full, which tells local branches named like feature/x apart from remote ones:
+    // "HEAD -> refs/heads/main, tag: refs/tags/v0.1.0, refs/remotes/origin/main, refs/remotes/origin/HEAD"
+    public static List<RefBadge> Parse(string refs)
+    {
+        List<RefBadge> badges = new List<RefBadge>();
+        StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
+        foreach (string part in refs.Split(',', options))
+        {
+            if (part.StartsWith("HEAD -> ", StringComparison.Ordinal))
+                badges.Add(new RefBadge(Short(part["HEAD -> ".Length..]), RefKind.Head));
+            else if (part == "HEAD")
+                badges.Add(new RefBadge("HEAD (detached)", RefKind.Head));
+            else if (part.StartsWith("tag: ", StringComparison.Ordinal))
+                badges.Add(new RefBadge(Short(part["tag: ".Length..]), RefKind.Tag));
+            else if (part.EndsWith("/HEAD", StringComparison.Ordinal) || part.StartsWith("refs/stash"))
+                continue;
+            else if (part.StartsWith("refs/remotes/", StringComparison.Ordinal))
+                badges.Add(new RefBadge(Short(part), RefKind.Remote));
+            else
+                badges.Add(new RefBadge(Short(part), RefKind.Local));
+        }
+
+        return badges;
+    }
+
+    private static string Short(string name)
+    {
+        foreach (string prefix in new[] { "refs/heads/", "refs/remotes/", "refs/tags/" })
+        {
+            if (name.StartsWith(prefix, StringComparison.Ordinal))
+                return name[prefix.Length..];
+        }
+
+        return name;
     }
 }

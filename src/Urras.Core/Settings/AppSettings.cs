@@ -50,6 +50,9 @@ public sealed class AppSettings
     // Committing asks first when the staged changes have whitespace problems such as trailing spaces
     public bool CheckWhitespaceBeforeCommit { get; set; }
 
+    // History lists every branch, remote branch and tag, with the commit graph beside it
+    public bool HistoryAllBranches { get; set; } = true;
+
     // Untracked files are left out of the change list and of Stage all
     public bool HideUntracked { get; set; }
 

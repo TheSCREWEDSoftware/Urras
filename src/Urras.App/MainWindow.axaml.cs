@@ -142,7 +142,12 @@ public partial class MainWindow : Window
 
             RepositoryStatus status = await _repository.GetStatusAsync();
             List<BranchInfo> branches = await _repository.GetBranchesAsync();
-            List<CommitInfo> history = await _repository.GetHistoryAsync(filter: _historyFilter);
+            List<CommitInfo> history = await _repository.GetHistoryAsync(filter: _historyFilter,
+                                                                         allBranches: _settings.HistoryAllBranches);
+
+            // A search leaves gaps between commits, so the graph is only drawn for the full history
+            if (_historyFilter == null)
+                CommitGraph.Assign(history);
             await ApplyLineEndingWarningsAsync(status);
             await UpdateOperationBannerAsync(status);
             _status = status;

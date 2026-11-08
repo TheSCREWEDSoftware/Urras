@@ -29,7 +29,8 @@ public static class ActionsTests
         Assert.Equal("Release two", annotated.Subject, "tag message");
 
         List<CommitInfo> decorated = await temp.Repository.GetHistoryAsync();
-        Assert.True(decorated[0].Refs.Contains("tag: v2.0") && decorated[0].Refs.Contains("main"), "refs in history");
+        Assert.True(decorated[0].RefBadges.Contains(new RefBadge("v2.0", RefKind.Tag))
+                    && decorated[0].RefBadges.Contains(new RefBadge("main", RefKind.Head)), "refs in history");
 
         Assert.Success(await temp.Repository.DeleteTagAsync("v1.0"), "delete tag");
         Assert.Equal(1, (await temp.Repository.GetTagsAsync()).Count, "one tag left");

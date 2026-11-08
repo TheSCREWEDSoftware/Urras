@@ -17,7 +17,8 @@ you already have installed.
   CRLF/LF markers, wrapped or scrolling lines
 - Commits shown per file (a list of changed files) or combined; image files compared side by side
 - Commit with summary and description, amend the last commit (Ctrl+Enter to commit)
-- History with the full diff of each commit
+- History with the full diff of each commit, a commit graph with branch lanes across every branch, and badges
+  for branches, remote branches and tags
 - Branches: switch, create, delete, check out remote branches
 - Fetch, pull and push, with ahead and behind counts; first push publishes the branch
 - Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`

@@ -16,6 +16,44 @@
       <Setter Property="Padding" Value="8,3" />
       <Setter Property="MinHeight" Value="0" />
     </Style>
+    <!-- History rows have no vertical padding so the graph's lines join from row to row -->
+    <Style Selector="ListBox#HistoryList ListBoxItem">
+      <Setter Property="Padding" Value="8,0" />
+    </Style>
+    <Style Selector="Border.refBadge">
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Margin" Value="0,0,5,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="#33E8B931" />
+      <Setter Property="BorderBrush" Value="#E8B931" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.refBadge TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="#E8B931" />
+    </Style>
+    <Style Selector="Border.refBadge.head">
+      <Setter Property="Background" Value="#E8B931" />
+    </Style>
+    <Style Selector="Border.refBadge.head TextBlock">
+      <Setter Property="Foreground" Value="#1E1E1E" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.refBadge.remote">
+      <Setter Property="Background" Value="#33539BF5" />
+      <Setter Property="BorderBrush" Value="#539BF5" />
+    </Style>
+    <Style Selector="Border.refBadge.remote TextBlock">
+      <Setter Property="Foreground" Value="#9CC4FA" />
+    </Style>
+    <Style Selector="Border.refBadge.tag">
+      <Setter Property="Background" Value="#3357AB5A" />
+      <Setter Property="BorderBrush" Value="#57AB5A" />
+    </Style>
+    <Style Selector="Border.refBadge.tag TextBlock">
+      <Setter Property="Foreground" Value="#8DDB8C" />
+    </Style>
     <Style Selector="ListBox.diff ListBoxItem">
       <Setter Property="Padding" Value="0" />
       <Setter Property="MinHeight" Value="0" />
@@ -308,6 +346,8 @@
                 <ComboBoxItem>File or folder</ComboBoxItem>
                 <ComboBoxItem>Content</ComboBoxItem>
               </ComboBox>
+              <CheckBox x:Name="AllBranchesBox" DockPanel.Dock="Right" Content="All branches" Margin="8,0,0,0"
+                        ToolTip.Tip="Every branch, remote branch and tag, not only the current branch" />
               <Button x:Name="ClearSearchButton" DockPanel.Dock="Right" Content="Clear" Margin="6,0,0,0" />
               <TextBlock x:Name="HistoryFilterText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.7"
                          Margin="8,0,0,0" MaxWidth="420" TextTrimming="CharacterEllipsis" />
@@ -315,10 +355,10 @@
             </DockPanel>
             <!-- Column titles; the padding matches the list items below so the columns line up -->
             <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="#1AFFFFFF">
-              <Grid ColumnDefinitions="80,*,170,130">
-                <TextBlock Grid.Column="0" Classes="columnHeader" Text="Commit" />
-                <TextBlock Grid.Column="1" Classes="columnHeader" Text="Summary" />
-                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
+              <Grid ColumnDefinitions="*,170,80,130">
+                <TextBlock Grid.Column="0" Classes="columnHeader" Text="Graph and summary" />
+                <TextBlock Grid.Column="1" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
                 <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
               </Grid>
             </Border>
@@ -327,18 +367,33 @@
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="80,*,170,130">
-                    <TextBlock Grid.Column="0" Text="{Binding ShortHash}" Classes="mono" Opacity="0.7" />
-                    <DockPanel Grid.Column="1">
-                      <Border DockPanel.Dock="Left" IsVisible="{Binding HasRefs}" Background="#33388BFD"
-                              CornerRadius="3" Padding="5,0" Margin="0,0,6,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Refs}" FontSize="11" Foreground="#79C0FF" />
-                      </Border>
-                      <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                  <Grid ColumnDefinitions="*,170,80,130" Height="24">
+                    <DockPanel Grid.Column="0">
+                      <local:GraphView DockPanel.Dock="Left" Row="{Binding Graph}" Margin="0,0,4,0" />
+                      <ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding RefBadges}"
+                                    IsVisible="{Binding HasRefs}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Classes="refBadge" Classes.head="{Binding IsHead}"
+                                    Classes.remote="{Binding IsRemote}" Classes.tag="{Binding IsTag}">
+                              <TextBlock Text="{Binding Text}" />
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                     </DockPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding Author}" TextTrimming="CharacterEllipsis"
-                               Opacity="0.7" Margin="8,0,0,0" />
-                    <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding Author}" TextTrimming="CharacterEllipsis"
+                               Opacity="0.7" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono" Opacity="0.7"
+                               Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
+                               VerticalAlignment="Center" />
                   </Grid>
                 </DataTemplate>
               </ListBox.ItemTemplate>

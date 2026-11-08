@@ -242,12 +242,18 @@ public sealed partial class GitRepository
         return null;
     }
 
-    public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT, HistoryFilter? filter = null)
+    // allBranches adds every local and remote branch and tag, as the commit graph shows them
+    public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT, HistoryFilter? filter = null,
+                                                        bool allBranches = false)
     {
         if (await IsUnbornAsync())
             return new List<CommitInfo>();
 
-        List<string> arguments = Arguments("log", "-n", limit.ToString(), "--format=" + GitParsers.LOG_FORMAT);
+        // Date order keeps every commit above its parents, which the graph needs
+        List<string> arguments = Arguments("log", "-n", limit.ToString(), "--date-order", "--decorate=full",
+                                           "--format=" + GitParsers.LOG_FORMAT);
+        if (allBranches)
+            arguments.AddRange(new[] { "--branches", "--remotes", "--tags", "HEAD" });
         if (filter != null)
             arguments.AddRange(filter.ToArguments(Path));
 

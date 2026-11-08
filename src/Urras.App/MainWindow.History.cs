@@ -23,6 +23,13 @@ public partial class MainWindow
             await SearchHistoryAsync();
         };
         ClearSearchButton.Click += async (_, _) => await ClearHistorySearchAsync();
+        AllBranchesBox.IsChecked = _settings.HistoryAllBranches;
+        AllBranchesBox.Click += async (_, _) =>
+        {
+            _settings.HistoryAllBranches = AllBranchesBox.IsChecked == true;
+            _settings.Save();
+            await RefreshAsync();
+        };
         CommitFilesList.ContextMenu = CommitFileContextMenu();
         UpdateSearchState();
     }
