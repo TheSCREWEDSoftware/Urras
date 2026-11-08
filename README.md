@@ -8,6 +8,8 @@ you already have installed.
 ## Features
 
 - Repository list: add existing folders, create new repositories, clone
+- Repository groups: automatic by folder on disk, or a manual layout you can rename and reorder; fetch or pull a
+  whole group; each repository shows its branch, remote, commits to push and pull, and uncommitted changes
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved

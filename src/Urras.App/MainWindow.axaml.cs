@@ -4,24 +4,11 @@ using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Urras.Core.Git;
 using Urras.Core.Settings;
 
 namespace Urras.App;
-
-public sealed class RepositoryItem
-{
-    public RepositoryItem(string path)
-    {
-        Path = path;
-        Name = System.IO.Path.GetFileName(path.TrimEnd('/', '\\'));
-    }
-
-    public string Name { get; }
-    public string Path { get; }
-}
 
 public partial class MainWindow : Window
 {
@@ -58,8 +45,7 @@ public partial class MainWindow : Window
 
         AddRepositoryButton.Click += async (_, _) => await AddRepositoryAsync();
         CloneButton.Click += async (_, _) => await CloneRepositoryAsync();
-        RemoveRepositoryButton.Click += async (_, _) => await RemoveRepositoryAsync();
-        RepositoryList.SelectionChanged += async (_, _) => await OnRepositorySelectedAsync();
+        RemoveRepositoryButton.Click += async (_, _) => await RemoveSelectedAsync();
 
         FetchButton.Click += async (_, _) => await RunGitAsync("Fetching…", repository => repository.FetchAsync(),
                                                                "Fetched.");
@@ -97,126 +83,15 @@ public partial class MainWindow : Window
         CommitDiffModeBox.SelectionChanged += (_, _) => OnDiffModeChanged(CommitDiffModeBox);
 
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
-        Activated += async (_, _) => await RefreshAsync();
+        Activated += async (_, _) =>
+        {
+            await RefreshAsync();
+            await RefreshSummariesAsync();
+        };
         Closed += (_, _) => GitRunner.CommandFinished -= OnGitCommandFinished;
 
-        LoadRepositoryList(_settings.LastRepository);
+        InitializeRepositoryTree();
         UpdateButtons();
-    }
-
-    // Repositories
-
-    private void LoadRepositoryList(string? selectPath)
-    {
-        List<RepositoryItem> items = _settings.Repositories.Select(path => new RepositoryItem(path)).ToList();
-        RepositoryList.ItemsSource = items;
-        RepositoryList.SelectedItem = items.FirstOrDefault(item => item.Path == selectPath);
-    }
-
-    private async Task<string?> PickFolderAsync(string title)
-    {
-        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions { Title = title, AllowMultiple = false });
-        return folders.Count == 0 ? null : folders[0].TryGetLocalPath();
-    }
-
-    private async Task AddRepositoryAsync()
-    {
-        string? folder = await PickFolderAsync("Add a repository");
-        if (folder == null)
-            return;
-
-        string? root = await GitRepository.FindRootAsync(folder);
-        if (root == null)
-        {
-            bool create = await Dialogs.ConfirmAsync(this, "Not a repository",
-                                                     folder + " is not a Git repository. Create one here?",
-                                                     "Create repository");
-            if (!create)
-                return;
-
-            GitResult result = await GitRepository.InitAsync(folder);
-            if (!ReportResult(result, "Created a repository."))
-                return;
-            root = folder;
-        }
-
-        AddAndSelectRepository(root);
-    }
-
-    private async Task CloneRepositoryAsync()
-    {
-        string? url = await Dialogs.PromptAsync(this, "Clone", "Repository URL:");
-        if (url == null)
-            return;
-
-        string? parent = await PickFolderAsync("Choose where to clone into");
-        if (parent == null)
-            return;
-
-        string name = url.TrimEnd('/');
-        name = name.Substring(Math.Max(name.LastIndexOfAny(new[] { '/', '\\', ':' }) + 1, 0));
-        if (name.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-            name = name.Substring(0, name.Length - ".git".Length);
-
-        string target = Path.Combine(parent, name);
-        if (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any())
-        {
-            SetStatus(target + " already exists and is not empty.", true);
-            return;
-        }
-
-        SetBusy(true, "Cloning " + url + "…");
-        GitResult result = await GitRepository.CloneAsync(url, target);
-        SetBusy(false, null);
-
-        if (ReportResult(result, "Cloned into " + target + "."))
-            AddAndSelectRepository(target);
-    }
-
-    private void AddAndSelectRepository(string path)
-    {
-        _settings.AddRepository(path);
-        _settings.LastRepository = path;
-        _settings.Save();
-        LoadRepositoryList(path);
-    }
-
-    private async Task RemoveRepositoryAsync()
-    {
-        if (RepositoryList.SelectedItem is not RepositoryItem item)
-            return;
-
-        bool remove = await Dialogs.ConfirmAsync(this, "Remove repository",
-                                                 "Remove " + item.Name +
-                                                     " from the list? Files on disk are not touched.",
-                                                 "Remove");
-        if (!remove)
-            return;
-
-        _settings.RemoveRepository(item.Path);
-        _settings.Save();
-        LoadRepositoryList(null);
-    }
-
-    private async Task OnRepositorySelectedAsync()
-    {
-        RepositoryItem? item = RepositoryList.SelectedItem as RepositoryItem;
-        _repository = item == null ? null : new GitRepository(item.Path);
-        _status = null;
-
-        if (item != null)
-        {
-            _settings.LastRepository = item.Path;
-            _settings.Save();
-        }
-
-        SummaryBox.Text = string.Empty;
-        DescriptionBox.Text = string.Empty;
-        AmendBox.IsChecked = false;
-        ShowChangesDiff(null, string.Empty);
-        ShowCommitDiff(null, string.Empty);
-        await RefreshAsync();
     }
 
     // Refresh
@@ -306,6 +181,8 @@ public partial class MainWindow : Window
                 await ShowFileDiffAsync(staged, true);
             else
                 ShowChangesDiff(null, string.Empty);
+
+            await UpdateSummaryAsync(_repository.Path, true);
 
             if (!_busy && StatusText.Text == "Ready")
                 SetStatus(DescribeStatus(status), false);
@@ -685,7 +562,7 @@ public partial class MainWindow : Window
                  {
                      FetchButton, PullButton, PushButton, RefreshButton, BranchBox, NewBranchButton, DeleteBranchButton,
                      StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton, DiscardButton,
-                     CommitButton, RemoveRepositoryButton
+                     CommitButton
                  })
         {
             control.IsEnabled = ready;
@@ -693,6 +570,8 @@ public partial class MainWindow : Window
 
         AddRepositoryButton.IsEnabled = !_busy;
         CloneButton.IsEnabled = !_busy;
+        NewGroupButton.IsEnabled = !_busy;
+        RemoveRepositoryButton.IsEnabled = !_busy;
     }
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)

@@ -16,7 +16,7 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 1: Finish the basics
 
-1. [ ] Repository groups and folders, with fetch and pull for a whole group
+1. [x] Repository groups and folders, with fetch and pull for a whole group
 2. [ ] Smaller tab titles, and hints in empty lists
 3. [ ] About dialog with the version and the AGPL notice
 4. [ ] Recent commit messages and a subject length reminder
