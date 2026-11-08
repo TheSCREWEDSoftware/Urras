@@ -27,6 +27,15 @@ public partial class MainWindow
         FileModeBox.SelectionChanged += async (_, _) => await OnFileModeChangedAsync(FileModeBox);
         CommitFileModeBox.SelectionChanged += async (_, _) => await OnFileModeChangedAsync(CommitFileModeBox);
         CommitFilesList.SelectionChanged += async (_, _) => await OnCommitFileSelectedAsync();
+        UpdateDiffOptionsState();
+    }
+
+    // Raw shows git's own output untouched, so Whitespace and Wrap don't apply to it
+    private void UpdateDiffOptionsState()
+    {
+        bool formatted = _settings.DiffView != DiffViewMode.Raw;
+        foreach (CheckBox box in new[] { WhitespaceBox, CommitWhitespaceBox, WrapBox, CommitWrapBox })
+            box.IsEnabled = formatted;
     }
 
     // Options shared by both diff panes

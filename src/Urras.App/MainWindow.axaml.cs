@@ -513,6 +513,7 @@ public partial class MainWindow : Window
         DiffModeBox.SelectedIndex = source.SelectedIndex;
         CommitDiffModeBox.SelectedIndex = source.SelectedIndex;
         _updatingDiffMode = false;
+        UpdateDiffOptionsState();
 
         RenderDiff(DiffList, _changesDiffText);
         RenderDiff(CommitDiffList, _commitDiffText);
