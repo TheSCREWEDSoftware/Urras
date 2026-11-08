@@ -87,8 +87,10 @@ public sealed partial class GitRepository
         return Run("branch", name, revision);
     }
 
+    private const int KNOWN_PEOPLE_COMMITS = 3000;
+
     // People who have committed here, most frequent first, as co-author suggestions
-    public async Task<List<CoAuthor>> GetKnownPeopleAsync(int commits = 3000)
+    public async Task<List<CoAuthor>> GetKnownPeopleAsync(int commits = KNOWN_PEOPLE_COMMITS)
     {
         GitResult result = await Run("log", "--all", "-n", commits.ToString(), "--format=%an%x1f%ae%n%cn%x1f%ce");
         if (!result.Success)

@@ -114,7 +114,7 @@ public partial class MainWindow
         try
         {
             List<BlameLine> lines = await _repository.GetBlameAsync(path, revision);
-            string at = revision == null ? "working copy" : revision.Substring(0, Math.Min(8, revision.Length));
+            string at = revision == null ? "working copy" : Hashes.Short(revision);
             BlameWindow window = new BlameWindow("Blame: " + path + " (" + at + ")", lines);
             window.CommitRequested += async hash => await ShowCommitByHashAsync(hash);
             window.Show(this);
@@ -136,7 +136,7 @@ public partial class MainWindow
         }
 
         // Older than the loaded history: shown without selecting a row
-        string shortHash = hash.Substring(0, Math.Min(8, hash.Length));
+        string shortHash = Hashes.Short(hash);
         await ShowSourceAsync(new DiffSource(shortHash, hash, null));
     }
 
@@ -146,7 +146,7 @@ public partial class MainWindow
             return;
 
         byte[]? contents = await _repository.GetBlobAsync(revision, path);
-        string at = revision.Substring(0, Math.Min(8, revision.Length));
+        string at = Hashes.Short(revision);
         new FileViewWindow(path + " (" + at + ")", path, contents).Show(this);
     }
 

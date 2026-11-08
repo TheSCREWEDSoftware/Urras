@@ -50,7 +50,7 @@ public sealed class StashInfo
     // The stash as a row in the history, branching off the commit it was made on
     public CommitInfo ToCommit()
     {
-        return new CommitInfo(Hash, Hash[..Math.Min(7, Hash.Length)], Author, string.Empty, Date, Message)
+        return new CommitInfo(Hash, Hashes.Short(Hash), Author, string.Empty, Date, Message)
         {
             Parents = Parent == null ? Array.Empty<string>() : new[] { Parent },
             Refs = Reference,

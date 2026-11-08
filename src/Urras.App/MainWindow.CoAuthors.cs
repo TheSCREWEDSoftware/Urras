@@ -11,6 +11,8 @@ namespace Urras.App;
 // Co-authors from the history, typed as Name <email>, or found as @username with an account
 public partial class MainWindow
 {
+    // Waits for a pause in typing before searching a platform
+    private const int TYPING_PAUSE_MILLISECONDS = 300;
     private static readonly IBrush ChipBrush = new SolidColorBrush(Color.Parse("#1F6FEB"));
 
     private readonly List<CoAuthor> _coAuthors = new List<CoAuthor>();
@@ -71,7 +73,7 @@ public partial class MainWindow
         try
         {
             // Waits for a pause in typing before asking the platform
-            await Task.Delay(300, cancellation);
+            await Task.Delay(TYPING_PAUSE_MILLISECONDS, cancellation);
             List<CoAuthor> found = await _accounts.SearchCoAuthorsAsync(query);
             List<object> labels = new List<object>();
             foreach (CoAuthor person in found)

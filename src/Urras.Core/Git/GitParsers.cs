@@ -136,7 +136,7 @@ public static class GitParsers
             string key = parts[0];
             string value = parts.Length > 1 ? parts[1] : string.Empty;
 
-            if (key.Length >= 40 && key.All(Uri.IsHexDigit))
+            if (key.Length >= Hashes.SHA1_LENGTH && key.All(Uri.IsHexDigit))
             {
                 hash = key;
                 string[] numbers = value.Split(' ');

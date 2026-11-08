@@ -26,7 +26,7 @@ public sealed partial class GitRepository
 
             // Annotated tags print the tagged commit first, then the tag object; the commit is the first 40 or 64
             string objects = fields[1];
-            string commit = objects.Length >= 80 ? objects.Substring(0, objects.Length / 2) : objects;
+            string commit = objects.Length >= 2 * Hashes.SHA1_LENGTH ? objects[..(objects.Length / 2)] : objects;
             tags.Add(new TagInfo(fields[0], commit, fields[2]));
         }
 

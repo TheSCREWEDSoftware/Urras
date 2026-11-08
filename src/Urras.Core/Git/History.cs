@@ -65,7 +65,7 @@ public sealed class BlameLine
 
     public int Number { get; }
     public string Hash { get; }
-    public string ShortHash => Hash.Length > 8 ? Hash.Substring(0, 8) : Hash;
+    public string ShortHash => Hashes.Short(Hash);
     public string Author { get; }
     public DateTimeOffset Date { get; }
     public string DateText => Urras.Core.Settings.DisplayFormats.Date(Date);

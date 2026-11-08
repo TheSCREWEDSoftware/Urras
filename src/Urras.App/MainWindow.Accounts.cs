@@ -8,12 +8,13 @@ public partial class MainWindow
 {
     private const string TOKEN_PAGE = "https://github.com/settings/tokens/new?description=Urras&scopes=repo,read:user";
 
+    private const int ACCOUNTS_TIMEOUT_SECONDS = 20;
     private static readonly HttpClient AccountsHttp = CreateAccountsHttp();
     private AccountManager? _accounts;
 
     private static HttpClient CreateAccountsHttp()
     {
-        return new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        return new HttpClient { Timeout = TimeSpan.FromSeconds(ACCOUNTS_TIMEOUT_SECONDS) };
     }
 
     private void InitializeAccounts()

@@ -13,6 +13,9 @@ namespace Urras.App;
 // A read-only view of a file at some revision: text with line numbers, or an image
 public sealed class FileViewWindow : Window
 {
+    // A zero byte in the start of a file means it isn't text
+    private const int BINARY_CHECK_BYTES = 8000;
+
     private const double WINDOW_WIDTH = 1000;
     private const double WINDOW_HEIGHT = 720;
 
@@ -35,7 +38,7 @@ public sealed class FileViewWindow : Window
     private static Control TextView(string path, byte[] contents)
     {
         // A NUL byte early on means a binary file, which has no lines to show
-        if (contents.Take(8000).Contains((byte)0))
+        if (contents.Take(BINARY_CHECK_BYTES).Contains((byte)0))
             return Message("Binary file (" + contents.Length + " bytes).");
 
         List<string> lines = Encoding.UTF8.GetString(contents).Replace("\r\n", "\n").Split('\n').ToList();

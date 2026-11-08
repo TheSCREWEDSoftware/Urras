@@ -7,6 +7,9 @@ public static class GlobalConfig
     public const string USER_EMAIL = "user.email";
     public const string DEFAULT_BRANCH = "init.defaultBranch";
 
+    // git config --unset exits with 5 when the key wasn't set, which is what was asked for
+    private const int NOT_SET_EXIT_CODE = 5;
+
     private static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     public static async Task<string?> GetAsync(string key)
@@ -22,8 +25,7 @@ public static class GlobalConfig
         if (string.IsNullOrWhiteSpace(value))
         {
             GitResult unset = await GitRunner.RunAsync(Home, new[] { "config", "--global", "--unset", key });
-            // Exit code 5 means it wasn't set, which is what was asked for
-            return unset.ExitCode == 5 ? new GitResult(0, string.Empty, string.Empty) : unset;
+            return unset.ExitCode == NOT_SET_EXIT_CODE ? new GitResult(0, string.Empty, string.Empty) : unset;
         }
 
         return await GitRunner.RunAsync(Home, new[] { "config", "--global", key, value.Trim() });

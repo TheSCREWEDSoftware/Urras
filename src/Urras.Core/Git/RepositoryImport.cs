@@ -6,6 +6,8 @@ namespace Urras.Core.Git;
 // Finds repositories to add in one go: every repository under a folder, or the ones GitHub Desktop knows
 public static partial class RepositoryImport
 {
+    public const int SEARCH_DEPTH = 4;
+
     // Folders not worth walking into: dependencies and build output hold no repositories of their own
     private static readonly HashSet<string> Skipped = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -16,7 +18,7 @@ public static partial class RepositoryImport
     private static partial Regex WindowsPathRegex();
 
     // Repositories at most depth folders below root; a repository's own subfolders are not searched
-    public static List<string> FindUnder(string root, int depth = 4)
+    public static List<string> FindUnder(string root, int depth = SEARCH_DEPTH)
     {
         List<string> found = new List<string>();
         Walk(root, depth, found);

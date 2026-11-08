@@ -10,13 +10,14 @@ public static class AvatarCache
     private static readonly HttpClient Http = CreateClient();
     private static readonly Dictionary<string, Task<Bitmap?>> Loading = new Dictionary<string, Task<Bitmap?>>();
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(7);
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
     private static string Folder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Urras", "avatars");
 
     private static HttpClient CreateClient()
     {
-        HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        HttpClient client = new HttpClient { Timeout = Timeout };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("Urras/0.1");
         return client;
     }

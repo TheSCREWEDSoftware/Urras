@@ -15,6 +15,10 @@ public sealed class PlatformException : Exception
 public sealed class GitHubClient
 {
     public const string GITHUB_API = "https://api.github.com";
+    public const int PAGE_SIZE = 100;
+    public const int MAX_PAGES = 10;
+    public const int SEARCH_RESULTS = 8;
+    public const int AVATAR_SIZE = 64;
 
     private readonly HttpClient _http;
     private readonly string _api;
@@ -58,7 +62,7 @@ public sealed class GitHubClient
     }
 
     // Users whose login or name matches, best first
-    public async Task<List<PlatformUser>> SearchUsersAsync(string query, int count = 8)
+    public async Task<List<PlatformUser>> SearchUsersAsync(string query, int count = SEARCH_RESULTS)
     {
         using JsonDocument result = await GetAsync("/search/users?per_page=" + count + "&q=" +
                                                    Uri.EscapeDataString(query + " in:login in:name"));
@@ -66,12 +70,13 @@ public sealed class GitHubClient
     }
 
     // Every repository the signed-in user can see: their own, their organisations' and ones they collaborate on
-    public async Task<List<PlatformRepository>> GetRepositoriesAsync(int maxPages = 10)
+    public async Task<List<PlatformRepository>> GetRepositoriesAsync(int maxPages = MAX_PAGES)
     {
         List<PlatformRepository> repositories = new List<PlatformRepository>();
         for (int page = 1; page <= maxPages; ++page)
         {
-            using JsonDocument result = await GetAsync("/user/repos?per_page=100&sort=pushed&page=" + page);
+            string path = "/user/repos?per_page=" + PAGE_SIZE + "&sort=pushed&page=" + page;
+            using JsonDocument result = await GetAsync(path);
             List<JsonElement> items = result.RootElement.EnumerateArray().ToList();
             foreach (JsonElement item in items)
             {
@@ -83,7 +88,7 @@ public sealed class GitHubClient
                     item.TryGetProperty("fork", out JsonElement fork) && fork.GetBoolean()));
             }
 
-            if (items.Count < 100)
+            if (items.Count < PAGE_SIZE)
                 break;
         }
 
@@ -139,7 +144,7 @@ public sealed class GitHubClient
     }
 
     // The picture for a GitHub user id, at a size in pixels; works without signing in
-    public static string AvatarUrl(long id, int size = 64, string host = "avatars.githubusercontent.com")
+    public static string AvatarUrl(long id, int size = AVATAR_SIZE, string host = "avatars.githubusercontent.com")
     {
         return "https://" + host + "/u/" + id + "?s=" + size;
     }

@@ -29,7 +29,7 @@ public sealed record WorktreeInfo(string Path, string? Head, string? Branch, boo
 {
     public override string ToString()
     {
-        string where = Branch ?? (Head == null ? "bare" : "detached at " + Head[..Math.Min(7, Head.Length)]);
+        string where = Branch ?? (Head == null ? "bare" : "detached at " + Hashes.Short(Head));
         return Path + "  ·  " + where + (IsMain ? "  ·  main" : string.Empty)
                + (IsLocked ? "  ·  locked" : string.Empty) + (IsPrunable ? "  ·  missing" : string.Empty);
     }

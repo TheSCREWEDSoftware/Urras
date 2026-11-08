@@ -13,6 +13,8 @@ public sealed class StatisticsWindow : Window
     private const double WINDOW_HEIGHT = 760;
     private const double BAR_WIDTH = 360;
     private const double COLUMN_HEIGHT = 90;
+    private const int TOP_CONTRIBUTORS = 15;
+    private const int HOUR_LABEL_STEP = 3;
 
     private static readonly string[] Periods = { "All time", "Last year", "Last 3 months", "Last month" };
     private static readonly string?[] Since = { null, "1 year ago", "3 months ago", "1 month ago" };
@@ -72,16 +74,16 @@ public sealed class StatisticsWindow : Window
         });
 
         _content.Children.Add(Section("Contributors", Bars(
-            stats.Contributors.Take(15).Select(person => (person.Name, person.Commits,
+            stats.Contributors.Take(TOP_CONTRIBUTORS).Select(person => (person.Name, person.Commits,
                                                           $"{person.Commits:N0} commits  +{person.Added:N0} " +
                                                           $"−{person.Removed:N0}")))));
         _content.Children.Add(Section("Commits per month",
                                       Columns(stats.ByMonth.Select(month => (month.Month[2..], month.Commits)))));
         Grid when = new Grid { ColumnDefinitions = new ColumnDefinitions("*,24,2*") };
         Control weekdays = Section("Day of the week", Columns(Weekdays.Select((day, i) => (day, stats.ByWeekday[i]))));
-        Control hours = Section("Hour of the day",
-                                Columns(stats.ByHour.Select((count, hour) => (hour % 3 == 0 ? hour.ToString() : "",
-                                                                              count))));
+        IEnumerable<(string, int)> byHour = stats.ByHour.Select((count, hour) =>
+            (hour % HOUR_LABEL_STEP == 0 ? hour.ToString() : string.Empty, count));
+        Control hours = Section("Hour of the day", Columns(byHour));
         Grid.SetColumn(hours, 2);
         when.Children.Add(weekdays);
         when.Children.Add(hours);

@@ -17,22 +17,26 @@ public sealed class RepositoryStatistics
     public List<FileStats> Files { get; init; } = new();
 
     // Commits per day of the week (Monday first) and per hour, in the commit's own time zone
-    public int[] ByWeekday { get; init; } = new int[7];
-    public int[] ByHour { get; init; } = new int[24];
+    public int[] ByWeekday { get; init; } = new int[DAYS_IN_WEEK];
+    public int[] ByHour { get; init; } = new int[HOURS_IN_DAY];
 
     // Commits per month as "yyyy-MM", oldest first, months without commits included
     public List<(string Month, int Commits)> ByMonth { get; init; } = new();
 
     public const string FORMAT = "%x1e%an%x1f%ae%x1f%aI";
+    public const int TOP_FILES = 15;
+    private const int DAYS_IN_WEEK = 7;
+    private const int HOURS_IN_DAY = 24;
+    private const string RENAME_ARROW = " => ";
 
     // Output of git log --no-merges --numstat with FORMAT
-    public static RepositoryStatistics Parse(string output, int topFiles = 15)
+    public static RepositoryStatistics Parse(string output, int topFiles = TOP_FILES)
     {
         Dictionary<string, (string Name, int Commits, int Added, int Removed)> people = new();
         Dictionary<string, (int Commits, int Added, int Removed)> files = new();
         Dictionary<string, int> months = new();
-        int[] weekdays = new int[7];
-        int[] hours = new int[24];
+        int[] weekdays = new int[DAYS_IN_WEEK];
+        int[] hours = new int[HOURS_IN_DAY];
         int commits = 0;
         int added = 0;
         int removed = 0;
@@ -50,7 +54,7 @@ public sealed class RepositoryStatistics
             ++commits;
             first = first == null || date < first ? date : first;
             last = last == null || date > last ? date : last;
-            weekdays[((int)date.DayOfWeek + 6) % 7]++;
+            weekdays[((int)date.DayOfWeek + DAYS_IN_WEEK - 1) % DAYS_IN_WEEK]++;
             hours[date.Hour]++;
             string month = date.ToString("yyyy-MM", CultureInfo.InvariantCulture);
             months[month] = months.GetValueOrDefault(month) + 1;
@@ -104,15 +108,15 @@ public sealed class RepositoryStatistics
     // "src/{old => new}/a.cs" and "old.cs => new.cs" count under the new path
     private static string RenamedPath(string path)
     {
-        int arrow = path.IndexOf(" => ", StringComparison.Ordinal);
+        int arrow = path.IndexOf(RENAME_ARROW, StringComparison.Ordinal);
         if (arrow < 0)
             return path;
 
         int open = path.LastIndexOf('{', arrow);
         int close = path.IndexOf('}', arrow);
         if (open >= 0 && close > arrow)
-            return (path[..open] + path[(arrow + 4)..close] + path[(close + 1)..]).Replace("//", "/");
-        return path[(arrow + 4)..];
+            return (path[..open] + path[(arrow + RENAME_ARROW.Length)..close] + path[(close + 1)..]).Replace("//", "/");
+        return path[(arrow + RENAME_ARROW.Length)..];
     }
 
     private static List<(string, int)> AllMonths(Dictionary<string, int> months, DateTimeOffset? first,

@@ -32,7 +32,7 @@ public partial class MainWindow
         BisectSkipButton.IsVisible = !found;
         BisectStopButton.Content = found ? "Finish" : "Stop bisect";
         CommitInfo? firstBad = _history.FirstOrDefault(commit => commit.Hash == badHash);
-        string badText = firstBad == null ? badHash?[..Math.Min(7, badHash.Length)] ?? string.Empty
+        string badText = firstBad == null ? (badHash == null ? string.Empty : Hashes.Short(badHash))
                                           : firstBad.ShortHash + "  " + firstBad.Subject;
         BisectText.Text = found
             ? "Found it: the first bad commit is " + badText + ". Finish goes back to where you started."
