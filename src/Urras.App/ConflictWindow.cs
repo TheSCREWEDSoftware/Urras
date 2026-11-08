@@ -23,6 +23,7 @@ public sealed class ConflictWindow : Window
     private static readonly IBrush FrameBrush = Brush("#33FFFFFF");
 
     private readonly ConflictFile _file;
+    private readonly Func<ConflictBlock, Task<string?>>? _suggest;
     private readonly string _oursName;
     private readonly string _theirsName;
     private readonly string _oursShort;
@@ -31,9 +32,12 @@ public sealed class ConflictWindow : Window
     private readonly TextBlock _progress = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _save = new Button { Content = "Save and mark resolved", IsDefault = true };
 
-    public ConflictWindow(string path, ConflictFile file, bool rebase)
+    // suggest asks the AI assistant for a conflict's result; null when the assistant is off
+    public ConflictWindow(string path, ConflictFile file, bool rebase,
+                          Func<ConflictBlock, Task<string?>>? suggest = null)
     {
         _file = file;
+        _suggest = suggest;
         Title = "Resolve conflicts: " + path;
         Width = WINDOW_WIDTH;
         Height = WINDOW_HEIGHT;
@@ -138,6 +142,21 @@ public sealed class ConflictWindow : Window
         AddChoice(choices, block, ConflictChoice.Theirs, "Use " + _theirsShort);
         AddChoice(choices, block, ConflictChoice.OursThenTheirs, "Both, " + _oursShort + " first");
         AddChoice(choices, block, ConflictChoice.TheirsThenOurs, "Both, " + _theirsShort + " first");
+        if (_suggest != null)
+        {
+            Button ask = new Button { Content = "Suggest with AI", Padding = new Thickness(8, 2) };
+            ask.Click += async (_, _) =>
+            {
+                ask.IsEnabled = false;
+                ask.Content = "Asking…";
+                string? answer = await _suggest(block);
+                if (answer != null)
+                    block.SetCustom(answer, _file.UsesCrlf);
+                Rebuild();
+            };
+            choices.Children.Add(ask);
+        }
+
         if (block.Choice != ConflictChoice.Unresolved)
             AddChoice(choices, block, ConflictChoice.Unresolved, "Undo");
 

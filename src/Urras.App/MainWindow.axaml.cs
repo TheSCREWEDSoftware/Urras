@@ -98,6 +98,7 @@ public partial class MainWindow : Window
         InitializeAccounts();
         ApplyPreferences();
         InitializeCoAuthors();
+        InitializeAssistant();
         InitializeRepositoryTree();
         UpdateButtons();
     }

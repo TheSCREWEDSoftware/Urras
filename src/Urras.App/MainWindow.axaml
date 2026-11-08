@@ -328,6 +328,8 @@ by owner (like GitHub Desktop), or by hand">
                     <TextBlock x:Name="SubjectCounter" DockPanel.Dock="Right" VerticalAlignment="Center" Width="40"
                                TextAlignment="Right" Opacity="0.7"
                                ToolTip.Tip="Keep the summary under 50 characters, 72 at most" />
+                    <Button x:Name="WriteMessageButton" DockPanel.Dock="Right" Content="Write" Margin="6,0,0,0"
+                            IsVisible="False" ToolTip.Tip="Write the message from the staged changes with AI" />
                     <Button x:Name="RecentButton" DockPanel.Dock="Right" Content="Recent" Margin="6,0,0,0"
                             ToolTip.Tip="Reuse a recent commit message" />
                     <Button x:Name="TemplateButton" DockPanel.Dock="Right" Content="Template" Margin="6,0,0,0"

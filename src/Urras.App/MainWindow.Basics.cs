@@ -286,6 +286,8 @@ public partial class MainWindow
             AddHistoryBrowseItems(menu, commit);
             AddBisectItems(menu, commit);
             AddCustomCommandItems(menu, Urras.Core.Commands.CommandScope.Commit, CurrentContext(commit: commit.Hash));
+            if (_settings.Assistant.IsOn)
+                AddMenuItem(menu, "Explain this commit (AI)", () => ExplainCommitAsync(commit));
         };
         return menu;
     }

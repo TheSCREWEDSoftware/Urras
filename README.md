@@ -56,6 +56,8 @@ you already have installed.
 - Options: accounts, external editor and shell (or your own), Git name, email and default branch, theme, date
   and time formats, tab size, which questions to ask, what happens to changes when switching branch, background
   fetch
+- AI assistant with the service of your choice (OpenAI-compatible, Anthropic or a command-line agent): commit
+  messages from the staged changes, explaining commits, conflict suggestions; off by default
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

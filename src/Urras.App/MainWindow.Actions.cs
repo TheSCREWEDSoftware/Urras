@@ -399,7 +399,10 @@ public partial class MainWindow
             return;
         }
 
-        ConflictWindow window = new ConflictWindow(path, file, _operation == OperationState.Rebase);
+        ConflictWindow window = new ConflictWindow(path, file, _operation == OperationState.Rebase,
+                                                   _settings.Assistant.IsOn
+                                                       ? block => SuggestConflictAsync(path, file, block)
+                                                       : null);
         if (!await window.ShowDialog<bool>(this))
             return;
 

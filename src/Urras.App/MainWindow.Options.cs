@@ -23,6 +23,7 @@ public partial class MainWindow
 
         ApplyPreferences();
         RestartAutoFetch();
+        UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();
         await UpdateNotificationCountAsync();

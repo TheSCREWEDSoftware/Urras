@@ -92,6 +92,9 @@ public sealed class AppSettings
     public ProgramChoice Shell { get; set; } = new ProgramChoice { Name = "Default" };
     public PromptSettings Prompts { get; set; } = new PromptSettings();
 
+    // The AI service for commit messages, explanations and conflict suggestions; off by default
+    public Urras.Core.Assistant.AssistantSettings Assistant { get; set; } = new();
+
     // Commands added to the menus by the user
     public List<Urras.Core.Commands.CustomCommand> CustomCommands { get; set; } = new();
 

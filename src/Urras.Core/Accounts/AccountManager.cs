@@ -53,6 +53,22 @@ public sealed class AccountManager
         return account;
     }
 
+    // Other secrets, such as the AI service's key, kept in the same credential store
+    public Task<bool> SaveSecretAsync(string key, string value)
+    {
+        return _tokens.SaveAsync(key, value);
+    }
+
+    public Task<string?> LoadSecretAsync(string key)
+    {
+        return _tokens.LoadAsync(key);
+    }
+
+    public Task DeleteSecretAsync(string key)
+    {
+        return _tokens.DeleteAsync(key);
+    }
+
     public async Task RemoveAsync(Account account)
     {
         await _tokens.DeleteAsync(account.TokenKey);

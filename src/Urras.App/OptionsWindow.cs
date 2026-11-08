@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Urras.Core.Accounts;
+using Urras.Core.Assistant;
 using Urras.Core.Git;
 using Urras.Core.Settings;
 
@@ -17,13 +18,17 @@ public sealed class OptionsWindow : Window
     public const string GIT = "Git";
     public const string APPEARANCE = "Appearance";
     public const string PROMPTS = "Prompts";
+    public const string ASSISTANT = "AI assistant";
     public const string ADVANCED = "Advanced";
 
     private const double WINDOW_WIDTH = 820;
     private const double WINDOW_HEIGHT = 620;
     private const double SIDEBAR_WIDTH = 170;
 
-    private static readonly string[] Sections = { ACCOUNTS, INTEGRATIONS, GIT, APPEARANCE, PROMPTS, ADVANCED };
+    private static readonly string[] Sections =
+    {
+        ACCOUNTS, INTEGRATIONS, GIT, APPEARANCE, PROMPTS, ASSISTANT, ADVANCED
+    };
     private static readonly int[] TabSizes = { 1, 2, 3, 4, 5, 6, 8, 10, 12 };
     private static readonly int[] FetchIntervals = { 0, 5, 10, 15, 30, 60 };
     private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
@@ -65,6 +70,18 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _confirmRemoveWorktree;
     private readonly CheckBox _lengthWarning;
     private readonly RadioButton[] _switching;
+
+    // AI assistant
+    private static readonly string[] AssistantKinds =
+    {
+        "Off", "OpenAI-compatible (OpenAI, OpenRouter, LM Studio, Ollama…)", "Anthropic", "Command-line agent"
+    };
+    private readonly ComboBox _assistantKind;
+    private readonly TextBox _assistantEndpoint = new TextBox();
+    private readonly TextBox _assistantModel = new TextBox { Watermark = "Model name, as the service lists it" };
+    private readonly TextBox _assistantKey = new TextBox { PasswordChar = '•' };
+    private readonly TextBox _assistantCommand = new TextBox { Watermark = "Such as: claude -p" };
+    private bool _forgetKey;
 
     // Advanced
     private readonly ComboBox _autoFetch;
@@ -127,6 +144,12 @@ public sealed class OptionsWindow : Window
         _pages[GIT] = GitPage();
         _pages[APPEARANCE] = AppearancePage();
         _pages[PROMPTS] = PromptsPage();
+        _assistantKind = Combo(AssistantKinds, null);
+        _assistantKind.SelectedIndex = (int)settings.Assistant.Kind;
+        _assistantEndpoint.Text = settings.Assistant.Endpoint;
+        _assistantModel.Text = settings.Assistant.Model;
+        _assistantCommand.Text = settings.Assistant.Command;
+        _pages[ASSISTANT] = AssistantPage();
         _pages[ADVANCED] = AdvancedPage();
 
         ListBox sidebar = new ListBox { ItemsSource = Sections, Width = SIDEBAR_WIDTH };
@@ -309,6 +332,44 @@ public sealed class OptionsWindow : Window
                     Heading("Commit message"), _lengthWarning);
     }
 
+    private Control AssistantPage()
+    {
+        StackPanel service = Page(Label("Address"), _assistantEndpoint, Label("Model"), _assistantModel,
+                                  Label("Key"), _assistantKey);
+        StackPanel agent = Page(Label("Command"), _assistantCommand,
+                                Note("The request goes to the command's standard input and its answer is read " +
+                                     "from standard output."));
+        Button forget = new Button { Content = "Forget the saved key" };
+        forget.Click += (_, _) =>
+        {
+            _forgetKey = true;
+            _assistantKey.Text = string.Empty;
+            forget.IsEnabled = false;
+        };
+        _assistantKey.Watermark = "Leave empty to keep the saved key (local services need none)";
+
+        void Update()
+        {
+            AssistantKind kind = (AssistantKind)Math.Max(0, _assistantKind.SelectedIndex);
+            service.IsVisible = kind is AssistantKind.OpenAiCompatible or AssistantKind.Anthropic;
+            forget.IsVisible = service.IsVisible;
+            agent.IsVisible = kind == AssistantKind.CommandLine;
+            if (kind == AssistantKind.Anthropic && (_assistantEndpoint.Text ?? string.Empty).Contains("openai"))
+                _assistantEndpoint.Text = AssistantSettings.ANTHROPIC_ENDPOINT;
+            string endpoint = _assistantEndpoint.Text ?? string.Empty;
+            if (kind == AssistantKind.OpenAiCompatible && endpoint.Contains("anthropic"))
+                _assistantEndpoint.Text = AssistantSettings.OPENAI_ENDPOINT;
+        }
+
+        _assistantKind.SelectionChanged += (_, _) => Update();
+        Update();
+        return Page(Heading("AI assistant"), _assistantKind, service, forget, agent,
+                    Note("Writes commit messages from the staged changes, explains commits and suggests conflict " +
+                         "resolutions. Diffs are sent to the service you choose, so pick one you trust with this " +
+                         "code. For Ollama, use the address http://localhost:11434/v1. The key is kept in your " +
+                         "system's credential store."));
+    }
+
     private Control AdvancedPage()
     {
         return Page(Heading("Background fetch"), _autoFetch,
@@ -348,6 +409,15 @@ public sealed class OptionsWindow : Window
         prompts.ShowCommitLengthWarning = _lengthWarning.IsChecked == true;
         prompts.SwitchingWithChanges = (BranchSwitchChanges)Math.Max(0, Array.FindIndex(_switching,
                                                                          radio => radio.IsChecked == true));
+
+        _settings.Assistant.Kind = (AssistantKind)Math.Max(0, _assistantKind.SelectedIndex);
+        _settings.Assistant.Endpoint = _assistantEndpoint.Text?.Trim() ?? string.Empty;
+        _settings.Assistant.Model = _assistantModel.Text?.Trim() ?? string.Empty;
+        _settings.Assistant.Command = _assistantCommand.Text?.Trim() ?? string.Empty;
+        if (_forgetKey)
+            await _accounts.DeleteSecretAsync(AssistantSettings.KEY_NAME);
+        if (!string.IsNullOrWhiteSpace(_assistantKey.Text))
+            await _accounts.SaveSecretAsync(AssistantSettings.KEY_NAME, _assistantKey.Text.Trim());
 
         _settings.AutoFetchMinutes = FetchIntervals[Math.Max(0, _autoFetch.SelectedIndex)];
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
