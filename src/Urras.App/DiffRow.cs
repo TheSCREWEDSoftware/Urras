@@ -70,6 +70,15 @@ public sealed class DiffRow
     public IBrush MarkerForeground { get; private init; } = NormalBrush;
     public FontWeight Weight { get; private init; } = FontWeight.Normal;
 
+    // Lines of git's output this row shows (two in a split row), for staging or discarding selected lines
+    public IReadOnlyList<int> RawLines { get; private set; } = Array.Empty<int>();
+
+    private DiffRow WithLines(params DiffLine?[] lines)
+    {
+        RawLines = lines.Where(line => line != null && line.RawIndex >= 0).Select(line => line!.RawIndex).ToArray();
+        return this;
+    }
+
     public static List<DiffRow> Raw(string text)
     {
         List<DiffRow> rows = new List<DiffRow>();
@@ -84,7 +93,7 @@ public sealed class DiffRow
             }
 
             string expanded = line.Replace("\t", new string(' ', TAB_WIDTH));
-            rows.Add(new DiffRow { Text = expanded, Foreground = RawBrush(line) });
+            rows.Add(new DiffRow { Text = expanded, Foreground = RawBrush(line), RawLines = new[] { rows.Count } });
         }
 
         return rows;
@@ -105,9 +114,10 @@ public sealed class DiffRow
                 break;
             }
 
-            rows.Add(line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line), syntax.GetValueOrDefault(line),
-                                               showWhitespace)
-                                 : FullWidth(line));
+            DiffRow row = line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line),
+                                                    syntax.GetValueOrDefault(line), showWhitespace)
+                                      : FullWidth(line);
+            rows.Add(row.WithLines(line));
         }
 
         return rows;
@@ -131,7 +141,7 @@ public sealed class DiffRow
 
             if (splitRow.Full != null)
             {
-                rows.Add(FullWidth(splitRow.Full));
+                rows.Add(FullWidth(splitRow.Full).WithLines(splitRow.Full));
                 continue;
             }
 
@@ -149,7 +159,7 @@ public sealed class DiffRow
                                                                            showWhitespace),
                 LeftBackground = SideBackground(left),
                 RightBackground = SideBackground(right)
-            });
+            }.WithLines(left, right == left ? null : right));
         }
 
         return rows;

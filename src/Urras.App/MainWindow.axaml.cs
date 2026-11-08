@@ -92,6 +92,7 @@ public partial class MainWindow : Window
         InitializeDiffOptions();
         InitializeActions();
         InitializeHistoryTools();
+        InitializeLineStaging();
         InitializeRepositoryTree();
         UpdateButtons();
     }

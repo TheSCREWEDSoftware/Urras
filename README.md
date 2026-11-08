@@ -11,6 +11,7 @@ you already have installed.
 - Repository groups: automatic by folder on disk, or a manual layout you can rename and reorder; fetch or pull a
   whole group; each repository shows its branch, remote, commits to push and pull, and uncommitted changes
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
+- Stage, unstage or discard single lines or whole hunks: select lines in the diff and right-click
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and

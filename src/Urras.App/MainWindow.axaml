@@ -327,7 +327,7 @@
                   <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
                 <Panel>
-                  <ListBox x:Name="DiffList" Classes="diff" />
+                  <ListBox x:Name="DiffList" Classes="diff" SelectionMode="Multiple" />
                   <local:ImageDiffView x:Name="ImageView" IsVisible="False" />
                   <TextBlock x:Name="DiffHint" Classes="hint" Text="Select a file to see its changes" />
                 </Panel>

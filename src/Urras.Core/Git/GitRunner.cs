@@ -27,7 +27,9 @@ public static class GitRunner
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
+            StandardErrorEncoding = Encoding.UTF8,
+            // Patches and commit messages go in as UTF-8 without a BOM, whatever the console code page is
+            StandardInputEncoding = new UTF8Encoding(false)
         };
 
         foreach (string argument in argumentList)

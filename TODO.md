@@ -63,7 +63,7 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 5: The big ones
 
-32. [ ] Stage individual lines and hunks
+32. [x] Stage, unstage and discard individual lines and hunks (select lines in the diff, then right-click)
 33. [x] Commit graph with branch lanes, all branches or the current one, and branch, remote and tag badges
 34. [ ] Interactive rebase: pick, squash, reword, drop, drag to reorder, backup tag
 35. [ ] Side-by-side conflict view: theirs, ours and result, with a choice per block

@@ -37,6 +37,10 @@ public sealed class DiffLine
     public bool MissingNewline { get; internal set; }
 
     public bool IsCode => Kind is DiffLineKind.Context or DiffLineKind.Added or DiffLineKind.Removed;
+
+    // Line number in git's output, counted from 0; used to stage or discard selected lines
+    public int RawIndex { get; internal set; } = -1;
+    public bool IsChange => Kind is DiffLineKind.Added or DiffLineKind.Removed;
 }
 
 // One row of a side-by-side diff: either a full-width line (Full) or an old line and/or a new line
@@ -78,7 +82,14 @@ public static partial class DiffParser
         int oldNumber = 0;
         int newNumber = 0;
 
-        for (int i = 0; i < count; ++i)
+        int i;
+        void Add(DiffLine line)
+        {
+            line.RawIndex = i;
+            lines.Add(line);
+        }
+
+        for (i = 0; i < count; ++i)
         {
             string line = rawLines[i];
             bool carriageReturn = line.EndsWith('\r');
@@ -92,20 +103,20 @@ public static partial class DiffParser
                 inFile = true;
                 inHunk = false;
                 combined = !line.StartsWith("diff --git ", StringComparison.Ordinal);
-                lines.Add(new DiffLine(DiffLineKind.FileHeader, FileNameFromHeader(line)));
+                Add(new DiffLine(DiffLineKind.FileHeader, FileNameFromHeader(line)));
                 continue;
             }
 
             if (!inFile)
             {
-                lines.Add(new DiffLine(DiffLineKind.Text, line));
+                Add(new DiffLine(DiffLineKind.Text, line));
                 continue;
             }
 
             if (combined)
             {
                 // Merge diffs have one marker column per parent; show them as they are
-                lines.Add(new DiffLine(line.StartsWith("@@", StringComparison.Ordinal) ? DiffLineKind.HunkHeader
+                Add(new DiffLine(line.StartsWith("@@", StringComparison.Ordinal) ? DiffLineKind.HunkHeader
                                                                                        : DiffLineKind.Context,
                                        line));
                 continue;
@@ -117,7 +128,7 @@ public static partial class DiffParser
                 inHunk = true;
                 oldNumber = int.Parse(hunk.Groups[1].Value, CultureInfo.InvariantCulture);
                 newNumber = int.Parse(hunk.Groups[2].Value, CultureInfo.InvariantCulture);
-                lines.Add(new DiffLine(DiffLineKind.HunkHeader, line));
+                Add(new DiffLine(DiffLineKind.HunkHeader, line));
                 continue;
             }
 
@@ -129,17 +140,17 @@ public static partial class DiffParser
                     line.StartsWith("+++ ", StringComparison.Ordinal))
                     continue;
 
-                lines.Add(new DiffLine(DiffLineKind.Meta, line));
+                Add(new DiffLine(DiffLineKind.Meta, line));
                 continue;
             }
 
             if (line.StartsWith('+'))
-                lines.Add(new DiffLine(DiffLineKind.Added, line.Substring(1), null, newNumber++)
+                Add(new DiffLine(DiffLineKind.Added, line.Substring(1), null, newNumber++)
                 {
                     HasCarriageReturn = carriageReturn
                 });
             else if (line.StartsWith('-'))
-                lines.Add(new DiffLine(DiffLineKind.Removed, line.Substring(1), oldNumber++, null)
+                Add(new DiffLine(DiffLineKind.Removed, line.Substring(1), oldNumber++, null)
                 {
                     HasCarriageReturn = carriageReturn
                 });
@@ -148,16 +159,16 @@ public static partial class DiffParser
                 // Marks the line before it as the end of the file without a line ending
                 if (lines.Count > 0 && lines[^1].IsCode)
                     lines[^1].MissingNewline = true;
-                lines.Add(new DiffLine(DiffLineKind.Meta, line));
+                Add(new DiffLine(DiffLineKind.Meta, line));
             }
             else if (line.StartsWith(' ') || line.Length == 0)
-                lines.Add(new DiffLine(DiffLineKind.Context, line.Length == 0 ? line : line.Substring(1), oldNumber++,
+                Add(new DiffLine(DiffLineKind.Context, line.Length == 0 ? line : line.Substring(1), oldNumber++,
                                        newNumber++) { HasCarriageReturn = carriageReturn });
             else
             {
                 // Anything else ends the hunk, such as the next commit in a multi-commit show
                 inHunk = false;
-                lines.Add(new DiffLine(DiffLineKind.Meta, line));
+                Add(new DiffLine(DiffLineKind.Meta, line));
             }
         }
 

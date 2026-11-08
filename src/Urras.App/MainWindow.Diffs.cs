@@ -111,6 +111,8 @@ public partial class MainWindow
         if (_repository == null)
             return;
 
+        _changesDiffStaged = staged;
+
         if (_settings.FileListMode == FileListMode.Combined)
         {
             List<FileChange> files = ((staged ? StagedList : UnstagedList).ItemsSource as IEnumerable<FileChange>)
