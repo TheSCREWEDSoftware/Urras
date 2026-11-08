@@ -59,9 +59,9 @@ Settings (the repository list) are stored in `%APPDATA%\Urras\settings.json` on 
 
 ## Contributing
 
-Read [CODING_STANDARDS.md](CODING_STANDARDS.md) before opening a pull request. Commit messages follow
-[.git_commit_template.txt](.git_commit_template.txt). AI-assisted pull requests are allowed, but must be disclosed in
-the pull request template.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request: it covers the coding standards, commit
+messages, tests and the contributor terms. AI-assisted pull requests are allowed, but must be disclosed in the pull
+request template.
 
 ## Credits
 
@@ -69,6 +69,14 @@ the pull request template.
 
 ## License
 
-The source code is **source-available, not open source**. You may read it, build it and use Urras for your own work,
-and contribute, but you may not redistribute it or use it commercially. See [LICENSE.md](LICENSE.md) for the full
-terms.
+Copyright (C) 2026 TheSCREWEDSoftware
+
+Urras is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+Urras is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with Urras, in [LICENSE](LICENSE). If
+not, see <https://www.gnu.org/licenses/>.

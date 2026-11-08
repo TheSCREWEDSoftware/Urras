@@ -15,15 +15,15 @@ installed `git` for every operation.
   `tests/Urras.Core.Tests`, run against a real temporary repository.
 - All Git commands go through `GitRunner`. Never add an operation that can lose data without a confirmation in the UI.
 - Commit messages follow `.git_commit_template.txt`.
-- Code taken from another project must credit its author and be compatible with `LICENSE.md`; ask first. Studying
-  other Git clients is fine; copying their code is not.
+- Urras is licensed under the AGPL-3.0-or-later (`LICENSE`). Code taken from another project must credit its author
+  and have a compatible license; ask first. Studying other Git clients is fine; copying their code is not.
 - Planning docs go in `.agents/plans/<task-slug>/` (gitignored), named `<task-slug>.<TYPE>.md`
   (`PLAN`, `REQUIREMENTS`, `ANALYSIS`, …).
 
 ## Mandatory reading per task
 
 - Writing or modifying C# → `CODING_STANDARDS.md`
-- Reusing outside code → `LICENSE.md`
+- Reusing outside code → `LICENSE` and `CONTRIBUTING.md`
 
 ## Persisting lessons
 
