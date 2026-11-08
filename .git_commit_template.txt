@@ -1,0 +1,14 @@
+### TITLE
+## Type(Scope/Subscope): Short summary, max 72 characters
+## Example: fix(Git/Status): Paths with spaces no longer break the change list
+
+### DESCRIPTION
+## Explain why the change is made and what it fixes, max 72 characters per line
+
+### CO-AUTHOR(S)
+## Co-authored-by: name <name@example.com>
+
+## Type: feat, fix, refactor, style, docs, test, chore
+## Scope: Core, Git, UI, Settings, Build, Docs, Tests
+## Subject: capitalized, imperative mood, no trailing period
+## Body: explain what and why, not how; "-" for bullet points
