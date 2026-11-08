@@ -61,6 +61,12 @@ public sealed class GitRepository
         return Run("add", "-A");
     }
 
+    // Stages changes to tracked files only, leaving untracked files alone
+    public Task<GitResult> StageTrackedAsync()
+    {
+        return Run("add", "-u");
+    }
+
     public async Task<GitResult> UnstageAsync(IEnumerable<string> paths)
     {
         // Before the first commit there is no HEAD to reset to
@@ -144,6 +150,42 @@ public sealed class GitRepository
         return result.Success ? result.Output.TrimEnd() : null;
     }
 
+    public async Task<string?> GetCommitMessageAsync(string hash)
+    {
+        GitResult result = await Run("log", "-1", "--format=%B", hash);
+        return result.Success ? result.Output.TrimEnd() : null;
+    }
+
+    public const string DEFAULT_TEMPLATE_FILE = ".git_commit_template.txt";
+    public const string GIT_MESSAGE_FILE = ".gitmessage";
+
+    // The commit.template setting, or a template file at the top of the repository
+    public async Task<string?> GetCommitTemplateAsync()
+    {
+        List<string> candidates = new List<string>();
+        GitResult setting = await Run("config", "--get", "commit.template");
+        string configured = setting.Success ? setting.Output.Trim() : string.Empty;
+        if (configured.Length > 0)
+        {
+            if (configured.StartsWith("~/", StringComparison.Ordinal))
+                configured = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), configured.Substring(2));
+            candidates.Add(System.IO.Path.IsPathRooted(configured) ? configured
+                                                                    : System.IO.Path.Combine(Path, configured));
+        }
+
+        candidates.Add(System.IO.Path.Combine(Path, DEFAULT_TEMPLATE_FILE));
+        candidates.Add(System.IO.Path.Combine(Path, GIT_MESSAGE_FILE));
+
+        foreach (string candidate in candidates)
+        {
+            if (File.Exists(candidate))
+                return await File.ReadAllTextAsync(candidate);
+        }
+
+        return null;
+    }
+
     public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT)
     {
         if (await IsUnbornAsync())
@@ -189,10 +231,19 @@ public sealed class GitRepository
         return Run("branch", force ? "-D" : "-d", name);
     }
 
-    public Task<GitResult> FetchAsync()
+    // A background fetch is not logged when it succeeds and never opens a sign-in window
+    public Task<GitResult> FetchAsync(bool background = false)
     {
-        return Run("fetch", "--all", "--prune");
+        if (!background)
+            return Run("fetch", "--all", "--prune");
+
+        return GitRunner.RunAsync(Path, new[] { "fetch", "--all", "--prune", "--quiet" }, null,
+                                  CancellationToken.None, true, BackgroundEnvironment);
     }
+
+    // Git Credential Manager would otherwise show a sign-in window for a fetch nobody asked for
+    private static readonly IReadOnlyDictionary<string, string> BackgroundEnvironment =
+        new Dictionary<string, string> { ["GCM_INTERACTIVE"] = "Never" };
 
     public async Task<GitResult> PullAsync()
     {

@@ -39,6 +39,10 @@ public sealed class FileChange
     };
 
     public string DisplayPath => OriginalPath == null ? Path : OriginalPath + " → " + Path;
+
+    // A line-ending problem to show next to the file, filled in by the change list
+    public string? Warning { get; set; }
+    public bool HasWarning => Warning != null;
 }
 
 public sealed class RepositoryStatus

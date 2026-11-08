@@ -14,6 +14,7 @@ public sealed class AppSettings
 {
     public const string APP_FOLDER_NAME = "Urras";
     public const string SETTINGS_FILE_NAME = "settings.json";
+    public const int DEFAULT_AUTO_FETCH_MINUTES = 10;
 
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
@@ -29,6 +30,12 @@ public sealed class AppSettings
 
     // Kept while grouping by folder too, so switching back restores it
     public LayoutGroup? ManualLayout { get; set; }
+
+    // Untracked files are left out of the change list and of Stage all
+    public bool HideUntracked { get; set; }
+
+    // Minutes between background fetches of every repository; 0 turns them off
+    public int AutoFetchMinutes { get; set; } = DEFAULT_AUTO_FETCH_MINUTES;
 
     // Folder groups the user collapsed in the automatic layout
     public List<string> CollapsedFolders { get; set; } = new List<string>();

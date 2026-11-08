@@ -5,14 +5,15 @@ namespace Urras.Core.Git;
 
 public static class GitRunner
 {
-    // Raised for every command, possibly from a background thread
-    public static event Action<string, GitResult>? CommandFinished;
+    // Raised for every command, possibly from a background thread; quiet commands ran in the background
+    public static event Action<string, GitResult, bool>? CommandFinished;
 
     public static string GitExecutable { get; set; } = "git";
 
     public static async Task<GitResult> RunAsync(string workingDirectory, IEnumerable<string> arguments,
                                                  string? standardInput = null,
-                                                 CancellationToken cancellationToken = default)
+                                                 CancellationToken cancellationToken = default, bool quiet = false,
+                                                 IReadOnlyDictionary<string, string>? environment = null)
     {
         List<string> argumentList = new List<string> { "-c", "core.quotepath=false", "-c", "color.ui=false" };
         argumentList.AddRange(arguments);
@@ -36,6 +37,11 @@ public static class GitRunner
 
         // Never block waiting for a terminal prompt; credential helpers still work
         startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        if (environment != null)
+        {
+            foreach (KeyValuePair<string, string> variable in environment)
+                startInfo.Environment[variable.Key] = variable.Value;
+        }
 
         string commandLine = "git " + string.Join(' ', arguments.Select(Quote));
         GitResult result;
@@ -65,7 +71,7 @@ public static class GitRunner
             result = new GitResult(-1, string.Empty, "Could not start git: " + exception.Message);
         }
 
-        CommandFinished?.Invoke(commandLine, result);
+        CommandFinished?.Invoke(commandLine, result, quiet);
         return result;
     }
 
