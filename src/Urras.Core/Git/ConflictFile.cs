@@ -8,7 +8,10 @@ public enum ConflictChoice
     Ours,
     Theirs,
     OursThenTheirs,
-    TheirsThenOurs
+    TheirsThenOurs,
+
+    // Written by hand in the conflict view
+    Custom
 }
 
 // A piece of a conflicted file: lines both sides agree on, or a conflict between them
@@ -37,12 +40,23 @@ public sealed class ConflictBlock
     public bool IsConflict => Common == null;
     public ConflictChoice Choice { get; set; }
 
+    // The hand-written result when Choice is Custom
+    public List<string> Custom { get; private set; } = new List<string>();
+
+    // Lines typed by the user replace the conflict; their line endings follow the file's
+    public void SetCustom(string text, bool crlf)
+    {
+        Custom = text.Replace("\r\n", "\n").Split('\n').Select(line => crlf ? line + "\r" : line).ToList();
+        Choice = ConflictChoice.Custom;
+    }
+
     public IEnumerable<string> ResolvedLines => Common ?? Choice switch
     {
         ConflictChoice.Ours => Ours!,
         ConflictChoice.Theirs => Theirs!,
         ConflictChoice.OursThenTheirs => Ours!.Concat(Theirs!),
         ConflictChoice.TheirsThenOurs => Theirs!.Concat(Ours!),
+        ConflictChoice.Custom => Custom,
         _ => Enumerable.Empty<string>()
     };
 }
@@ -69,6 +83,17 @@ public sealed class ConflictFile
     public string OursLabel { get; }
     public string TheirsLabel { get; }
     public bool EndsWithNewline { get; }
+
+    // The file uses CRLF line endings, which hand-written results follow
+    public bool UsesCrlf => Blocks.SelectMany(block => block.Common ?? block.Ours ?? new List<string>())
+                                  .Any(line => line.EndsWith('\r'));
+
+    // Conflict markers left in text written by hand, which would be committed by mistake
+    public static bool HasMarkers(string text)
+    {
+        return text.Replace("\r\n", "\n").Split('\n').Any(line => IsMarker(line, OURS_MARKER) ||
+                                                                    IsMarker(line, THEIRS_MARKER));
+    }
 
     public IEnumerable<ConflictBlock> Conflicts => Blocks.Where(block => block.IsConflict);
     public bool IsResolved => Conflicts.All(block => block.Choice != ConflictChoice.Unresolved);

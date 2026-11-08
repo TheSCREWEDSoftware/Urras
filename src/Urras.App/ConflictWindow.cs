@@ -50,12 +50,15 @@ public sealed class ConflictWindow : Window
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
         allOurs.Click += (_, _) => ChooseAll(ConflictChoice.Ours);
         allTheirs.Click += (_, _) => ChooseAll(ConflictChoice.Theirs);
+        Button wholeFile = new Button { Content = "Edit the whole file…" };
+        wholeFile.Click += async (_, _) => await EditWholeFileAsync();
         _save.Click += (_, _) => Close(true);
         cancel.Click += (_, _) => Close(false);
 
         StackPanel left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         left.Children.Add(allOurs);
         left.Children.Add(allTheirs);
+        left.Children.Add(wholeFile);
         left.Children.Add(_progress);
         StackPanel right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         right.Children.Add(_save);
@@ -149,10 +152,7 @@ public sealed class ConflictWindow : Window
         sides.Children.Add(ours);
         sides.Children.Add(theirs);
 
-        bool resolved = block.Choice != ConflictChoice.Unresolved;
-        List<string> result = block.ResolvedLines.ToList();
-        Control resultView = Side("Result", resolved ? result : new List<string> { "Choose which side to keep." },
-                                  resolved ? ResultBrush : UnresolvedBrush, false);
+        Control resultView = ResultEditor(block);
 
         StackPanel panel = new StackPanel { Spacing = 6 };
         panel.Children.Add(choices);
@@ -167,6 +167,63 @@ public sealed class ConflictWindow : Window
             Child = panel
         };
     }
+
+    // The result can be edited directly; typing makes it a hand-written resolution
+    private Control ResultEditor(ConflictBlock block)
+    {
+        bool resolved = block.Choice != ConflictChoice.Unresolved;
+        TextBox editor = new TextBox
+        {
+            Text = string.Join('\n', block.ResolvedLines.Select(line => line.TrimEnd('\r'))),
+            Watermark = "Choose a side above, or type the result here",
+            AcceptsReturn = true,
+            FontFamily = MonoFont,
+            Background = resolved ? ResultBrush : UnresolvedBrush,
+            TextWrapping = TextWrapping.NoWrap
+        };
+        editor.LostFocus += (_, _) =>
+        {
+            string text = editor.Text ?? string.Empty;
+            string current = string.Join('\n', block.ResolvedLines.Select(line => line.TrimEnd('\r')));
+            if (text == current || (text.Length == 0 && block.Choice == ConflictChoice.Unresolved))
+                return;
+
+            block.SetCustom(text, _file.UsesCrlf);
+            Rebuild();
+        };
+
+        StackPanel panel = new StackPanel();
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Result" + (block.Choice == ConflictChoice.Custom ? "  (written by hand)" : string.Empty),
+            Foreground = MutedBrush,
+            FontSize = 11,
+            Margin = new Thickness(0, 0, 0, 2)
+        });
+        panel.Children.Add(editor);
+        return panel;
+    }
+
+    // The whole file as text, markers included, for resolving it freely in one place
+    private async Task EditWholeFileAsync()
+    {
+        string? text = await Dialogs.EditTextAsync(this, "Edit the whole file", _file.Render());
+        if (text == null)
+            return;
+
+        if (ConflictFile.HasMarkers(text))
+        {
+            await Dialogs.ShowTextAsync(this, "Conflict markers left",
+                                        "Remove every <<<<<<<, ======= and >>>>>>> line before saving.");
+            return;
+        }
+
+        WholeFileText = text;
+        Close(true);
+    }
+
+    // Set when the whole file was edited by hand; the main window saves it instead of the per-conflict choices
+    public string? WholeFileText { get; private set; }
 
     private void AddChoice(StackPanel panel, ConflictBlock block, ConflictChoice choice, string text)
     {

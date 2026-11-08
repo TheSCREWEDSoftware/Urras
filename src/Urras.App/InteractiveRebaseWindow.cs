@@ -14,6 +14,8 @@ public sealed class InteractiveRebaseWindow : Window
 {
     private const double WINDOW_WIDTH = 980;
     private const double WINDOW_HEIGHT = 620;
+    private const double DRAG_DISTANCE = 6;
+    private const string DRAG_FORMAT = "urras-rebase-step";
 
     private static readonly string[] ActionNames = { "Pick", "Reword", "Edit", "Squash", "Fixup", "Drop" };
     private static readonly IBrush[] ActionBrushes =
@@ -45,8 +47,8 @@ public sealed class InteractiveRebaseWindow : Window
         };
         TextBlock help = new TextBlock
         {
-            Text = "Newest at the top. Squash and Fixup join a commit into the one below it. Move commits with the " +
-                   "buttons or Alt+Up and Alt+Down." +
+            Text = "Newest at the top. Squash and Fixup join a commit into the one below it. Drag commits to " +
+                   "reorder them, or use the buttons or Alt+Up and Alt+Down." +
                    (hasMerges ? " Merge commits in this range are flattened away by the rebase." : string.Empty),
             TextWrapping = TextWrapping.Wrap,
             Foreground = MutedBrush,
@@ -54,6 +56,11 @@ public sealed class InteractiveRebaseWindow : Window
         };
 
         _list = new ListBox { ItemsSource = Steps, ItemTemplate = new FuncDataTemplate<RebaseStep>(Row) };
+        DragDrop.SetAllowDrop(_list, true);
+        _list.AddHandler(DragDrop.DragOverEvent, (_, e) => e.DragEffects = e.Data.Contains(DRAG_FORMAT)
+                                                                               ? DragDropEffects.Move
+                                                                               : DragDropEffects.None);
+        _list.AddHandler(DragDrop.DropEvent, (_, e) => OnDrop(e));
         _list.KeyDown += (_, e) =>
         {
             if (e.KeyModifiers != KeyModifiers.Alt || e.Key is not (Key.Up or Key.Down))
@@ -139,13 +146,52 @@ public sealed class InteractiveRebaseWindow : Window
             Refresh(step);
         };
 
-        Grid grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,160,80,130") };
+        Grid grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,160,80,130"),
+                               Background = Brushes.Transparent };
+        Point? pressedAt = null;
+        grid.PointerPressed += (_, e) =>
+        {
+            if (e.GetCurrentPoint(grid).Properties.IsLeftButtonPressed)
+                pressedAt = e.GetPosition(grid);
+        };
+        grid.PointerReleased += (_, _) => pressedAt = null;
+        grid.PointerMoved += async (_, e) =>
+        {
+            if (pressedAt is not { } start || Distance(start, e.GetPosition(grid)) < DRAG_DISTANCE)
+                return;
+
+            pressedAt = null;
+            DataObject data = new DataObject();
+            data.Set(DRAG_FORMAT, Steps.IndexOf(step));
+            await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+        };
         AddCell(grid, action, 0);
         AddCell(grid, subject, 1);
         AddCell(grid, Muted(step.Commit.Author), 2);
         AddCell(grid, Muted(step.Commit.ShortHash), 3);
         AddCell(grid, Muted(step.Commit.DateText), 4);
         return grid;
+    }
+
+    // Dropping a row on another moves it to that row's place
+    private void OnDrop(DragEventArgs e)
+    {
+        if (e.Data.Get(DRAG_FORMAT) is not int from || from < 0 || from >= Steps.Count)
+            return;
+
+        RebaseStep? target = (e.Source as StyledElement)?.DataContext as RebaseStep;
+        int to = target == null ? Steps.Count - 1 : Steps.IndexOf(target);
+        if (to < 0 || to == from)
+            return;
+
+        Steps.Move(from, to);
+        _list.SelectedIndex = to;
+        Validate();
+    }
+
+    private static double Distance(Point a, Point b)
+    {
+        return Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
     }
 
     private static void AddCell(Grid grid, Control control, int column)

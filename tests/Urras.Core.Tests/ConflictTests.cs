@@ -61,4 +61,23 @@ public static class ConflictTests
         Assert.True(status.Unstaged.All(change => change.Kind != ChangeKind.Conflicted), "no longer conflicted");
         Assert.True(await temp.Repository.GetConflictAsync("missing.txt") == null, "missing file");
     }
+
+    public static async Task ResolvesByHand()
+    {
+        ConflictFile crlf = ConflictFile.Parse("a\r\n<<<<<<< HEAD\r\nx\r\n=======\r\ny\r\n>>>>>>> b\r\nz\r\n")!;
+        Assert.True(crlf.UsesCrlf, "CRLF file");
+        crlf.Conflicts.First().SetCustom("x and y\nboth", crlf.UsesCrlf);
+        Assert.True(crlf.IsResolved, "hand-written counts as resolved");
+        Assert.Equal("a\r\nx and y\r\nboth\r\nz\r\n", crlf.Render(), "typed lines follow the file's endings");
+        Assert.True(ConflictFile.HasMarkers("ok\n<<<<<<< HEAD\n"), "markers left");
+        Assert.True(!ConflictFile.HasMarkers("ok\n"), "clean");
+
+        using TempRepository temp = await TempRepository.CreateAsync();
+        temp.Write("f.txt", "x\n");
+        await temp.CommitAllAsync("Base");
+        Assert.True(!(await temp.Repository.SaveResolvedTextAsync("f.txt", "<<<<<<< HEAD\n")).Success,
+                    "refused with markers");
+        Assert.Success(await temp.Repository.SaveResolvedTextAsync("f.txt", "written\n"), "saved");
+        Assert.Equal("written\n", File.ReadAllText(Path.Combine(temp.Path, "f.txt")), "file written");
+    }
 }

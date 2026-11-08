@@ -65,8 +65,8 @@ Desktop) for ideas is fine; copying their code is not.
 
 32. [x] Stage, unstage and discard individual lines and hunks (select lines in the diff, then right-click)
 33. [x] Commit graph with branch lanes, all branches or the current one, and branch, remote and tag badges
-34. [x] Interactive rebase: pick, reword, edit, squash, fixup, drop, reorder (buttons or Alt+arrows; drag to
-    reorder still to do), backup tag
+34. [x] Interactive rebase: pick, reword, edit, squash, fixup, drop, reorder (drag, buttons or Alt+arrows),
+    backup tag
 35. [x] Side-by-side conflict view: theirs, ours and result, with a choice per block (right-click a conflicted
     file, Resolve conflicts…)
 36. [x] Rendered Markdown diff: old and new rendered side by side with changed blocks highlighted
@@ -80,7 +80,7 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 7: Requires much
 
-41. [ ] Fully editable merge resolver
+41. [x] Fully editable merge resolver: type each conflict's result, or edit the whole file
 42. [x] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
 43. [x] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
     - [x] Sign in with a personal access token (sign-in through the browser needs a registered OAuth app)

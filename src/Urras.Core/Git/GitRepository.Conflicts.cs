@@ -22,4 +22,14 @@ public partial class GitRepository
                                      new System.Text.UTF8Encoding(false));
         return await MarkResolvedAsync(new[] { path });
     }
+
+    // The whole file written by hand; refused while conflict markers are left in it
+    public async Task<GitResult> SaveResolvedTextAsync(string path, string text)
+    {
+        if (ConflictFile.HasMarkers(text))
+            return new GitResult(1, string.Empty, "Conflict markers are still in the file; remove them first.");
+
+        await File.WriteAllTextAsync(System.IO.Path.Combine(Path, path), text, new System.Text.UTF8Encoding(false));
+        return await MarkResolvedAsync(new[] { path });
+    }
 }

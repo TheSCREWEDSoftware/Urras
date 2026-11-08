@@ -85,6 +85,48 @@ public static class Dialogs
         return await dialog.ShowDialog<List<T>?>(owner);
     }
 
+    // A large text editor; null when cancelled
+    public static async Task<string?> EditTextAsync(Window owner, string title, string text)
+    {
+        Window dialog = new Window
+        {
+            Title = title,
+            Width = EDITOR_WIDTH,
+            Height = EDITOR_HEIGHT,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        TextBox editor = new TextBox
+        {
+            Text = text,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.NoWrap,
+            FontFamily = new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace")
+        };
+        Button save = new Button { Content = "Save", IsDefault = false };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        save.Click += (_, _) => dialog.Close(editor.Text ?? string.Empty);
+        cancel.Click += (_, _) => dialog.Close(null);
+
+        StackPanel buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        buttons.Children.Add(save);
+        buttons.Children.Add(cancel);
+        DockPanel root = new DockPanel { Margin = new Thickness(12) };
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        root.Children.Add(buttons);
+        root.Children.Add(editor);
+        dialog.Content = root;
+        return await dialog.ShowDialog<string?>(owner);
+    }
+
+    private const double EDITOR_WIDTH = 900;
+    private const double EDITOR_HEIGHT = 640;
+
     // A commit message: summary on the first line, then a blank line and the description
     public static async Task<string?> MessageAsync(Window owner, string title, string initialText)
     {

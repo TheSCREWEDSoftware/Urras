@@ -400,9 +400,14 @@ public partial class MainWindow
         }
 
         ConflictWindow window = new ConflictWindow(path, file, _operation == OperationState.Rebase);
-        if (await window.ShowDialog<bool>(this))
-            await RunGitAsync("Saving " + path + "…", repository => repository.SaveResolvedAsync(path, file),
-                              "Resolved " + path + ".");
+        if (!await window.ShowDialog<bool>(this))
+            return;
+
+        string? whole = window.WholeFileText;
+        await RunGitAsync("Saving " + path + "…",
+                          repository => whole != null ? repository.SaveResolvedTextAsync(path, whole)
+                                                      : repository.SaveResolvedAsync(path, file),
+                          "Resolved " + path + ".");
     }
 
     // Asks before committing staged whitespace problems, when that check is on; false cancels the commit
