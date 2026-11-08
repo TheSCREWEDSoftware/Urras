@@ -6,28 +6,26 @@ using Urras.Core.Git;
 
 namespace Urras.App;
 
-// The coloured letter in front of a changed file (M, A, D, R…), explained in its tooltip
-public sealed class ChangeKindBadge : Border
+// The small icon in front of a changed file: an outlined square with a dot (modified), plus (new), minus
+// (deleted), arrow (renamed or copied) or exclamation mark (conflicted). Its tooltip names the change.
+public sealed class ChangeKindBadge : Control
 {
+    private const double SIZE = 14;
+    private const double STROKE = 1.5;
+
     public static readonly StyledProperty<FileChange?> ChangeProperty =
         AvaloniaProperty.Register<ChangeKindBadge, FileChange?>(nameof(Change));
 
-    private readonly TextBlock _letter = new TextBlock
+    static ChangeKindBadge()
     {
-        FontFamily = new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace"),
-        FontSize = 11,
-        FontWeight = FontWeight.Bold,
-        HorizontalAlignment = HorizontalAlignment.Center,
-        VerticalAlignment = VerticalAlignment.Center
-    };
+        AffectsRender<ChangeKindBadge>(ChangeProperty);
+    }
 
     public ChangeKindBadge()
     {
-        Width = 16;
-        Height = 16;
-        CornerRadius = new CornerRadius(3);
+        Width = SIZE;
+        Height = SIZE;
         VerticalAlignment = VerticalAlignment.Center;
-        Child = _letter;
     }
 
     public FileChange? Change
@@ -39,26 +37,56 @@ public sealed class ChangeKindBadge : Border
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property != ChangeProperty)
-            return;
-
-        FileChange? file = Change;
-        _letter.Text = file?.KindLetter ?? string.Empty;
-        ToolTip.SetTip(this, file?.KindDescription);
-        Color colour = Color.Parse(ColourOf(file?.Kind));
-        _letter.Foreground = new SolidColorBrush(colour);
-        Background = new SolidColorBrush(Color.FromArgb(0x33, colour.R, colour.G, colour.B));
+        if (change.Property == ChangeProperty)
+            ToolTip.SetTip(this, Change?.KindDescription);
     }
 
-    private static string ColourOf(ChangeKind? kind)
+    public override void Render(DrawingContext context)
+    {
+        FileChange? file = Change;
+        if (file == null)
+            return;
+
+        IBrush brush = new SolidColorBrush(Color.Parse(ColourOf(file.Kind)));
+        Pen pen = new Pen(brush, STROKE);
+        double half = STROKE / 2;
+        context.DrawRectangle(null, pen, new Rect(half, half, SIZE - STROKE, SIZE - STROKE), 2.5, 2.5);
+
+        const double middle = SIZE / 2;
+        const double arm = 3;
+        switch (file.Kind)
+        {
+            case ChangeKind.Added or ChangeKind.Untracked:
+                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
+                context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + arm));
+                break;
+            case ChangeKind.Deleted:
+                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
+                break;
+            case ChangeKind.Renamed or ChangeKind.Copied:
+                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
+                context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle - arm + 0.5));
+                context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle + arm - 0.5));
+                break;
+            case ChangeKind.Conflicted:
+                context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + 0.5));
+                context.DrawEllipse(brush, null, new Point(middle, middle + arm - 0.5), 0.9, 0.9);
+                break;
+            default:
+                context.DrawEllipse(brush, null, new Point(middle, middle), 2, 2);
+                break;
+        }
+    }
+
+    private static string ColourOf(ChangeKind kind)
     {
         return kind switch
         {
-            ChangeKind.Added or ChangeKind.Untracked => "#57AB5A",
-            ChangeKind.Deleted => "#E5534B",
-            ChangeKind.Renamed or ChangeKind.Copied => "#539BF5",
+            ChangeKind.Added or ChangeKind.Untracked => "#3FB950",
+            ChangeKind.Deleted => "#F85149",
+            ChangeKind.Renamed or ChangeKind.Copied => "#58A6FF",
             ChangeKind.Conflicted => "#F0883E",
-            _ => "#E8B931"
+            _ => "#D29922"
         };
     }
 }

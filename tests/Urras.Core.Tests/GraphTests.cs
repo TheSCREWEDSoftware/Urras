@@ -103,8 +103,8 @@ public static class GraphTests
     {
         FileChange renamed = new FileChange("new.cs", ChangeKind.Renamed, "old.cs");
         Assert.Equal("Renamed", renamed.KindName, "name");
-        Assert.Equal("R = Renamed from old.cs", renamed.KindDescription, "tooltip");
-        Assert.Equal("M = Modified: the file's contents changed",
+        Assert.Equal("Renamed from old.cs", renamed.KindDescription, "tooltip");
+        Assert.Equal("Modified",
                      new FileChange("a.cs", ChangeKind.Modified).KindDescription, "modified");
     }
 }

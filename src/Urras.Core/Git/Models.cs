@@ -51,18 +51,15 @@ public sealed class FileChange
         _ => "Unchanged"
     };
 
-    // Shown when hovering the letter
-    public string KindDescription => KindLetter + " = " + KindName + Kind switch
+    // Shown when hovering the change icon
+    public string KindDescription => Kind switch
     {
-        ChangeKind.Modified => ": the file's contents changed",
-        ChangeKind.TypeChanged => ": for example a file became a symbolic link",
-        ChangeKind.Added => ": a new file",
-        ChangeKind.Deleted => ": the file was removed",
-        ChangeKind.Renamed => " from " + (OriginalPath ?? "another path"),
-        ChangeKind.Copied => " from " + (OriginalPath ?? "another file"),
-        ChangeKind.Untracked => ": a new file Git is not tracking yet",
-        ChangeKind.Conflicted => ": resolve it before the merge or rebase can continue",
-        _ => string.Empty
+        ChangeKind.Added => "New",
+        ChangeKind.Untracked => "New (not tracked yet)",
+        ChangeKind.TypeChanged => "Type changed (for example a file became a link)",
+        ChangeKind.Renamed or ChangeKind.Copied when OriginalPath != null => KindName + " from " + OriginalPath,
+        ChangeKind.Conflicted => "Conflicted (resolve before continuing)",
+        _ => KindName
     };
 
     public string DisplayPath => OriginalPath == null ? Path : OriginalPath + " → " + Path;
