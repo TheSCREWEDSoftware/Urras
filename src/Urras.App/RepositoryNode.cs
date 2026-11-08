@@ -39,7 +39,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
     public RepositoryNode? Parent { get; }
     public ObservableCollection<RepositoryNode> Children { get; } = new ObservableCollection<RepositoryNode>();
 
-    public string Name => Source.IsPinned ? "📌 " + Source.Name : Source.Name;
+    public string Name => Source.IsPinned ? "[P] " + Source.Name : Source.Name;
     public string? Path => Source.RepositoryPath;
     public bool IsGroup => Source.IsGroup;
     public FontWeight NameWeight => IsGroup ? FontWeight.SemiBold : FontWeight.Normal;
