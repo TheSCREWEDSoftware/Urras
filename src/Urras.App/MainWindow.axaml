@@ -40,8 +40,9 @@
           <Button x:Name="RefreshButton" Content="Refresh" ToolTip.Tip="Refresh (F5)" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
+          <!-- Fixed width, matching the repository panel, so the branch box doesn't move with the name -->
           <TextBlock x:Name="RepositoryTitle" Text="No repository" FontSize="16" FontWeight="SemiBold"
-                     VerticalAlignment="Center" MinWidth="140" />
+                     VerticalAlignment="Center" Width="236" TextTrimming="CharacterEllipsis" />
           <ComboBox x:Name="BranchBox" MinWidth="240" ToolTip.Tip="Switch branch" />
           <Button x:Name="NewBranchButton" Content="New branch…" />
           <Button x:Name="DeleteBranchButton" Content="Delete branch…" />

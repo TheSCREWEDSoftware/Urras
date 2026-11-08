@@ -265,6 +265,7 @@ public partial class MainWindow : Window
             try
             {
                 RepositoryTitle.Text = status.IsDetached ? _repository.Name + " (detached HEAD)" : _repository.Name;
+                ToolTip.SetTip(RepositoryTitle, _repository.Path);
                 UnstagedList.ItemsSource = status.Unstaged;
                 StagedList.ItemsSource = status.Staged;
                 UnstagedHeader.Text = $"Changes ({status.Unstaged.Count})";
@@ -312,6 +313,7 @@ public partial class MainWindow : Window
     {
         _suppressSelection = true;
         RepositoryTitle.Text = "No repository";
+        ToolTip.SetTip(RepositoryTitle, null);
         UnstagedList.ItemsSource = null;
         StagedList.ItemsSource = null;
         HistoryList.ItemsSource = null;
