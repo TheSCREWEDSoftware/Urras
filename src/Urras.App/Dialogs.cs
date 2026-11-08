@@ -289,6 +289,58 @@ public static class Dialogs
         return await dialog.ShowDialog<RepositorySettingsResult?>(owner);
     }
 
+    // Adds or edits a custom command; null when cancelled
+    public static async Task<Urras.Core.Commands.CustomCommand?> CustomCommandAsync(
+        Window owner, Urras.Core.Commands.CustomCommand? existing)
+    {
+        Window dialog = CreateWindow(existing == null ? "Add a command" : "Edit command");
+        TextBox name = new TextBox { Text = existing?.Name, Watermark = "Name in the menu, such as Build" };
+        TextBox program = new TextBox { Text = existing?.Program, Watermark = "Program: git, code, cmd, dotnet…" };
+        TextBox arguments = new TextBox
+        {
+            Text = existing?.Arguments,
+            Watermark = "Arguments, such as build \"${repo}/Urras.slnx\""
+        };
+        ComboBox scope = new ComboBox
+        {
+            ItemsSource = new[] { "Commands menu (repository)", "File menu", "Commit menu" },
+            SelectedIndex = (int)(existing?.Scope ?? Urras.Core.Commands.CommandScope.Repository),
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        CheckBox confirm = new CheckBox { Content = "Ask before running", IsChecked = existing?.Confirm ?? false };
+        TextBlock problem = new TextBlock { Foreground = Brushes.IndianRed, TextWrapping = TextWrapping.Wrap };
+
+        Button save = new Button { Content = "Save", IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        save.Click += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(name.Text) || string.IsNullOrWhiteSpace(program.Text))
+            {
+                problem.Text = "A command needs a name and a program.";
+                return;
+            }
+
+            dialog.Close(new Urras.Core.Commands.CustomCommand
+            {
+                Name = name.Text.Trim(),
+                Program = program.Text.Trim(),
+                Arguments = arguments.Text?.Trim() ?? string.Empty,
+                Scope = (Urras.Core.Commands.CommandScope)Math.Max(0, scope.SelectedIndex),
+                Confirm = confirm.IsChecked == true
+            });
+        };
+        cancel.Click += (_, _) => dialog.Close(null);
+
+        StackPanel input = new StackPanel { Spacing = 8 };
+        foreach (Control control in new Control[] { name, program, arguments, scope, confirm, problem })
+            input.Children.Add(control);
+        TextBlock label = Paragraph("Placeholders: ${repo} (repository folder), ${branch}, ${file} (path in the " +
+                                    "repository), ${filePath} (full path) and ${sha} (commit). Quote arguments " +
+                                    "with spaces. The command runs in the repository folder.");
+        dialog.Content = Layout(label, input, save, cancel);
+        return await dialog.ShowDialog<Urras.Core.Commands.CustomCommand?>(owner);
+    }
+
     private static TextBlock Paragraph(string text)
     {
         return new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };

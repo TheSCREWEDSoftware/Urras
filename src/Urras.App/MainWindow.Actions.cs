@@ -35,6 +35,10 @@ public partial class MainWindow
         AddMenuItem(menu, "Submodules…", ManageSubmodulesAsync);
         AddMenuItem(menu, "Worktrees…", ManageWorktreesAsync);
         AddMenuItem(menu, "Git LFS…", ManageLfsAsync);
+        AddMenuItem(menu, "Commands…", ManageCommandsAsync);
+        foreach (Urras.Core.Commands.CustomCommand command in _settings.CustomCommands
+                     .Where(command => command.Scope == Urras.Core.Commands.CommandScope.Repository))
+            AddMenuItem(menu, "▸ " + command.Name, () => RunCustomCommandAsync(command, CurrentContext()));
         AddMenuItem(menu, "Repository settings…", () => RepositorySettingsAsync(_repository?.Path));
         menu.Open(BranchMenuButton);
     }

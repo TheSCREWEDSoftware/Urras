@@ -247,6 +247,7 @@ public partial class MainWindow
             string fullPath = Path.Combine(_repository.Path, change.Path);
             AddConflictItems(menu, change);
             AddFileHistoryItems(menu, change);
+            AddCustomCommandItems(menu, Urras.Core.Commands.CommandScope.File, CurrentContext(file: change.Path));
             if (change.Kind != ChangeKind.Deleted)
             {
                 AddMenuItem(menu, "Open file", () => Report(SystemShell.OpenFile(fullPath)));
@@ -284,6 +285,7 @@ public partial class MainWindow
             AddCommitActions(menu, commit);
             AddHistoryBrowseItems(menu, commit);
             AddBisectItems(menu, commit);
+            AddCustomCommandItems(menu, Urras.Core.Commands.CommandScope.Commit, CurrentContext(commit: commit.Hash));
         };
         return menu;
     }

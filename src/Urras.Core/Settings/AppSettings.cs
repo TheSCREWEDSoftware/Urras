@@ -50,6 +50,9 @@ public sealed class AppSettings
     // Committing asks first when the staged changes have whitespace problems such as trailing spaces
     public bool CheckWhitespaceBeforeCommit { get; set; }
 
+    // Commands added to the menus by the user
+    public List<Urras.Core.Commands.CustomCommand> CustomCommands { get; set; } = new();
+
     // History lists every branch, remote branch and tag, with the commit graph beside it
     public bool HistoryAllBranches { get; set; } = true;
 

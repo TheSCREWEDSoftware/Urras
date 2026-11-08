@@ -42,6 +42,8 @@ you already have installed.
   by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
   finding lost commits
 - Quick Launch (Ctrl+P): open a repository, switch branch or run a command by typing a few letters
+- Custom commands: run builds, scripts or other tools from the menus, with the repository, branch, file or
+  commit filled in
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements
