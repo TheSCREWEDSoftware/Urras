@@ -1,0 +1,15 @@
+# Agent planning docs stay local
+.agents/plans/
+
+bin/
+obj/
+out/
+publish/
+.vs/
+.idea/
+*.user
+*.suo
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
