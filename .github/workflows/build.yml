@@ -32,6 +32,17 @@ jobs:
       - name: Core tests
         run: dotnet run --project tests/Urras.Core.Tests -c Release
 
+      - name: Coverage (xUnit and coverlet)
+        run: >-
+          dotnet test tests/Urras.Core.Tests.XUnit -c Release --collect:"XPlat Code Coverage"
+          --results-directory coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}
+          path: coverage/**/coverage.cobertura.xml
+
       - name: Coding standards (files)
         run: dotnet run --project tools/Urras.Standards -c Release -- --all
 

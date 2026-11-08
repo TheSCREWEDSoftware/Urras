@@ -1,45 +1,23 @@
 using System.Reflection;
 using Urras.Core.Tests;
 
-// Minimal test runner with no package dependencies: every public static async method of a test class is a test
-Type[] testClasses =
-{
-    typeof(ParserTests), typeof(DiffParserTests), typeof(LayoutTests), typeof(BasicsTests), typeof(DiffViewTests),
-    typeof(ActionsTests), typeof(HistoryTests), typeof(SyntaxTests), typeof(GraphTests), typeof(LineStagingTests),
-    typeof(RebaseTests), typeof(ConflictTests), typeof(BisectTests), typeof(ModuleTests), typeof(LfsTests),
-    typeof(QuickLaunchTests), typeof(CoAuthorTests), typeof(CommandTests), typeof(StatisticsTests),
-    typeof(AccountTests), typeof(ImportTests), typeof(GroupingTests), typeof(PreferenceTests), typeof(StandardsTests),
-    typeof(MarkdownTests), typeof(PlatformTests), typeof(AssistantTests), typeof(DeviceSignInTests),
-    typeof(RepositoryTests), typeof(SettingsTests)
-};
+// Runs every test with no package dependencies; tests/Urras.Core.Tests.XUnit runs the same ones with coverage
 int passed = 0;
 int failed = 0;
 
-foreach (Type testClass in testClasses)
+foreach (MethodInfo method in TestCatalog.All())
 {
-    foreach (MethodInfo method in testClass.GetMethods(BindingFlags.Public | BindingFlags.Static))
+    string name = TestCatalog.Name(method);
+    try
     {
-        if (method.ReturnType != typeof(Task) && method.ReturnType != typeof(void))
-            continue;
-
-        string name = testClass.Name + "." + method.Name;
-        try
-        {
-            object? result = method.Invoke(null, null);
-            if (result is Task task)
-                await task;
-
-            Console.WriteLine("PASS " + name);
-            ++passed;
-        }
-        catch (Exception exception)
-        {
-            Exception actual = exception is TargetInvocationException { InnerException: not null }
-                ? exception.InnerException
-                : exception;
-            Console.WriteLine("FAIL " + name + ": " + actual.Message);
-            ++failed;
-        }
+        await TestCatalog.RunAsync(method);
+        Console.WriteLine("PASS " + name);
+        ++passed;
+    }
+    catch (Exception exception)
+    {
+        Console.WriteLine("FAIL " + name + ": " + exception.Message);
+        ++failed;
     }
 }
 
