@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "ms-dotnettools.csdevkit",
+    "avaloniateam.vscode-avalonia",
+    "eamodio.gitlens",
+    "shardulm94.trailing-spaces"
+  ]
+}
