@@ -1,0 +1,183 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Urras.App.MainWindow"
+        Title="Urras"
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="560">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,6,0,4" />
+    </Style>
+    <Style Selector="ListBox.files ListBoxItem">
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="ListBox.diff ListBoxItem">
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="TextBlock.mono">
+      <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="GridSplitter">
+      <Setter Property="Background" Value="#22FFFFFF" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+
+    <!-- Toolbar -->
+    <Border DockPanel.Dock="Top" Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="#33FFFFFF">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+          <Button x:Name="FetchButton" Content="Fetch" />
+          <Button x:Name="PullButton" Content="Pull" />
+          <Button x:Name="PushButton" Content="Push" />
+          <Button x:Name="RefreshButton" Content="Refresh" ToolTip.Tip="Refresh (F5)" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock x:Name="RepositoryTitle" Text="No repository" FontSize="16" FontWeight="SemiBold"
+                     VerticalAlignment="Center" MinWidth="140" />
+          <ComboBox x:Name="BranchBox" MinWidth="240" ToolTip.Tip="Switch branch" />
+          <Button x:Name="NewBranchButton" Content="New branch…" />
+          <Button x:Name="DeleteBranchButton" Content="Delete branch…" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- Status bar -->
+    <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#33FFFFFF">
+      <DockPanel>
+        <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Padding="8,2" />
+        <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="Ready" />
+      </DockPanel>
+    </Border>
+
+    <!-- Git command log -->
+    <TextBox x:Name="LogBox" DockPanel.Dock="Bottom" Height="170" IsVisible="False" IsReadOnly="True"
+             AcceptsReturn="True" TextWrapping="NoWrap" FontSize="12"
+             FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace" />
+
+    <Grid ColumnDefinitions="250,4,*">
+
+      <!-- Repositories -->
+      <DockPanel Grid.Column="0" Margin="10,6,6,10">
+        <TextBlock DockPanel.Dock="Top" Classes="header" Text="Repositories" />
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+          <Button x:Name="AddRepositoryButton" Content="Add…" />
+          <Button x:Name="CloneButton" Content="Clone…" />
+          <Button x:Name="RemoveRepositoryButton" Content="Remove" />
+        </StackPanel>
+        <ListBox x:Name="RepositoryList">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Margin="0,2">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+      <TabControl x:Name="MainTabs" Grid.Column="2" Margin="6,0,10,6">
+
+        <TabItem Header="Changes">
+          <Grid ColumnDefinitions="400,4,*">
+
+            <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,*,Auto" Margin="0,0,6,0">
+              <DockPanel Grid.Row="0">
+                <Button x:Name="StageAllButton" DockPanel.Dock="Right" Content="Stage all" Padding="8,2" />
+                <TextBlock x:Name="UnstagedHeader" Classes="header" Text="Changes" />
+              </DockPanel>
+              <ListBox x:Name="UnstagedList" Grid.Row="1" Classes="files" SelectionMode="Multiple">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+
+              <DockPanel Grid.Row="2" Margin="0,6,0,0">
+                <Button x:Name="UnstageAllButton" DockPanel.Dock="Right" Content="Unstage all" Padding="8,2" />
+                <TextBlock x:Name="StagedHeader" Classes="header" Text="Staged" />
+              </DockPanel>
+              <ListBox x:Name="StagedList" Grid.Row="3" Classes="files" SelectionMode="Multiple">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+
+              <StackPanel Grid.Row="4" Spacing="6" Margin="0,8,0,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button x:Name="StageSelectedButton" Content="Stage" ToolTip.Tip="Stage selected (or double-click)" />
+                  <Button x:Name="UnstageSelectedButton" Content="Unstage" ToolTip.Tip="Unstage selected" />
+                  <Button x:Name="DiscardButton" Content="Discard…" ToolTip.Tip="Discard selected changes" />
+                </StackPanel>
+                <TextBox x:Name="SummaryBox" Watermark="Summary (required)" />
+                <TextBox x:Name="DescriptionBox" Watermark="Description" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="90" />
+                <DockPanel>
+                  <Button x:Name="CommitButton" DockPanel.Dock="Right" Content="Commit" Classes="accent"
+                          ToolTip.Tip="Commit (Ctrl+Enter)" />
+                  <CheckBox x:Name="AmendBox" Content="Amend last commit" />
+                </DockPanel>
+              </StackPanel>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <ListBox x:Name="DiffList" Grid.Column="2" Classes="diff" Margin="6,6,0,4">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Classes="mono" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="History">
+          <Grid RowDefinitions="*,4,2*">
+            <ListBox x:Name="HistoryList" Grid.Row="0" Classes="files" Margin="0,6,0,6">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="80,*,170,130">
+                    <TextBlock Grid.Column="0" Text="{Binding ShortHash}" Classes="mono" Opacity="0.7" />
+                    <TextBlock Grid.Column="1" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding Author}" TextTrimming="CharacterEllipsis"
+                               Opacity="0.7" Margin="8,0,0,0" />
+                    <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+            <ListBox x:Name="CommitDiffList" Grid.Row="2" Classes="diff" Margin="0,6,0,4">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Classes="mono" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </TabItem>
+
+      </TabControl>
+    </Grid>
+  </DockPanel>
+</Window>
