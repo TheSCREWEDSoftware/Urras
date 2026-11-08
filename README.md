@@ -16,7 +16,9 @@ you already have installed.
 - Co-authors on commits (Co-authored-by lines), picked from people in the history, typed as Name <email>, or
   found as @username with a GitHub account
 - Import many repositories at once: everything in a folder, GitHub Desktop's list, or cloned from GitHub
-- Accounts: GitHub and GitHub Enterprise with a token kept in the system's credential store; profile pictures
+- Accounts on GitHub, GitHub Enterprise, GitLab, Gitea (Forgejo, Codeberg), Bitbucket and Bitbucket Server,
+  with tokens in the system's credential store: profile pictures, pull requests (list, check out, create),
+  notifications, and cloning your repositories
 - Stage, unstage or discard single lines or whole hunks: select lines in the diff and right-click
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved

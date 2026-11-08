@@ -160,6 +160,7 @@ public partial class MainWindow : Window
             _history = history;
             UpdateSearchState();
             await UpdateBisectBannerAsync();
+            _ = LearnPicturesAsync(history);
 
             _suppressSelection = true;
             try

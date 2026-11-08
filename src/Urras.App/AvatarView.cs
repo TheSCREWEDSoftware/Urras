@@ -36,10 +36,28 @@ public sealed class AvatarView : Control
     {
         Width = 18;
         Height = 18;
+        Shown.Add(new WeakReference<AvatarView>(this));
+        if (Shown.Count % PRUNE_EVERY == 0)
+            Shown.RemoveAll(reference => !reference.TryGetTarget(out _));
     }
+
+    private const int PRUNE_EVERY = 500;
+
+    // Every avatar on screen, so newly found pictures can be shown without rebuilding the lists
+    private static readonly List<WeakReference<AvatarView>> Shown = new List<WeakReference<AvatarView>>();
 
     // Set once by the main window, so pictures can be found from accounts
     public static AccountManager? Accounts { get; set; }
+
+    public static void RefreshAll()
+    {
+        Shown.RemoveAll(reference => !reference.TryGetTarget(out _));
+        foreach (WeakReference<AvatarView> reference in Shown.ToList())
+        {
+            if (reference.TryGetTarget(out AvatarView? view))
+                _ = view.LoadAsync();
+        }
+    }
 
     public string? Email
     {

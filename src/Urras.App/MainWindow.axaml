@@ -178,6 +178,8 @@
         <Button x:Name="AboutButton" DockPanel.Dock="Right" Content="About" Padding="8,2" Margin="0,0,6,0" />
         <Button x:Name="SettingsButton" DockPanel.Dock="Right" Content="Settings…" Padding="8,2" Margin="0,0,6,0" />
         <Button x:Name="AccountsButton" DockPanel.Dock="Right" Content="Accounts…" Padding="8,2" Margin="0,0,6,0" />
+        <Button x:Name="NotificationsButton" DockPanel.Dock="Right" Content="Notifications" Padding="8,2"
+                Margin="0,0,6,0" IsVisible="False" />
         <TextBlock x:Name="AutoFetchText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.6"
                    Margin="0,0,12,0" />
         <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="Ready" />

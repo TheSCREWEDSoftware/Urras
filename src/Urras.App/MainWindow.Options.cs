@@ -17,7 +17,7 @@ public partial class MainWindow
         if (_accounts == null)
             return;
 
-        OptionsWindow window = new OptionsWindow(_settings, _accounts, AddGitHubAccountAsync, section);
+        OptionsWindow window = new OptionsWindow(_settings, _accounts, AddAccountAsync, section);
         if (!await window.ShowDialog<bool>(this))
             return;
 
@@ -25,6 +25,7 @@ public partial class MainWindow
         RestartAutoFetch();
         SetStatus("Options saved.", false);
         await RefreshAsync();
+        await UpdateNotificationCountAsync();
     }
 
     // Formats, tab size, theme and the summary counter, at startup and after Options is saved

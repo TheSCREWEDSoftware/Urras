@@ -1,54 +1,47 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Urras.Core.Git;
 
 namespace Urras.Core.Accounts;
 
-public sealed class PlatformException : Exception
-{
-    public PlatformException(string message) : base(message)
-    {
-    }
-}
-
-// The few GitHub REST calls Urras needs. Works with GitHub Enterprise Server too, given its API address.
-public sealed class GitHubClient
+// GitHub's REST API; also GitHub Enterprise Server, given its API address
+public sealed class GitHubClient : PlatformClient
 {
     public const string GITHUB_API = "https://api.github.com";
-    public const int PAGE_SIZE = 100;
-    public const int MAX_PAGES = 10;
-    public const int SEARCH_RESULTS = 8;
-    public const int AVATAR_SIZE = 64;
+    private const string NOREPLY_DOMAIN = "@users.noreply.github.com";
 
-    private readonly HttpClient _http;
-    private readonly string _api;
-    private readonly string? _token;
-
-    public GitHubClient(HttpClient http, string? token, string api = GITHUB_API)
+    public GitHubClient(HttpClient http, string? token, string api = GITHUB_API) : base(http, token, api)
     {
-        _http = http;
-        _token = token;
-        _api = api.TrimEnd('/');
+    }
+
+    public override string PlatformName => "GitHub";
+
+    protected override void Authorize(HttpRequestMessage request)
+    {
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        if (Token != null)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
     }
 
     // The signed-in user, which also checks that the token works
-    public async Task<Account> GetAccountAsync()
+    public override async Task<Account> GetAccountAsync()
     {
         using JsonDocument user = await GetAsync("/user");
         JsonElement root = user.RootElement;
         return new Account
         {
-            Kind = _api == GITHUB_API ? AccountKind.GitHub : AccountKind.GitHubEnterprise,
-            ApiUrl = _api,
-            Id = root.GetProperty("id").GetInt64(),
-            Username = root.GetProperty("login").GetString() ?? string.Empty,
+            Kind = Api == GITHUB_API ? AccountKind.GitHub : AccountKind.GitHubEnterprise,
+            ApiUrl = Api,
+            Id = Number(root, "id"),
+            Username = Text(root, "login") ?? string.Empty,
             Name = Text(root, "name"),
             Email = Text(root, "email"),
             AvatarUrl = Text(root, "avatar_url")
         };
     }
 
-    public async Task<PlatformUser?> GetUserAsync(string login)
+    public override async Task<PlatformUser?> GetUserAsync(string login)
     {
         try
         {
@@ -61,8 +54,7 @@ public sealed class GitHubClient
         }
     }
 
-    // Users whose login or name matches, best first
-    public async Task<List<PlatformUser>> SearchUsersAsync(string query, int count = SEARCH_RESULTS)
+    public override async Task<List<PlatformUser>> SearchUsersAsync(string query, int count = SEARCH_RESULTS)
     {
         using JsonDocument result = await GetAsync("/search/users?per_page=" + count + "&q=" +
                                                    Uri.EscapeDataString(query + " in:login in:name"));
@@ -70,7 +62,7 @@ public sealed class GitHubClient
     }
 
     // Every repository the signed-in user can see: their own, their organisations' and ones they collaborate on
-    public async Task<List<PlatformRepository>> GetRepositoriesAsync(int maxPages = MAX_PAGES)
+    public override async Task<List<PlatformRepository>> GetRepositoriesAsync(int maxPages = MAX_PAGES)
     {
         List<PlatformRepository> repositories = new List<PlatformRepository>();
         for (int page = 1; page <= maxPages; ++page)
@@ -78,16 +70,9 @@ public sealed class GitHubClient
             string path = "/user/repos?per_page=" + PAGE_SIZE + "&sort=pushed&page=" + page;
             using JsonDocument result = await GetAsync(path);
             List<JsonElement> items = result.RootElement.EnumerateArray().ToList();
-            foreach (JsonElement item in items)
-            {
-                repositories.Add(new PlatformRepository(
-                    item.GetProperty("full_name").GetString() ?? string.Empty,
-                    item.GetProperty("clone_url").GetString() ?? string.Empty,
-                    Text(item, "description"),
-                    item.TryGetProperty("private", out JsonElement isPrivate) && isPrivate.GetBoolean(),
-                    item.TryGetProperty("fork", out JsonElement fork) && fork.GetBoolean()));
-            }
-
+            repositories.AddRange(items.Select(item => new PlatformRepository(
+                Text(item, "full_name") ?? string.Empty, Text(item, "clone_url") ?? string.Empty,
+                Text(item, "description"), Flag(item, "private"), Flag(item, "fork"))));
             if (items.Count < PAGE_SIZE)
                 break;
         }
@@ -95,52 +80,81 @@ public sealed class GitHubClient
         return repositories;
     }
 
-    private static PlatformUser ReadUser(JsonElement user)
+    public override async Task<List<PlatformPullRequest>> GetPullRequestsAsync(string owner, string repository)
     {
-        return new PlatformUser(user.GetProperty("id").GetInt64(), user.GetProperty("login").GetString() ?? "",
-                                Text(user, "name"), Text(user, "avatar_url"));
+        string path = "/repos/" + owner + "/" + repository + "/pulls?state=open&per_page=" + PAGE_SIZE;
+        using JsonDocument result = await GetAsync(path);
+        return result.RootElement.EnumerateArray().Select(item => new PlatformPullRequest(
+            (int)Number(item, "number"), Text(item, "title") ?? string.Empty,
+            item.TryGetProperty("user", out JsonElement user) ? Text(user, "login") ?? "?" : "?",
+            item.GetProperty("head").TryGetProperty("ref", out JsonElement head) ? head.GetString() ?? "" : "",
+            item.GetProperty("base").TryGetProperty("ref", out JsonElement target) ? target.GetString() ?? "" : "",
+            Text(item, "html_url") ?? string.Empty, Flag(item, "draft"))).ToList();
     }
 
-    private static string? Text(JsonElement element, string name)
+    public override async Task<PlatformUser?> GetCommitAuthorAsync(string owner, string repository, string hash,
+                                                                   string email)
     {
-        return element.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-    }
-
-    private async Task<JsonDocument> GetAsync(string path)
-    {
-        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, _api + path);
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Urras", "0.1"));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        if (_token != null)
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
-
-        HttpResponseMessage response;
         try
         {
-            response = await _http.SendAsync(request);
+            using JsonDocument commit = await GetAsync("/repos/" + owner + "/" + repository + "/commits/" + hash);
+            return commit.RootElement.TryGetProperty("author", out JsonElement author) &&
+                   author.ValueKind == JsonValueKind.Object
+                ? ReadUser(author)
+                : null;
         }
-        catch (HttpRequestException exception)
+        catch (PlatformException exception) when (exception.Message.StartsWith("Not found"))
         {
-            throw new PlatformException("Couldn't reach " + new Uri(_api).Host + ": " + exception.Message);
+            return null;
         }
+    }
 
-        using (response)
+    public override async Task<List<PlatformNotification>> GetNotificationsAsync()
+    {
+        using JsonDocument result = await GetAsync("/notifications?per_page=" + PAGE_SIZE);
+        return result.RootElement.EnumerateArray().Select(item =>
         {
-            string body = await response.Content.ReadAsStringAsync();
-            if (response.IsSuccessStatusCode)
-                return JsonDocument.Parse(body);
+            JsonElement subject = item.GetProperty("subject");
+            string repository = item.TryGetProperty("repository", out JsonElement repo)
+                ? Text(repo, "full_name") ?? string.Empty
+                : string.Empty;
+            return new PlatformNotification(Text(item, "id") ?? string.Empty, repository,
+                                            Text(subject, "title") ?? string.Empty, Text(subject, "type") ?? "",
+                                            Text(item, "reason") ?? string.Empty, WebPageFor(Text(subject, "url")));
+        }).ToList();
+    }
 
-            throw new PlatformException(response.StatusCode switch
-            {
-                HttpStatusCode.Unauthorized => "The token was refused; it may have expired or been revoked.",
-                HttpStatusCode.Forbidden => "GitHub refused the request (rate limit or missing permission).",
-                HttpStatusCode.NotFound => "Not found.",
-                _ => "GitHub answered " + (int)response.StatusCode + "."
-            });
-        }
+    public override async Task MarkNotificationReadAsync(PlatformNotification notification)
+    {
+        using JsonDocument _ = await SendAsync(HttpMethod.Patch, "/notifications/threads/" + notification.Id, null);
+    }
+
+    public override CoAuthor CoAuthorFor(PlatformUser user)
+    {
+        return CoAuthor.FromGitHub(user.Id, user.Login, user.Name);
+    }
+
+    public override string NewPullRequestUrl(string owner, string repository, string branch, string target)
+    {
+        return WebUrl + "/" + owner + "/" + repository + "/compare/" + Uri.EscapeDataString(target) + "..." +
+               Uri.EscapeDataString(branch) + "?expand=1";
+    }
+
+    public override string WebUrl => Api == GITHUB_API ? "https://github.com" : Api.Replace("/api/v3", string.Empty);
+
+    // API addresses of pull requests and issues, turned into their web pages
+    public static string? WebPageFor(string? apiUrl)
+    {
+        if (apiUrl == null)
+            return null;
+        return apiUrl.Replace("://api.github.com/repos/", "://github.com/").Replace("/api/v3/repos/", "/")
+                     .Replace("/pulls/", "/pull/");
+    }
+
+    private static PlatformUser ReadUser(JsonElement user)
+    {
+        return new PlatformUser(Number(user, "id"), Text(user, "login") ?? string.Empty, Text(user, "name"),
+                                Text(user, "avatar_url"));
     }
 
     // The picture for a GitHub user id, at a size in pixels; works without signing in
@@ -152,11 +166,10 @@ public sealed class GitHubClient
     // "123+login@users.noreply.github.com" (or the older "login@users.noreply.github.com") gives the user
     public static (long? Id, string Login)? FromNoreplyEmail(string email)
     {
-        const string DOMAIN = "@users.noreply.github.com";
-        if (!email.EndsWith(DOMAIN, StringComparison.OrdinalIgnoreCase))
+        if (!email.EndsWith(NOREPLY_DOMAIN, StringComparison.OrdinalIgnoreCase))
             return null;
 
-        string local = email[..^DOMAIN.Length];
+        string local = email[..^NOREPLY_DOMAIN.Length];
         int plus = local.IndexOf('+');
         if (plus > 0 && long.TryParse(local[..plus], out long id))
             return (id, local[(plus + 1)..]);

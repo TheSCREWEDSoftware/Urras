@@ -350,6 +350,7 @@ public partial class MainWindow
     private async Task FetchSoonAfterStartAsync()
     {
         await Task.Delay(AUTO_FETCH_START_DELAY_MS);
+        await UpdateNotificationCountAsync();
         await AutoFetchAsync();
     }
 
@@ -368,9 +369,10 @@ public partial class MainWindow
                     await new GitRepository(path).FetchAsync(true);
             }
 
-            AutoFetchText.Text = "Fetched " + DateTime.Now.ToString("HH:mm");
+            AutoFetchText.Text = "Fetched " + DateTime.Now.ToString(DisplayFormats.TimeFormat);
             await RefreshSummariesAsync();
             await RefreshAsync();
+            await UpdateNotificationCountAsync();
         }
         finally
         {

@@ -29,6 +29,7 @@ public partial class MainWindow
         AddMenuItem(menu, "Merge a branch into the current one…", MergeBranchAsync);
         AddMenuItem(menu, "Rebase the current branch onto…", RebaseBranchAsync);
         AddMenuItem(menu, "Compare with a branch…", CompareWithBranchAsync);
+        AddMenuItem(menu, "Pull requests…", ShowPullRequestsAsync);
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Tags…", ManageTagsAsync);
         AddMenuItem(menu, "Reflog (find lost commits)…", ShowReflogAsync);

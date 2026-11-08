@@ -13,7 +13,7 @@ public partial class MainWindow
         ContextMenu menu = new ContextMenu();
         AddMenuItem(menu, "All repositories in a folder…", ImportFromFolderAsync);
         AddMenuItem(menu, "Repositories from GitHub Desktop", ImportFromGitHubDesktopAsync);
-        AddMenuItem(menu, "Clone from your GitHub account…", CloneFromGitHubAsync);
+        AddMenuItem(menu, "Clone from your accounts…", CloneFromAccountAsync);
         menu.Open(ImportButton);
     }
 
@@ -57,19 +57,28 @@ public partial class MainWindow
         SetStatus(added == 1 ? "Added 1 repository." : $"Added {added} repositories.", false);
     }
 
-    private async Task CloneFromGitHubAsync()
+    private async Task CloneFromAccountAsync()
     {
-        GitHubClient? client = _accounts == null ? null : await _accounts.GitHubAsync();
+        List<Account> accounts = _accounts?.Accounts.ToList() ?? new List<Account>();
+        Account? account = accounts.FirstOrDefault();
+        if (accounts.Count > 1)
+        {
+            string? which = await Dialogs.ChooseAsync(this, "Clone", "Clone from which account?",
+                                                      accounts.Select(item => item.ToString()));
+            account = accounts.FirstOrDefault(item => item.ToString() == which);
+        }
+
+        PlatformClient? client = account == null ? null : await _accounts!.ClientAsync(account);
         if (client == null)
         {
-            SetStatus("Add your GitHub account first (Accounts…), then clone from it.", true);
+            SetStatus("Add an account first (Accounts…), then clone from it.", true);
             return;
         }
 
         List<PlatformRepository> repositories;
         try
         {
-            SetStatus("Asking GitHub for your repositories…", false);
+            SetStatus("Asking " + client.PlatformName + " for your repositories…", false);
             repositories = await client.GetRepositoriesAsync();
         }
         catch (PlatformException exception)
@@ -84,8 +93,8 @@ public partial class MainWindow
                                           .Select(remote => (remote!.Owner + "/" + remote.Name).ToLowerInvariant())
                                           .ToHashSet();
         List<PlatformRepository>? chosen = await Dialogs.ChooseManyAsync(
-            this, "Clone from GitHub", $"{repositories.Count} repositories on your account. Ones you already have " +
-                                       "are unticked.",
+            this, "Clone from " + client.PlatformName,
+            $"{repositories.Count} repositories on your account. Ones you already have are unticked.",
             repositories, "Choose folder…",
             repository => !cloned.Contains(repository.FullName.ToLowerInvariant()));
         if (chosen == null || chosen.Count == 0)

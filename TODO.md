@@ -82,19 +82,19 @@ Desktop) for ideas is fine; copying their code is not.
 
 41. [ ] Fully editable merge resolver
 42. [x] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
-43. [ ] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
+43. [x] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
     - [x] Sign in with a personal access token (sign-in through the browser needs a registered OAuth app)
     - [x] Co-authors by @username, with suggestions while typing and GitHub's private noreply address
     - [x] Profile pictures in History and on co-author chips (your account, GitHub noreply addresses), cached on
       disk; coloured initials for everyone else
-    - [ ] Pictures for other emails (asking GitHub which user owns a commit), and in the commit details
+    - [x] Pictures for other emails (asking the platform who wrote a commit), remembered between runs
     - [x] Repository list for cloning (Import ▾ → Clone from your GitHub account), into Owner/Name folders
-    - [ ] Pull requests, notifications
+    - [x] Pull requests (list, check out, open, create) and notifications (list, open, mark as read)
 44. [x] GitHub Enterprise Server (GitHub plus a server address), same features as GitHub
-45. [ ] GitLab and GitLab Server
-46. [ ] Gitea
-47. [ ] Bitbucket
-48. [ ] Bitbucket Server (a separate API)
+45. [x] GitLab and GitLab Server (merge requests, to-dos as notifications, pictures by email)
+46. [x] Gitea (also Forgejo and Codeberg)
+47. [x] Bitbucket (no user search, so no @username co-authors)
+48. [x] Bitbucket Server (a separate API)
 49. [x] Custom commands: your own programs and scripts in the Branch, file and commit menus and Quick Launch,
     with ${repo}, ${branch}, ${file}, ${filePath} and ${sha}
 50. [x] Statistics: contributors, commits per month, day and hour, most changed files, by period

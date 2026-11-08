@@ -58,6 +58,7 @@ public partial class MainWindow
             AddCommand(items, "Merge a branch into the current one…", MergeBranchAsync);
             AddCommand(items, "Rebase the current branch onto…", RebaseBranchAsync);
             AddCommand(items, "Compare with a branch…", CompareWithBranchAsync);
+            AddCommand(items, "Pull requests…", ShowPullRequestsAsync);
             AddCommand(items, "Stash changes…", StashChangesAsync);
             AddCommand(items, "Stashes…", ManageStashesAsync);
             AddCommand(items, "Tags…", ManageTagsAsync);
@@ -84,8 +85,9 @@ public partial class MainWindow
         AddCommand(items, "Clone…", CloneRepositoryAsync);
         AddCommand(items, "Import all repositories in a folder…", ImportFromFolderAsync);
         AddCommand(items, "Import repositories from GitHub Desktop", ImportFromGitHubDesktopAsync);
-        AddCommand(items, "Clone from your GitHub account…", CloneFromGitHubAsync);
+        AddCommand(items, "Clone from your accounts…", CloneFromAccountAsync);
         AddCommand(items, "Accounts…", ManageAccountsAsync);
+        AddCommand(items, "Notifications…", ShowNotificationsAsync);
         AddCommand(items, "Settings…", OpenSettingsAsync);
         return items;
     }

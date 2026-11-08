@@ -30,7 +30,7 @@ public sealed class OptionsWindow : Window
 
     private readonly AppSettings _settings;
     private readonly AccountManager _accounts;
-    private readonly Func<Window, string, Task> _addAccount;
+    private readonly Func<Window, AccountKind, Task> _addAccount;
     private readonly ContentControl _page = new ContentControl();
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
     private readonly StackPanel _accountList = new StackPanel { Spacing = 10 };
@@ -71,7 +71,7 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _checkWhitespace;
     private readonly CheckBox _hideUntracked;
 
-    public OptionsWindow(AppSettings settings, AccountManager accounts, Func<Window, string, Task> addAccount,
+    public OptionsWindow(AppSettings settings, AccountManager accounts, Func<Window, AccountKind, Task> addAccount,
                          string section = ACCOUNTS)
     {
         _settings = settings;
@@ -167,17 +167,19 @@ public sealed class OptionsWindow : Window
     private Control AccountsPage()
     {
         ShowAccounts();
-        Button github = new Button { Content = "Sign in to GitHub…" };
-        Button enterprise = new Button { Content = "Sign in to GitHub Enterprise…" };
-        github.Click += async (_, _) => await AddAccountAsync(GitHubClient.GITHUB_API);
-        enterprise.Click += async (_, _) => await AddAccountAsync(string.Empty);
+        WrapPanel signIn = new WrapPanel();
+        foreach (AccountKind kind in Enum.GetValues<AccountKind>())
+        {
+            Button button = new Button { Content = "Sign in to " + Account.PlatformName(kind) + "…",
+                                         Margin = new Thickness(0, 0, 8, 8) };
+            button.Click += async (_, _) => await AddAccountAsync(kind);
+            signIn.Children.Add(button);
+        }
 
-        StackPanel signIn = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        signIn.Children.Add(github);
-        signIn.Children.Add(enterprise);
         return Page(Heading("Accounts"), _accountList, signIn,
-                    Note("Accounts let you add co-authors by @username, show profile pictures and clone your " +
-                         "repositories. Tokens are kept in your system's credential store."));
+                    Note("Accounts let you add co-authors by @username, show profile pictures, see pull requests " +
+                         "and notifications, and clone your repositories. Tokens are kept in your system's " +
+                         "credential store."));
     }
 
     private void ShowAccounts()
@@ -221,9 +223,9 @@ public sealed class OptionsWindow : Window
         }
     }
 
-    private async Task AddAccountAsync(string api)
+    private async Task AddAccountAsync(AccountKind kind)
     {
-        await _addAccount(this, api);
+        await _addAccount(this, kind);
         ShowAccounts();
     }
 

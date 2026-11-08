@@ -32,20 +32,54 @@ public sealed class Account
     [JsonIgnore]
     public string Host => new Uri(ApiUrl).Host;
 
+    // The website's host, which remotes use: github.com rather than api.github.com
+    [JsonIgnore]
+    public string WebHost => Host switch
+    {
+        "api.github.com" => "github.com",
+        "api.bitbucket.org" => "bitbucket.org",
+        _ => Host
+    };
+
+    public static string PlatformName(AccountKind kind)
+    {
+        return kind switch
+        {
+            AccountKind.GitHubEnterprise => "GitHub Enterprise",
+            AccountKind.BitbucketServer => "Bitbucket Server",
+            _ => kind.ToString()
+        };
+    }
+
+    // The API address for a platform; server is the website address for self-hosted ones
+    public static string ApiFor(AccountKind kind, string? server)
+    {
+        string site = (server ?? string.Empty).Trim().TrimEnd('/');
+        return kind switch
+        {
+            AccountKind.GitHub => GitHubClient.GITHUB_API,
+            AccountKind.GitHubEnterprise => site + "/api/v3",
+            AccountKind.GitLab => (site.Length == 0 ? "https://gitlab.com" : site) + "/api/v4",
+            AccountKind.Gitea => (site.Length == 0 ? "https://codeberg.org" : site) + "/api/v1",
+            AccountKind.Bitbucket => BitbucketClient.BITBUCKET_API,
+            _ => site + "/rest/api/1.0"
+        };
+    }
+
     public override string ToString()
     {
         string platform = Kind switch
         {
             AccountKind.GitHub => "GitHub",
-            AccountKind.GitHubEnterprise => "GitHub Enterprise (" + Host + ")",
-            _ => Kind + " (" + Host + ")"
+            AccountKind.Bitbucket => "Bitbucket",
+            _ => PlatformName(Kind) + " (" + WebHost + ")"
         };
         return "@" + Username + (string.IsNullOrEmpty(Name) ? string.Empty : "  ·  " + Name) + "  ·  " + platform;
     }
 }
 
 // A user found on a platform, for co-authors and pictures
-public sealed record PlatformUser(long Id, string Login, string? Name, string? AvatarUrl);
+public sealed record PlatformUser(long Id, string Login, string? Name, string? AvatarUrl, string? Email = null);
 
 // A repository on a platform, for cloning
 public sealed record PlatformRepository(string FullName, string CloneUrl, string? Description, bool IsPrivate,
