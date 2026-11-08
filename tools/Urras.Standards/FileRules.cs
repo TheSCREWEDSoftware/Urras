@@ -213,7 +213,9 @@ public static partial class FileRules
             int statements = 0;
             for (int j = i + 1; j < close && !(Indent(lines[j]) <= indent + 4 && lines[j].Trim().Length > 0); ++j)
             {
-                if (Indent(lines[j]) == indent + 8 && lines[j].Trim().Length > 0)
+                // Closing braces of an initializer or lambda belong to the statement above
+                string statement = lines[j].Trim();
+                if (Indent(lines[j]) == indent + 8 && StartsStatement(statement))
                     ++statements;
             }
 
@@ -233,11 +235,16 @@ public static partial class FileRules
         string last = string.Empty;
         for (int j = from; j < to && !(Indent(lines[j]) < indent && lines[j].Trim().Length > 0); ++j)
         {
-            if (Indent(lines[j]) == indent && lines[j].Trim().Length > 0)
+            if (Indent(lines[j]) == indent && StartsStatement(lines[j].Trim()))
                 last = lines[j].Trim();
         }
 
         return last;
+    }
+
+    private static bool StartsStatement(string line)
+    {
+        return line.Length > 0 && line[0] is not ('{' or '}' or ')');
     }
 
     private static int Indent(string line)
