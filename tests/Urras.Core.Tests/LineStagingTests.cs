@@ -111,8 +111,8 @@ public static class LineStagingTests
 
     public static void RecordsRawLineNumbers()
     {
-        const string diff = "diff --git a/f b/f\nindex 1..2 100644\n--- a/f\n+++ b/f\n@@ -1,2 +1,2 @@\n-a\n+b\n c\n";
-        List<DiffLine> lines = DiffParser.Parse(diff);
+        const string DIFF = "diff --git a/f b/f\nindex 1..2 100644\n--- a/f\n+++ b/f\n@@ -1,2 +1,2 @@\n-a\n+b\n c\n";
+        List<DiffLine> lines = DiffParser.Parse(DIFF);
         Assert.Equal(0, lines[0].RawIndex, "file header");
         Assert.Equal(4, lines[1].RawIndex, "hunk header after the skipped index, --- and +++ lines");
         Assert.Equal(5, lines[2].RawIndex, "removed line");

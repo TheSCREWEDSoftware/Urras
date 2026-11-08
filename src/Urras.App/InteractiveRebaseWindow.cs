@@ -9,8 +9,7 @@ using Urras.Core.Git;
 
 namespace Urras.App;
 
-// Plan an interactive rebase: choose pick, reword, edit, squash, fixup or drop for each commit and reorder them.
-// Closes with true when the plan should run; Steps and CreateBackup hold the plan.
+// Plans an interactive rebase; closes with true when the plan in Steps should run
 public sealed class InteractiveRebaseWindow : Window
 {
     private const double WINDOW_WIDTH = 980;

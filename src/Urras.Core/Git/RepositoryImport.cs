@@ -60,8 +60,7 @@ public static partial class RepositoryImport
         return Directory.Exists(git) || File.Exists(git);
     }
 
-    // GitHub Desktop keeps its repository list in a browser database; the paths are in there as plain text,
-    // one byte or two bytes per character. Returns the ones that still exist.
+    // GitHub Desktop's list is a browser database holding the paths as plain text; returns those that exist
     public static List<string> FromGitHubDesktop(string? appData = null)
     {
         appData ??= Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);

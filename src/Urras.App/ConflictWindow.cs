@@ -6,8 +6,7 @@ using Urras.Core.Git;
 
 namespace Urras.App;
 
-// Resolves a conflicted file one conflict at a time: both sides next to each other, a choice per conflict, and
-// the result below each one. Closes with true when the file should be saved.
+// Resolves a conflicted file one conflict at a time; closes with true when the file should be saved
 public sealed class ConflictWindow : Window
 {
     private const double WINDOW_WIDTH = 1100;
@@ -187,7 +186,7 @@ public sealed class ConflictWindow : Window
         StackPanel panel = new StackPanel();
         panel.Children.Add(new TextBlock
         {
-            Text = title + (chosen ? "  ✓" : string.Empty),
+            Text = title + (chosen ? "  (kept)" : string.Empty),
             Foreground = MutedBrush,
             FontSize = 11,
             Margin = new Thickness(0, 0, 0, 2)

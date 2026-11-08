@@ -405,8 +405,7 @@ public partial class MainWindow : Window
                           "Switched to " + localName + ".");
     }
 
-    // Uncommitted changes either come along to the new branch (git's own behaviour) or are stashed on the current
-    // one, as Options says; false when the user cancels
+    // Brings uncommitted changes along or stashes them, as Options says; false when cancelled
     private async Task<bool> HandleChangesBeforeSwitchAsync(string target)
     {
         if (_repository == null || _status == null ||

@@ -147,11 +147,11 @@ public sealed class GitHubClient
     // "123+login@users.noreply.github.com" (or the older "login@users.noreply.github.com") gives the user
     public static (long? Id, string Login)? FromNoreplyEmail(string email)
     {
-        const string domain = "@users.noreply.github.com";
-        if (!email.EndsWith(domain, StringComparison.OrdinalIgnoreCase))
+        const string DOMAIN = "@users.noreply.github.com";
+        if (!email.EndsWith(DOMAIN, StringComparison.OrdinalIgnoreCase))
             return null;
 
-        string local = email[..^domain.Length];
+        string local = email[..^DOMAIN.Length];
         int plus = local.IndexOf('+');
         if (plus > 0 && long.TryParse(local[..plus], out long id))
             return (id, local[(plus + 1)..]);

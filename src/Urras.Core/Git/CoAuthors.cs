@@ -2,8 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Urras.Core.Git;
 
-// Someone credited on a commit with a "Co-authored-by: Name <email>" line, as GitHub and GitLab show it.
-// Username is set when the person came from a signed-in account (shown as @username).
+// A Co-authored-by person; Username is set when found through a signed-in account
 public sealed partial record CoAuthor(string Name, string Email, string? Username = null)
 {
     public const string TRAILER = "Co-authored-by:";

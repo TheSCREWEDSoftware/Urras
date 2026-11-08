@@ -529,8 +529,7 @@ public partial class MainWindow
     private const int MANUAL_INDEX = 3;
     private bool _suppressGrouping;
 
-    // The automatic list, grouped the way the settings say
-    // Pinned repositories and folders come first, folders laid out as on disk; the rest follows the grouping
+    // Pinned items first, folders laid out as on disk; the rest follows the chosen grouping
     private List<RepositoryTreeNode> BuildAutomaticTree()
     {
         return RepositoryLayout.BuildWithPins(_settings.Repositories, _settings.PinnedFolders, rest =>

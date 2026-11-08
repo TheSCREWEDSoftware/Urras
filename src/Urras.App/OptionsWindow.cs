@@ -9,8 +9,7 @@ using Urras.Core.Settings;
 
 namespace Urras.App;
 
-// Options: accounts, editor and shell, Git identity, appearance, prompts and background work. Accounts change
-// straight away; everything else is applied by Save. Closes with true when saved.
+// Accounts change straight away; everything else is applied by Save, which closes with true
 public sealed class OptionsWindow : Window
 {
     public const string ACCOUNTS = "Accounts";

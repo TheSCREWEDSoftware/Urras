@@ -32,8 +32,7 @@ public sealed class PromptSettings
     public BranchSwitchChanges SwitchingWithChanges { get; set; } = BranchSwitchChanges.Ask;
 }
 
-// A program Urras starts: a known one by name, or a custom one with a path and arguments, where %TARGET_PATH%
-// stands for the folder or file to open
+// A known program by name, or a custom path and arguments where %TARGET_PATH% is the folder or file
 public sealed class ProgramChoice
 {
     public const string TARGET = "%TARGET_PATH%";

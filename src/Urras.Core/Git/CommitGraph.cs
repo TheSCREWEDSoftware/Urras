@@ -1,7 +1,6 @@
 namespace Urras.Core.Git;
 
-// A line inside one history row, in lane units. Y is 0 at the top of the row, 0.5 at the commit dot, 1 at the
-// bottom. Colour is a lane number, so a branch keeps its colour as long as it stays in its lane.
+// A line in one row, in lanes; Y is 0 at the top, 0.5 at the dot, 1 at the bottom; Colour is a lane
 public readonly record struct GraphLine(int FromLane, double FromY, int ToLane, double ToY, int Colour);
 
 // What to draw beside one commit: its dot, and the lines through the row
@@ -57,9 +56,7 @@ public static class CommitGraph
                     lanes[i] = null;
             }
 
-            // The first parent always continues in this lane, so a branch stays straight until the commit where
-            // it split off (where the lanes meet again). Merged parents join a lane already waiting for them, or
-            // take a free one.
+            // The first parent stays in this lane; merged parents join a waiting lane or take a free one
             List<int> parentLanes = new List<int>();
             for (int p = 0; p < commit.Parents.Count; ++p)
             {

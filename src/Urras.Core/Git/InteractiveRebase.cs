@@ -12,8 +12,7 @@ public enum RebaseAction
     Drop
 }
 
-// One commit in an interactive rebase and what to do with it. Message replaces the commit's message for Reword,
-// and the combined message for the last commit of a squash.
+// One commit in an interactive rebase; Message is for Reword, or for the last commit of a squash
 public sealed class RebaseStep
 {
     public RebaseStep(CommitInfo commit)

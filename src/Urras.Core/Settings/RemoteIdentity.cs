@@ -1,7 +1,6 @@
 namespace Urras.Core.Settings;
 
-// Owner and name of a repository's origin, such as TheSCREWEDSoftware / azerothcore-wotlk, read from its
-// .git/config without starting git, so the repository list builds quickly
+// Owner and name of a repository's origin, read from .git/config without starting git
 public sealed record RemoteIdentity(string Owner, string Name, string Host)
 {
     // Null for repositories without an origin remote

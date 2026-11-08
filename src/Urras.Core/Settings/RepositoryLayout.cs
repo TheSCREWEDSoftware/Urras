@@ -60,9 +60,7 @@ public sealed class RepositoryTreeNode
 
 public static class RepositoryLayout
 {
-    // Mirrors the folders on disk. From each drive, a chain of folders with a single subfolder and no repositories is
-    // skipped, so each project folder (such as F:\Echo Flint Engine) becomes a top-level group with its subfolders
-    // as nested groups
+    // Mirrors the folders on disk, skipping single-folder chains from each drive down to project folders
     public static List<RepositoryTreeNode> BuildByFolder(IEnumerable<string> repositories)
     {
         FolderTrie drives = new FolderTrie(string.Empty, string.Empty);
@@ -129,8 +127,7 @@ public static class RepositoryLayout
         return node;
     }
 
-    // One group per repository name, with each copy (fork or clone) inside it named by its owner, such as
-    // azerothcore-wotlk with Aceddian and TheSCREWEDSoftware. A name with a single copy is listed on its own.
+    // One group per repository name with each fork or clone inside it, named by owner; single copies alone
     public static List<RepositoryTreeNode> BuildByName(IEnumerable<string> repositories,
                                                        Func<string, RemoteIdentity?> identify)
     {
@@ -156,8 +153,7 @@ public static class RepositoryLayout
         return roots;
     }
 
-    // One group per owner (user or organisation), like GitHub Desktop; repositories without a remote go under
-    // "Other"
+    // One group per owner, like GitHub Desktop; repositories without a remote go under Other
     public static List<RepositoryTreeNode> BuildByOwner(IEnumerable<string> repositories,
                                                         Func<string, RemoteIdentity?> identify)
     {
@@ -211,8 +207,7 @@ public static class RepositoryLayout
         }
     }
 
-    // Pinned repositories come first, then pinned folders laid out as on disk, then the rest grouped by groupRest.
-    // A pin inside a pinned folder is covered by the folder.
+    // Pinned repositories, then pinned folders as on disk, then the rest; a pin in a pinned folder is covered
     public static List<RepositoryTreeNode> BuildWithPins(IEnumerable<string> repositories,
                                                          IEnumerable<string> pinnedFolders,
                                                          Func<IEnumerable<string>, List<RepositoryTreeNode>> groupRest,

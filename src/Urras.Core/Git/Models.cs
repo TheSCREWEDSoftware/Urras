@@ -163,10 +163,9 @@ public sealed record RefBadge(string Name, RefKind Kind)
     public bool IsRemote => Kind == RefKind.Remote;
     public bool IsTag => Kind == RefKind.Tag;
     public bool IsStash => Kind == RefKind.Stash;
-    public string Text => Kind == RefKind.Head ? "✓ " + Name : Name;
+    public string Text => Name;
 
-    // git log's %D with --decorate=full, which tells local branches named like feature/x apart from remote ones:
-    // "HEAD -> refs/heads/main, tag: refs/tags/v0.1.0, refs/remotes/origin/main, refs/remotes/origin/HEAD"
+    // %D with --decorate=full, so local branches like feature/x are told apart from remote ones
     public static List<RefBadge> Parse(string refs)
     {
         List<RefBadge> badges = new List<RefBadge>();

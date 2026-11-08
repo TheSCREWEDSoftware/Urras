@@ -28,19 +28,19 @@ public static class SyntaxTests
     public static void ColoursCSharp()
     {
         SyntaxLanguage cs = SyntaxLanguage.CSharp;
-        const string line = "public static int Count(string name) => name.Length + 42; // done";
-        Assert.Equal(SyntaxKind.Keyword, KindOf(line, "public", cs), "keyword");
-        Assert.Equal(SyntaxKind.Type, KindOf(line, "int", cs), "built-in type");
-        Assert.Equal(SyntaxKind.Type, KindOf(line, "Count", cs), "capitalised name");
-        Assert.Equal(SyntaxKind.Plain, KindOf(line, "name)", cs), "plain name");
-        Assert.Equal(SyntaxKind.Number, KindOf(line, "42", cs), "number");
-        Assert.Equal(SyntaxKind.Comment, KindOf(line, "done", cs), "line comment");
+        const string LINE = "public static int Count(string name) => name.Length + 42; // done";
+        Assert.Equal(SyntaxKind.Keyword, KindOf(LINE, "public", cs), "keyword");
+        Assert.Equal(SyntaxKind.Type, KindOf(LINE, "int", cs), "built-in type");
+        Assert.Equal(SyntaxKind.Type, KindOf(LINE, "Count", cs), "capitalised name");
+        Assert.Equal(SyntaxKind.Plain, KindOf(LINE, "name)", cs), "plain name");
+        Assert.Equal(SyntaxKind.Number, KindOf(LINE, "42", cs), "number");
+        Assert.Equal(SyntaxKind.Comment, KindOf(LINE, "done", cs), "line comment");
 
-        const string strings = "var path = @\"C:\\\"\"x\"\"\" + \"a \\\" b\" + 'c'; int after = 1;";
-        Assert.Equal(SyntaxKind.String, KindOf(strings, "@", cs), "verbatim string with doubled quotes");
-        Assert.Equal(SyntaxKind.String, KindOf(strings, "b\"", cs), "escaped quote stays in the string");
-        Assert.Equal(SyntaxKind.Keyword, KindOf(strings, "var", cs), "before the strings");
-        Assert.Equal(SyntaxKind.Plain, KindOf(strings, "after", cs), "after the strings");
+        const string STRINGS = "var path = @\"C:\\\"\"x\"\"\" + \"a \\\" b\" + 'c'; int after = 1;";
+        Assert.Equal(SyntaxKind.String, KindOf(STRINGS, "@", cs), "verbatim string with doubled quotes");
+        Assert.Equal(SyntaxKind.String, KindOf(STRINGS, "b\"", cs), "escaped quote stays in the string");
+        Assert.Equal(SyntaxKind.Keyword, KindOf(STRINGS, "var", cs), "before the strings");
+        Assert.Equal(SyntaxKind.Plain, KindOf(STRINGS, "after", cs), "after the strings");
         Assert.Equal(SyntaxKind.Preprocessor, KindOf("  #region Tests", "region", cs), "directive");
     }
 
@@ -62,17 +62,17 @@ public static class SyntaxTests
 
     public static void ColoursJsonCMakeAndShell()
     {
-        const string json = "  \"name\": \"Urras\", \"count\": 3, \"on\": true";
-        Assert.Equal(SyntaxKind.Attribute, KindOf(json, "\"name\"", SyntaxLanguage.Json), "key");
-        Assert.Equal(SyntaxKind.String, KindOf(json, "\"Urras\"", SyntaxLanguage.Json), "value");
-        Assert.Equal(SyntaxKind.Number, KindOf(json, "3", SyntaxLanguage.Json), "number");
-        Assert.Equal(SyntaxKind.Keyword, KindOf(json, "true", SyntaxLanguage.Json), "literal");
+        const string JSON = "  \"name\": \"Urras\", \"count\": 3, \"on\": true";
+        Assert.Equal(SyntaxKind.Attribute, KindOf(JSON, "\"name\"", SyntaxLanguage.Json), "key");
+        Assert.Equal(SyntaxKind.String, KindOf(JSON, "\"Urras\"", SyntaxLanguage.Json), "value");
+        Assert.Equal(SyntaxKind.Number, KindOf(JSON, "3", SyntaxLanguage.Json), "number");
+        Assert.Equal(SyntaxKind.Keyword, KindOf(JSON, "true", SyntaxLanguage.Json), "literal");
 
-        const string cmake = "target_link_libraries(${PROJECT_NAME} PUBLIC raylib) # link";
-        Assert.Equal(SyntaxKind.Keyword, KindOf(cmake, "target_link", SyntaxLanguage.CMake), "command");
-        Assert.Equal(SyntaxKind.Type, KindOf(cmake, "${", SyntaxLanguage.CMake), "variable");
-        Assert.Equal(SyntaxKind.Keyword, KindOf(cmake, "PUBLIC", SyntaxLanguage.CMake), "keyword");
-        Assert.Equal(SyntaxKind.Comment, KindOf(cmake, "# link", SyntaxLanguage.CMake), "comment");
+        const string CMAKE = "target_link_libraries(${PROJECT_NAME} PUBLIC raylib) # link";
+        Assert.Equal(SyntaxKind.Keyword, KindOf(CMAKE, "target_link", SyntaxLanguage.CMake), "command");
+        Assert.Equal(SyntaxKind.Type, KindOf(CMAKE, "${", SyntaxLanguage.CMake), "variable");
+        Assert.Equal(SyntaxKind.Keyword, KindOf(CMAKE, "PUBLIC", SyntaxLanguage.CMake), "keyword");
+        Assert.Equal(SyntaxKind.Comment, KindOf(CMAKE, "# link", SyntaxLanguage.CMake), "comment");
         List<SyntaxKind[]> bracket = SyntaxHighlighter.ClassifyLines(new[] { "#[[ a", "b ]] set(x)" },
                                                                      SyntaxLanguage.CMake);
         Assert.Equal(SyntaxKind.Keyword, bracket[1][5], "code after a bracket comment");
@@ -85,13 +85,13 @@ public static class SyntaxTests
     public static void ColoursMarkup()
     {
         SyntaxLanguage xml = SyntaxLanguage.Xml;
-        const string line = "<Button x:Name=\"Go\" Content=\"&amp; go\"/> text <!-- note -->";
-        Assert.Equal(SyntaxKind.Tag, KindOf(line, "<Button", xml), "tag");
-        Assert.Equal(SyntaxKind.Attribute, KindOf(line, "x:Name", xml), "attribute");
-        Assert.Equal(SyntaxKind.String, KindOf(line, "\"Go\"", xml), "value");
-        Assert.Equal(SyntaxKind.Tag, KindOf(line, "/>", xml), "tag end");
-        Assert.Equal(SyntaxKind.Plain, KindOf(line, "text", xml), "text between tags");
-        Assert.Equal(SyntaxKind.Comment, KindOf(line, "note", xml), "comment");
+        const string LINE = "<Button x:Name=\"Go\" Content=\"&amp; go\"/> text <!-- note -->";
+        Assert.Equal(SyntaxKind.Tag, KindOf(LINE, "<Button", xml), "tag");
+        Assert.Equal(SyntaxKind.Attribute, KindOf(LINE, "x:Name", xml), "attribute");
+        Assert.Equal(SyntaxKind.String, KindOf(LINE, "\"Go\"", xml), "value");
+        Assert.Equal(SyntaxKind.Tag, KindOf(LINE, "/>", xml), "tag end");
+        Assert.Equal(SyntaxKind.Plain, KindOf(LINE, "text", xml), "text between tags");
+        Assert.Equal(SyntaxKind.Comment, KindOf(LINE, "note", xml), "comment");
 
         List<SyntaxKind[]> multi = SyntaxHighlighter.ClassifyLines(
             new[] { "<Grid", "  Margin=\"4\">", "<!-- a", "b -->" }, xml);
@@ -107,12 +107,12 @@ public static class SyntaxTests
         Assert.Equal(SyntaxKind.Plain, KindOf("#hashtag", "hashtag", md), "not a heading without a space");
         Assert.Equal(SyntaxKind.Comment, KindOf("> quoted", "quoted", md), "quote");
 
-        const string line = "- Run `dotnet build` then **check** the [docs](https://example.org)";
-        Assert.Equal(SyntaxKind.Keyword, KindOf(line, "-", md), "list marker");
-        Assert.Equal(SyntaxKind.Code, KindOf(line, "dotnet", md), "inline code");
-        Assert.Equal(SyntaxKind.Emphasis, KindOf(line, "check", md), "bold");
-        Assert.Equal(SyntaxKind.Attribute, KindOf(line, "docs", md), "link text");
-        Assert.Equal(SyntaxKind.String, KindOf(line, "https", md), "link target");
+        const string LINE = "- Run `dotnet build` then **check** the [docs](https://example.org)";
+        Assert.Equal(SyntaxKind.Keyword, KindOf(LINE, "-", md), "list marker");
+        Assert.Equal(SyntaxKind.Code, KindOf(LINE, "dotnet", md), "inline code");
+        Assert.Equal(SyntaxKind.Emphasis, KindOf(LINE, "check", md), "bold");
+        Assert.Equal(SyntaxKind.Attribute, KindOf(LINE, "docs", md), "link text");
+        Assert.Equal(SyntaxKind.String, KindOf(LINE, "https", md), "link target");
         Assert.Equal(SyntaxKind.Plain, KindOf("snake_case_name", "case", md), "underscores inside words");
 
         List<SyntaxKind[]> fenced = SyntaxHighlighter.ClassifyLines(

@@ -7,8 +7,7 @@ using Avalonia.Media.Imaging;
 
 namespace Urras.App;
 
-// Old and new versions of an image: side by side, as a swipe (drag to reveal the new one over the old) or as an
-// onion skin (the new one faded over the old), with their size in pixels and bytes
+// Old and new versions of an image: side by side, as a swipe or as an onion skin, with sizes
 public sealed class ImageDiffView : UserControl
 {
     private const double BYTES_PER_KILOBYTE = 1024.0;

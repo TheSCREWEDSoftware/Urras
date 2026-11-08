@@ -6,12 +6,12 @@ public static class StatisticsTests
 {
     public static void CountsPeopleTimesAndFiles()
     {
-        const string log =
+        const string LOG =
             "\u001eAna\u001fana@example.com\u001f2026-01-05T09:30:00+00:00\n\n3\t1\tsrc/a.cs\n-\t-\tlogo.png\n" +
             "\u001eBob\u001fbob@example.com\u001f2026-03-07T22:10:00+00:00\n\n" +
             "2\t0\tsrc/{old => new}/b.cs\n1\t1\tsrc/a.cs\n" +
             "\u001eana\u001fANA@example.com\u001f2026-03-08T09:00:00+00:00\n\n0\t4\told.txt => new.txt\n";
-        RepositoryStatistics stats = RepositoryStatistics.Parse(log);
+        RepositoryStatistics stats = RepositoryStatistics.Parse(LOG);
 
         Assert.Equal(3, stats.Commits, "commits");
         Assert.Equal(6, stats.Added, "lines added");

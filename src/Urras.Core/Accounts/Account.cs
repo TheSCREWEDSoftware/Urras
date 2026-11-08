@@ -12,8 +12,7 @@ public enum AccountKind
     BitbucketServer
 }
 
-// A signed-in account on a hosting platform. The token is not kept here: it lives in the system's credential
-// store (Windows Credential Manager, or the Secret Service keyring on Linux) under TokenKey.
+// A signed-in account; its token lives in the system's credential store under TokenKey
 public sealed class Account
 {
     [JsonConverter(typeof(JsonStringEnumConverter<AccountKind>))]

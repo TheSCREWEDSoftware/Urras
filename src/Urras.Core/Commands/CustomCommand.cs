@@ -17,8 +17,7 @@ public enum CommandScope
 public sealed record CommandContext(string Repository, string? Branch = null, string? File = null,
                                     string? Commit = null);
 
-// A command the user adds to Urras's menus, such as running a build or opening a file in another tool.
-// Arguments may contain ${repo}, ${branch}, ${file}, ${filePath} (full path) and ${sha}.
+// A user command in Urras's menus; arguments may use ${repo}, ${branch}, ${file}, ${filePath}, ${sha}
 public sealed class CustomCommand
 {
     public string Name { get; set; } = string.Empty;
@@ -44,8 +43,7 @@ public sealed class CustomCommand
         return Name + "  ·  " + Program + " " + Arguments + "  ·  " + where;
     }
 
-    // Splits the arguments like a shell would ("quoted parts" stay together), then fills in each placeholder,
-    // so a path with spaces stays one argument
+    // Splits like a shell, then fills placeholders per part, so a path with spaces stays one argument
     public List<string> ExpandArguments(CommandContext context)
     {
         return Split(Arguments).Select(argument => Expand(argument, context)).ToList();

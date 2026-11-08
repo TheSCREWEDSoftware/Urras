@@ -57,9 +57,9 @@ public partial class GitRepository
         foreach (string line in log.Output.Split('\n'))
         {
             // "# first bad commit: [hash] subject"
-            const string prefix = "# first bad commit: [";
-            if (line.StartsWith(prefix, StringComparison.Ordinal))
-                firstBad = line[prefix.Length..].Split(']')[0];
+            const string PREFIX = "# first bad commit: [";
+            if (line.StartsWith(PREFIX, StringComparison.Ordinal))
+                firstBad = line[PREFIX.Length..].Split(']')[0];
         }
 
         int remaining = 0;

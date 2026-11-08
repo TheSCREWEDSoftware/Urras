@@ -7,8 +7,7 @@ using Urras.Core.Settings;
 
 namespace Urras.App;
 
-// Smaller everyday features: empty-list hints, file filter, untracked files, commit message helpers, open and copy
-// menus, settings, About and background fetching
+// Everyday helpers: hints, file filter, commit message tools, open and copy menus, background fetch
 public partial class MainWindow
 {
     private const int RECOMMENDED_SUMMARY_LENGTH = 50;

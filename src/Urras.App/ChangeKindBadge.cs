@@ -6,8 +6,7 @@ using Urras.Core.Git;
 
 namespace Urras.App;
 
-// The small icon in front of a changed file: an outlined square with a dot (modified), plus (new), minus
-// (deleted), arrow (renamed or copied) or exclamation mark (conflicted). Its tooltip names the change.
+// Change icon: dot modified, plus new, minus deleted, arrow renamed, ! conflicted; the tooltip names it
 public sealed class ChangeKindBadge : Control
 {
     private const double SIZE = 14;
@@ -52,34 +51,34 @@ public sealed class ChangeKindBadge : Control
         double half = STROKE / 2;
         context.DrawRectangle(null, pen, new Rect(half, half, SIZE - STROKE, SIZE - STROKE), 2.5, 2.5);
 
-        const double middle = SIZE / 2;
-        const double arm = 3;
+        const double MIDDLE = SIZE / 2;
+        const double ARM = 3;
         switch (file.Kind)
         {
             case ChangeKind.Added or ChangeKind.Untracked:
             {
-                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
-                context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + arm));
+                context.DrawLine(pen, new Point(MIDDLE - ARM, MIDDLE), new Point(MIDDLE + ARM, MIDDLE));
+                context.DrawLine(pen, new Point(MIDDLE, MIDDLE - ARM), new Point(MIDDLE, MIDDLE + ARM));
                 break;
             }
             case ChangeKind.Deleted:
-                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
+                context.DrawLine(pen, new Point(MIDDLE - ARM, MIDDLE), new Point(MIDDLE + ARM, MIDDLE));
                 break;
             case ChangeKind.Renamed or ChangeKind.Copied:
             {
-                context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
-                context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle - arm + 0.5));
-                context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle + arm - 0.5));
+                context.DrawLine(pen, new Point(MIDDLE - ARM, MIDDLE), new Point(MIDDLE + ARM, MIDDLE));
+                context.DrawLine(pen, new Point(MIDDLE + ARM, MIDDLE), new Point(MIDDLE, MIDDLE - ARM + 0.5));
+                context.DrawLine(pen, new Point(MIDDLE + ARM, MIDDLE), new Point(MIDDLE, MIDDLE + ARM - 0.5));
                 break;
             }
             case ChangeKind.Conflicted:
             {
-                context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + 0.5));
-                context.DrawEllipse(brush, null, new Point(middle, middle + arm - 0.5), 0.9, 0.9);
+                context.DrawLine(pen, new Point(MIDDLE, MIDDLE - ARM), new Point(MIDDLE, MIDDLE + 0.5));
+                context.DrawEllipse(brush, null, new Point(MIDDLE, MIDDLE + ARM - 0.5), 0.9, 0.9);
                 break;
             }
             default:
-                context.DrawEllipse(brush, null, new Point(middle, middle), 2, 2);
+                context.DrawEllipse(brush, null, new Point(MIDDLE, MIDDLE), 2, 2);
                 break;
         }
     }

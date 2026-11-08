@@ -4,16 +4,13 @@ using System.Text.RegularExpressions;
 
 namespace Urras.Core.Git;
 
-// Builds a patch holding only some of a diff's changed lines, for staging, unstaging or discarding single lines
-// and hunks with `git apply`. Lines are chosen by their line number in git's diff output (DiffLine.RawIndex).
+// Builds a patch from some of a diff's lines (by DiffLine.RawIndex) for git apply
 public static partial class PatchBuilder
 {
     [GeneratedRegex(@"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$")]
     private static partial Regex HunkHeaderRegex();
 
-    // reverse: the patch will be applied with -R (unstaging from the index, discarding from the working tree).
-    // Then unselected added lines stay as context and unselected removed lines are left out; forwards it is the
-    // other way round. Returns null when no changed line is selected.
+    // reverse is for -R: unselected + lines stay as context and unselected - lines go; null if none chosen
     public static string? Build(string diff, IReadOnlySet<int> selected, bool reverse)
     {
         string[] lines = diff.Split('\n');

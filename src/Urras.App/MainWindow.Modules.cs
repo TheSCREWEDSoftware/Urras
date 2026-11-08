@@ -106,13 +106,13 @@ public partial class MainWindow
 
         List<string> branches = _branches.Where(branch => !branch.IsRemote && !branch.IsCurrent)
                                          .Select(branch => branch.Name).ToList();
-        const string newBranch = "A new branch from the current commit…";
+        const string NEW_BRANCH = "A new branch from the current commit…";
         string? choice = await Dialogs.ChooseAsync(this, "New worktree", "Branch to check out in the new folder:",
-                                                   branches.Prepend(newBranch));
+                                                   branches.Prepend(NEW_BRANCH));
         if (choice == null)
             return;
 
-        bool create = choice == newBranch;
+        bool create = choice == NEW_BRANCH;
         string? branch = create ? await Dialogs.PromptAsync(this, "New worktree", "New branch name:") : choice;
         if (branch == null)
             return;

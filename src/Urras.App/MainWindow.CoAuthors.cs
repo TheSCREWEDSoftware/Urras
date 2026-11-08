@@ -8,8 +8,7 @@ using Urras.Core.Git;
 
 namespace Urras.App;
 
-// Co-authors on the next commit, picked from people in the history or typed as Name <email>.
-// When accounts are added, @username will look people up on the connected platform.
+// Co-authors from the history, typed as Name <email>, or found as @username with an account
 public partial class MainWindow
 {
     private static readonly IBrush ChipBrush = new SolidColorBrush(Color.Parse("#1F6FEB"));
@@ -171,7 +170,7 @@ public partial class MainWindow
         {
             Button remove = new Button
             {
-                Content = "✕",
+                Content = "×",
                 Padding = new Thickness(4, 0),
                 Background = Brushes.Transparent,
                 Foreground = Brushes.White,

@@ -3,8 +3,7 @@ using Urras.Core.Settings;
 
 namespace Urras.App;
 
-// The pinned bar in the toolbar: a button per pinned repository, and per pinned folder a button listing its
-// repositories. Right-click one to unpin it.
+// Toolbar buttons for pinned repositories and folders; right-click one to unpin it
 public partial class MainWindow
 {
     private void UpdatePinnedBar()

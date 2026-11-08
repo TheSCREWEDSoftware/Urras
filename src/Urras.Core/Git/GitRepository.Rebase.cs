@@ -34,8 +34,7 @@ public partial class GitRepository
                 return tag;
         }
 
-        // Messages and the todo list live in a folder of their own. A rebase stopped by a conflict still needs its
-        // message files when it continues, so folders are only cleaned up a day later.
+        // A stopped rebase still needs its message files, so these folders are cleaned up a day later
         string temp = System.IO.Path.GetTempPath();
         RemoveOldRebaseFolders(temp);
         string folder = System.IO.Path.Combine(temp, "urras-rebase-" + Guid.NewGuid().ToString("N"));

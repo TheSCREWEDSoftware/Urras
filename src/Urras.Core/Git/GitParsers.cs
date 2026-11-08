@@ -105,8 +105,7 @@ public static class GitParsers
             status.Unstaged.Add(new FileChange(path, ToKind(xy[1]), xy[0] == '.' ? originalPath : null));
     }
 
-    // Parses `git blame --porcelain`: a header per line ("<hash> <old> <new> [<count>]"), commit details the first
-    // time a commit appears, then the line itself after a tab
+    // Blame porcelain: a header per line, commit details the first time a commit appears, then the text
     public static List<BlameLine> ParseBlame(string output)
     {
         List<BlameLine> lines = new List<BlameLine>();
@@ -323,8 +322,7 @@ public static class GitParsers
         return modules;
     }
 
-    // Blocks separated by blank lines: "worktree <path>", "HEAD <sha>", "branch refs/heads/x" or "detached",
-    // "bare", "locked [reason]", "prunable [reason]". The first block is the main worktree.
+    // Blank-line separated blocks of worktree, HEAD, branch or detached, locked, prunable; main comes first
     public static List<WorktreeInfo> ParseWorktrees(string output)
     {
         List<WorktreeInfo> worktrees = new List<WorktreeInfo>();

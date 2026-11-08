@@ -91,7 +91,7 @@ public static class GraphTests
                                                "refs/heads/feature/graph");
         Assert.Equal(4, badges.Count, "origin/HEAD is left out");
         Assert.Equal(new RefBadge("main", RefKind.Head), badges[0], "checked-out branch");
-        Assert.Equal("✓ main", badges[0].Text, "marked with a tick");
+        Assert.Equal("main", badges[0].Text, "the badge style marks the current branch");
         Assert.Equal(new RefBadge("v0.1.0", RefKind.Tag), badges[1], "tag");
         Assert.Equal(new RefBadge("origin/main", RefKind.Remote), badges[2], "remote branch");
         Assert.Equal(new RefBadge("feature/graph", RefKind.Local), badges[3], "local branch with a slash");

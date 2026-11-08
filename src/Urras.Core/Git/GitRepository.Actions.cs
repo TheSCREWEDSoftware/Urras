@@ -194,8 +194,7 @@ public sealed partial class GitRepository
         };
     }
 
-    // Resolves conflicts with one side's version. "ours" is the current branch in a merge, but the branch being
-    // rebased onto in a rebase, so the UI names the sides for each operation
+    // "ours" is the current branch in a merge but the base in a rebase, so the UI names the sides itself
     public async Task<GitResult> ResolveWithSideAsync(IEnumerable<string> paths, bool ours)
     {
         List<string> list = paths.ToList();

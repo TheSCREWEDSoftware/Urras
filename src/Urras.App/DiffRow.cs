@@ -166,8 +166,7 @@ public sealed class DiffRow
         return rows;
     }
 
-    // Syntax colours for every code line: each file uses its own language, and the old and new sides each carry
-    // their own state (such as an open block comment) from line to line
+    // Each file uses its own language, and each side carries its own state (such as an open comment)
     private static Dictionary<DiffLine, SyntaxKind[]> SyntaxColours(IEnumerable<DiffLine> lines)
     {
         Dictionary<DiffLine, SyntaxKind[]> colours = new Dictionary<DiffLine, SyntaxKind[]>();
