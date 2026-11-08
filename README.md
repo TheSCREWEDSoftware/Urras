@@ -44,6 +44,7 @@ you already have installed.
 - Quick Launch (Ctrl+P): open a repository, switch branch or run a command by typing a few letters
 - Custom commands: run builds, scripts or other tools from the menus, with the repository, branch, file or
   commit filled in
+- Statistics: contributors, when commits happen and which files change most
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

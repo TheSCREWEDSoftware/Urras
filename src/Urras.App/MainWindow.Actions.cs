@@ -35,6 +35,7 @@ public partial class MainWindow
         AddMenuItem(menu, "Submodules…", ManageSubmodulesAsync);
         AddMenuItem(menu, "Worktrees…", ManageWorktreesAsync);
         AddMenuItem(menu, "Git LFS…", ManageLfsAsync);
+        AddMenuItem(menu, "Statistics…", ShowStatisticsAsync);
         AddMenuItem(menu, "Commands…", ManageCommandsAsync);
         foreach (Urras.Core.Commands.CustomCommand command in _settings.CustomCommands
                      .Where(command => command.Scope == Urras.Core.Commands.CommandScope.Repository))
@@ -60,6 +61,12 @@ public partial class MainWindow
         AddMenuItem(menu, "Revert this commit…", () => RevertCommitAsync(commit));
         AddMenuItem(menu, "Cherry-pick into the current branch…", () => CherryPickAsync(commit));
         AddMenuItem(menu, "Interactive rebase of the commits after this one…", () => InteractiveRebaseAsync(commit));
+    }
+
+    private async Task ShowStatisticsAsync()
+    {
+        if (_repository != null)
+            await new StatisticsWindow(_repository, Path.GetFileName(_repository.Path)).ShowDialog(this);
     }
 
     // Rewrites the current branch's commits after onto: reorder, reword, squash, fix up, edit or drop them

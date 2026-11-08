@@ -72,6 +72,7 @@ public partial class MainWindow
             AddCommand(items, "Open in VS Code", () => Report(SystemShell.OpenInVisualStudioCode(folder)));
             AddCommand(items, "Refresh", RefreshAsync);
             AddCommand(items, "Commands…", ManageCommandsAsync);
+            AddCommand(items, "Statistics…", ShowStatisticsAsync);
             foreach (Urras.Core.Commands.CustomCommand command in _settings.CustomCommands
                          .Where(command => command.Scope == Urras.Core.Commands.CommandScope.Repository))
                 items.Add(new QuickItem(command.Name, "your command",

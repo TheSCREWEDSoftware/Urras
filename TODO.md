@@ -95,7 +95,7 @@ Desktop) for ideas is fine; copying their code is not.
 48. [ ] Bitbucket Server (a separate API)
 49. [x] Custom commands: your own programs and scripts in the Branch, file and commit menus and Quick Launch,
     with ${repo}, ${branch}, ${file}, ${filePath} and ${sha}
-50. [ ] Statistics
+50. [x] Statistics: contributors, commits per month, day and hour, most changed files, by period
 
 Pushing and pulling already work with every host through Git Credential Manager; accounts only add the website
 features.
