@@ -25,59 +25,68 @@ Desktop) for ideas is fine; copying their code is not.
 7. [ ] Filter boxes for changed files and branches
 8. [ ] Hide untracked files
 9. [ ] Automatic background fetch
+10. [ ] Line-ending warnings: flag files whose line endings don't match the repository's rules, in Changes and
+    before committing
 
 ## Phase 2: Better diffs
 
-10. [ ] Word-level highlighting inside changed lines
-11. [ ] Wrap or scroll long lines
-12. [ ] Image diffs: side by side, then swipe and onion skin
-13. [ ] Syntax highlighting
+11. [ ] Word-level highlighting inside changed lines
+12. [ ] Show whitespace in diffs: spaces, tabs, trailing spaces and CRLF or LF at line ends (keep the \r when
+    reading diffs)
+13. [ ] Changed files per file (file list with a diff per file) or combined, as a setting, in History and Changes
+14. [ ] Wrap or scroll long lines
+15. [ ] Image diffs: side by side, then swipe and onion skin
+16. [ ] Syntax highlighting
+17. [ ] Markdown preview for .md files, with a Diff / Preview switch (Markdown.Avalonia, MIT, approved)
 
 ## Phase 3: Everyday Git actions
 
-14. [ ] Tags: create, delete, push
-15. [ ] Check out a specific commit
-16. [ ] Revert a commit
-17. [ ] Cherry-pick a commit
-18. [ ] Stashes: save, apply, pop, drop, and shown in the history
-19. [ ] Merge a branch, with a conflict helper (take ours, take theirs, open in editor, mark resolved)
-20. [ ] Rebase onto a branch
+18. [ ] Tags: create, delete, push
+19. [ ] Check out a specific commit
+20. [ ] Revert a commit
+21. [ ] Cherry-pick a commit
+22. [ ] Stashes: save, apply, pop, drop, and shown in the history
+23. [ ] Merge a branch, with a conflict helper (take ours, take theirs, open in editor, mark resolved)
+24. [ ] Rebase onto a branch
+25. [ ] Repository settings: write .gitattributes and .editorconfig (LF, CRLF, or CRLF for Windows scripts and LF
+    elsewhere), normalize existing files with a preview, optional check before committing
 
 ## Phase 4: Look into the past
 
-21. [ ] File and directory history
-22. [ ] Blame
-23. [ ] Browse the file tree at any commit
-24. [ ] Search commits by message, author, file or content
-25. [ ] Compare two commits or branches
-26. [ ] Reflog, to restore lost commits
+26. [ ] File and directory history
+27. [ ] Blame
+28. [ ] Browse the file tree at any commit
+29. [ ] Search commits by message, author, file or content
+30. [ ] Compare two commits or branches
+31. [ ] Reflog, to restore lost commits
 
 ## Phase 5: The big ones
 
-27. [ ] Stage individual lines and hunks
-28. [ ] Commit graph with branch lanes
-29. [ ] Interactive rebase: pick, squash, reword, drop, drag to reorder, backup tag
-30. [ ] Side-by-side conflict view: theirs, ours and result, with a choice per block
+32. [ ] Stage individual lines and hunks
+33. [ ] Commit graph with branch lanes
+34. [ ] Interactive rebase: pick, squash, reword, drop, drag to reorder, backup tag
+35. [ ] Side-by-side conflict view: theirs, ours and result, with a choice per block
+36. [ ] Rendered Markdown diff: old and new rendered side by side with changed blocks highlighted
 
 ## Phase 6: Project needs
 
-31. [ ] Git LFS: status, pull, locks
-32. [ ] Submodules and worktrees
-33. [ ] Quick Launch (Ctrl+P)
-34. [ ] Bisect
+37. [ ] Git LFS: status, pull, locks
+38. [ ] Submodules and worktrees
+39. [ ] Quick Launch (Ctrl+P)
+40. [ ] Bisect
 
 ## Phase 7: Requires much
 
-35. [ ] Fully editable merge resolver
-36. [ ] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
-37. [ ] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
-38. [ ] GitHub Enterprise Server (GitHub plus a server address)
-39. [ ] GitLab and GitLab Server
-40. [ ] Gitea
-41. [ ] Bitbucket
-42. [ ] Bitbucket Server (a separate API)
-43. [ ] Custom commands
-44. [ ] Statistics
+41. [ ] Fully editable merge resolver
+42. [ ] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
+43. [ ] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
+44. [ ] GitHub Enterprise Server (GitHub plus a server address)
+45. [ ] GitLab and GitLab Server
+46. [ ] Gitea
+47. [ ] Bitbucket
+48. [ ] Bitbucket Server (a separate API)
+49. [ ] Custom commands
+50. [ ] Statistics
 
 Pushing and pulling already work with every host through Git Credential Manager; accounts only add the website
 features.
