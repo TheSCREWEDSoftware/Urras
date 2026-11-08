@@ -127,8 +127,9 @@ public partial class MainWindow
         UnstagedHint.Text = filtered ? "No changes match the filter, or they are hidden untracked files" : "No changes";
         StagedHint.IsVisible = hasRepository && StagedList.ItemCount == 0;
         HistoryHint.IsVisible = hasRepository && HistoryList.ItemCount == 0;
-        DiffHint.IsVisible = hasRepository && DiffList.ItemCount == 0;
-        CommitDiffHint.IsVisible = hasRepository && HistoryList.ItemCount > 0 && CommitDiffList.ItemCount == 0;
+        DiffHint.IsVisible = hasRepository && DiffList.ItemCount == 0 && !ImageView.IsVisible;
+        CommitDiffHint.IsVisible = hasRepository && HistoryList.ItemCount > 0 && CommitDiffList.ItemCount == 0 &&
+                                   !CommitImageView.IsVisible;
     }
 
     private Task<GitResult> StageAllOrTrackedAsync(GitRepository repository)

@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Urras.App"
         x:Class="Urras.App.MainWindow"
         Title="Urras"
         Width="1280" Height="800"
@@ -18,6 +19,17 @@
     <Style Selector="ListBox.diff ListBoxItem">
       <Setter Property="Padding" Value="0" />
       <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <!-- Diff text: trimmed by default, scrolled sideways (unified view) or wrapped by the diff settings -->
+    <Style Selector="TextBlock.code">
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="ListBox.scroll TextBlock.code">
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
+    <Style Selector="ListBox.wrap TextBlock.code">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="None" />
     </Style>
     <Style Selector="TextBlock.lineNumber">
       <Setter Property="Foreground" Value="#8B949E" />
@@ -62,8 +74,8 @@
         <TextBlock Grid.Column="0" Text="{Binding OldNumber}" Classes="mono lineNumber" />
         <TextBlock Grid.Column="1" Text="{Binding NewNumber}" Classes="mono lineNumber" />
         <TextBlock Grid.Column="2" Text="{Binding Marker}" Foreground="{Binding MarkerForeground}" Classes="mono" />
-        <TextBlock Grid.Column="3" Text="{Binding Text}" Foreground="{Binding Foreground}" Classes="mono"
-                   TextTrimming="CharacterEllipsis" />
+        <local:SegmentedTextBlock Grid.Column="3" Segments="{Binding Segments}" Foreground="{Binding Foreground}"
+                                  Classes="mono code" />
         <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Text="{Binding FullText}" Foreground="{Binding Foreground}"
                    FontWeight="{Binding Weight}" Classes="mono" Margin="8,0" TextTrimming="CharacterEllipsis" />
       </Grid>
@@ -75,11 +87,11 @@
         <Border Grid.Column="2" Grid.ColumnSpan="2" Background="{Binding RightBackground}"
                 BorderBrush="#33FFFFFF" BorderThickness="1,0,0,0" />
         <TextBlock Grid.Column="0" Text="{Binding OldNumber}" Classes="mono lineNumber" />
-        <TextBlock Grid.Column="1" Text="{Binding LeftText}" Foreground="{Binding Foreground}" Classes="mono"
-                   Margin="0,0,6,0" TextTrimming="CharacterEllipsis" />
+        <local:SegmentedTextBlock Grid.Column="1" Segments="{Binding LeftSegments}" Foreground="{Binding Foreground}"
+                                  Classes="mono code" Margin="0,0,6,0" />
         <TextBlock Grid.Column="2" Text="{Binding NewNumber}" Classes="mono lineNumber" />
-        <TextBlock Grid.Column="3" Text="{Binding RightText}" Foreground="{Binding Foreground}" Classes="mono"
-                   Margin="0,0,6,0" TextTrimming="CharacterEllipsis" />
+        <local:SegmentedTextBlock Grid.Column="3" Segments="{Binding RightSegments}" Foreground="{Binding Foreground}"
+                                  Classes="mono code" Margin="0,0,6,0" />
         <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Text="{Binding FullText}" Foreground="{Binding Foreground}"
                    FontWeight="{Binding Weight}" Classes="mono" Margin="8,0" TextTrimming="CharacterEllipsis" />
       </Grid>
@@ -253,10 +265,20 @@
                   <ComboBoxItem>Split</ComboBoxItem>
                   <ComboBoxItem>Raw (git output)</ComboBoxItem>
                 </ComboBox>
+                <CheckBox x:Name="WrapBox" DockPanel.Dock="Right" Content="Wrap" Margin="8,0"
+                          ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
+                <CheckBox x:Name="WhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
+                          ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
+                <ComboBox x:Name="FileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
+                          ToolTip.Tip="Per file: one file at a time. Combined: every file in the list at once">
+                  <ComboBoxItem>Per file</ComboBoxItem>
+                  <ComboBoxItem>Combined</ComboBoxItem>
+                </ComboBox>
                 <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <Panel>
                 <ListBox x:Name="DiffList" Classes="diff" />
+                <local:ImageDiffView x:Name="ImageView" IsVisible="False" />
                 <TextBlock x:Name="DiffHint" Classes="hint" Text="Select a file to see its changes" />
               </Panel>
             </DockPanel>
@@ -296,10 +318,30 @@
                   <ComboBoxItem>Split</ComboBoxItem>
                   <ComboBoxItem>Raw (git output)</ComboBoxItem>
                 </ComboBox>
+                <CheckBox x:Name="CommitWrapBox" DockPanel.Dock="Right" Content="Wrap" Margin="8,0"
+                          ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
+                <CheckBox x:Name="CommitWhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
+                          ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
+                <ComboBox x:Name="CommitFileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
+                          ToolTip.Tip="Per file: a list of changed files. Combined: the whole commit in one diff">
+                  <ComboBoxItem>Per file</ComboBoxItem>
+                  <ComboBoxItem>Combined</ComboBoxItem>
+                </ComboBox>
                 <TextBlock x:Name="CommitDiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
               </DockPanel>
+              <ListBox x:Name="CommitFilesList" DockPanel.Dock="Left" Width="280" Margin="0,0,6,0" Classes="files">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
               <Panel>
                 <ListBox x:Name="CommitDiffList" Classes="diff" />
+                <local:ImageDiffView x:Name="CommitImageView" IsVisible="False" />
                 <TextBlock x:Name="CommitDiffHint" Classes="hint" Text="Select a commit to see its changes" />
               </Panel>
             </DockPanel>

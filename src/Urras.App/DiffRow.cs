@@ -1,3 +1,4 @@
+using System.Text;
 using Avalonia.Media;
 using Urras.Core.Git;
 
@@ -7,24 +8,35 @@ namespace Urras.App;
 public sealed class DiffRow
 {
     private const int MAX_ROWS = 20000;
+    private const int TAB_WIDTH = 4;
 
     private static readonly IBrush NormalBrush = Brush("#E6EDF3");
     private static readonly IBrush MutedBrush = Brush("#8B949E");
+    private static readonly IBrush WhitespaceBrush = Brush("#6E7681");
     private static readonly IBrush AddedTextBrush = Brush("#7EE787");
     private static readonly IBrush RemovedTextBrush = Brush("#FF7B72");
     private static readonly IBrush HunkTextBrush = Brush("#79C0FF");
     private static readonly IBrush AddedBackground = Brush("#262EA043");
     private static readonly IBrush RemovedBackground = Brush("#26F85149");
+    private static readonly IBrush AddedWordBackground = Brush("#662EA043");
+    private static readonly IBrush RemovedWordBackground = Brush("#66F85149");
+    private static readonly IBrush TrailingWhitespaceBackground = Brush("#59F85149");
     private static readonly IBrush HunkBackground = Brush("#1A388BFD");
     private static readonly IBrush FileBackground = Brush("#1FFFFFFF");
     private static readonly IBrush EmptySideBackground = Brush("#0AFFFFFF");
+    private static readonly IReadOnlyList<TextSegment> NoSegments = Array.Empty<TextSegment>();
 
     public string OldNumber { get; private init; } = string.Empty;
     public string NewNumber { get; private init; } = string.Empty;
     public string Marker { get; private init; } = string.Empty;
+
+    // Raw view text
     public string Text { get; private init; } = string.Empty;
-    public string LeftText { get; private init; } = string.Empty;
-    public string RightText { get; private init; } = string.Empty;
+
+    // Unified and split views: the line with word highlights and whitespace markers
+    public IReadOnlyList<TextSegment> Segments { get; private init; } = NoSegments;
+    public IReadOnlyList<TextSegment> LeftSegments { get; private init; } = NoSegments;
+    public IReadOnlyList<TextSegment> RightSegments { get; private init; } = NoSegments;
 
     // Headers and other lines that span the whole width
     public string FullText { get; private init; } = string.Empty;
@@ -49,15 +61,17 @@ public sealed class DiffRow
                 break;
             }
 
-            rows.Add(new DiffRow { Text = Tabs(line), Foreground = RawBrush(line) });
+            string expanded = line.Replace("\t", new string(' ', TAB_WIDTH));
+            rows.Add(new DiffRow { Text = expanded, Foreground = RawBrush(line) });
         }
 
         return rows;
     }
 
-    public static List<DiffRow> Unified(string text)
+    public static List<DiffRow> Unified(string text, bool showWhitespace)
     {
         List<DiffLine> lines = DiffParser.Parse(text);
+        Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(DiffParser.ToSplit(lines));
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (DiffLine line in lines)
@@ -68,15 +82,16 @@ public sealed class DiffRow
                 break;
             }
 
-            rows.Add(line.IsCode ? UnifiedCode(line) : FullWidth(line));
+            rows.Add(line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line), showWhitespace) : FullWidth(line));
         }
 
         return rows;
     }
 
-    public static List<DiffRow> Split(string text)
+    public static List<DiffRow> Split(string text, bool showWhitespace)
     {
         List<SplitDiffRow> splitRows = DiffParser.ToSplit(DiffParser.Parse(text));
+        Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(splitRows);
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (SplitDiffRow splitRow in splitRows)
@@ -99,8 +114,10 @@ public sealed class DiffRow
             {
                 OldNumber = Number(left?.OldNumber),
                 NewNumber = Number(right?.NewNumber),
-                LeftText = left == null ? string.Empty : Tabs(left.Text),
-                RightText = right == null ? string.Empty : Tabs(right.Text),
+                LeftSegments = left == null ? NoSegments : BuildSegments(left, words.GetValueOrDefault(left),
+                                                                         showWhitespace),
+                RightSegments = right == null ? NoSegments : BuildSegments(right, words.GetValueOrDefault(right),
+                                                                           showWhitespace),
                 LeftBackground = SideBackground(left),
                 RightBackground = SideBackground(right)
             });
@@ -109,8 +126,27 @@ public sealed class DiffRow
         return rows;
     }
 
-    private static DiffRow UnifiedCode(DiffLine line)
+    // Word highlights for every removed line that has a matching added line
+    private static Dictionary<DiffLine, List<InlineSegment>> WordHighlights(IEnumerable<SplitDiffRow> rows)
     {
+        Dictionary<DiffLine, List<InlineSegment>> words = new Dictionary<DiffLine, List<InlineSegment>>();
+        foreach (SplitDiffRow row in rows)
+        {
+            if (row.Left?.Kind != DiffLineKind.Removed || row.Right?.Kind != DiffLineKind.Added)
+                continue;
+
+            (List<InlineSegment> oldWords, List<InlineSegment> newWords) =
+                IntralineDiff.Compare(row.Left.Text, row.Right.Text);
+            words[row.Left] = oldWords;
+            words[row.Right] = newWords;
+        }
+
+        return words;
+    }
+
+    private static DiffRow UnifiedCode(DiffLine line, List<InlineSegment>? words, bool showWhitespace)
+    {
+        IReadOnlyList<TextSegment> segments = BuildSegments(line, words, showWhitespace);
         return line.Kind switch
         {
             DiffLineKind.Added => new DiffRow
@@ -118,7 +154,7 @@ public sealed class DiffRow
                 NewNumber = Number(line.NewNumber),
                 Marker = "+",
                 MarkerForeground = AddedTextBrush,
-                Text = Tabs(line.Text),
+                Segments = segments,
                 Background = AddedBackground
             },
             DiffLineKind.Removed => new DiffRow
@@ -126,16 +162,88 @@ public sealed class DiffRow
                 OldNumber = Number(line.OldNumber),
                 Marker = "-",
                 MarkerForeground = RemovedTextBrush,
-                Text = Tabs(line.Text),
+                Segments = segments,
                 Background = RemovedBackground
             },
             _ => new DiffRow
             {
                 OldNumber = Number(line.OldNumber),
                 NewNumber = Number(line.NewNumber),
-                Text = Tabs(line.Text)
+                Segments = segments
             }
         };
+    }
+
+    // Splits a line into coloured segments: changed words, whitespace markers and trailing whitespace
+    private static IReadOnlyList<TextSegment> BuildSegments(DiffLine line, List<InlineSegment>? words,
+                                                             bool showWhitespace)
+    {
+        string text = line.Text;
+        IBrush? wordBackground = line.Kind switch
+        {
+            DiffLineKind.Added => AddedWordBackground,
+            DiffLineKind.Removed => RemovedWordBackground,
+            _ => null
+        };
+
+        // Which characters belong to a changed word
+        bool[] changed = new bool[text.Length];
+        if (words != null)
+        {
+            int position = 0;
+            foreach (InlineSegment word in words)
+            {
+                for (int i = 0; i < word.Text.Length && position < text.Length; ++i)
+                    changed[position++] = word.Changed;
+            }
+        }
+
+        int trailingStart = text.TrimEnd(' ', '\t').Length;
+        List<TextSegment> segments = new List<TextSegment>();
+        StringBuilder current = new StringBuilder();
+        (bool Changed, bool Whitespace, bool Trailing) currentStyle = default;
+
+        for (int i = 0; i < text.Length; ++i)
+        {
+            char character = text[i];
+            bool whitespace = showWhitespace && (character == ' ' || character == '\t');
+            bool trailing = showWhitespace && i >= trailingStart;
+            (bool, bool, bool) style = (changed[i], whitespace, trailing);
+
+            if (current.Length > 0 && style != currentStyle)
+            {
+                segments.Add(Segment(current.ToString(), currentStyle, wordBackground));
+                current.Clear();
+            }
+
+            currentStyle = style;
+            current.Append(character switch
+            {
+                ' ' when showWhitespace => "·",
+                '\t' when showWhitespace => "→" + new string(' ', TAB_WIDTH - 1),
+                '\t' => new string(' ', TAB_WIDTH),
+                _ => character.ToString()
+            });
+        }
+
+        if (current.Length > 0)
+            segments.Add(Segment(current.ToString(), currentStyle, wordBackground));
+
+        if (showWhitespace)
+        {
+            string ending = line.MissingNewline ? " ⊘ no line ending" : line.HasCarriageReturn ? " ␍↵ CRLF" : " ↵ LF";
+            segments.Add(new TextSegment(ending, WhitespaceBrush));
+        }
+
+        return segments;
+    }
+
+    private static TextSegment Segment(string text, (bool Changed, bool Whitespace, bool Trailing) style,
+                                       IBrush? wordBackground)
+    {
+        IBrush? background = style.Trailing ? TrailingWhitespaceBackground :
+                             style.Changed ? wordBackground : null;
+        return new TextSegment(text, style.Whitespace ? WhitespaceBrush : null, background);
     }
 
     private static DiffRow FullWidth(DiffLine line)
@@ -155,7 +263,7 @@ public sealed class DiffRow
                 Foreground = HunkTextBrush
             },
             DiffLineKind.Meta => new DiffRow { FullText = line.Text, Foreground = MutedBrush },
-            _ => new DiffRow { FullText = Tabs(line.Text) }
+            _ => new DiffRow { FullText = line.Text.Replace("\t", new string(' ', TAB_WIDTH)) }
         };
     }
 
@@ -195,11 +303,6 @@ public sealed class DiffRow
     private static string Number(int? number)
     {
         return number?.ToString() ?? string.Empty;
-    }
-
-    private static string Tabs(string text)
-    {
-        return text.Replace("\t", "    ");
     }
 
     private static IBrush Brush(string color)

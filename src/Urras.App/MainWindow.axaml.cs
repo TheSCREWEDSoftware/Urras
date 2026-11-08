@@ -91,6 +91,7 @@ public partial class MainWindow : Window
         Closed += (_, _) => GitRunner.CommandFinished -= OnGitCommandFinished;
 
         InitializeBasics();
+        InitializeDiffOptions();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -198,6 +199,7 @@ public partial class MainWindow : Window
         _suppressSelection = true;
         _status = null;
         _history = new List<CommitInfo>();
+        ClearCommitFiles();
         RepositoryTitle.Text = "No repository";
         ToolTip.SetTip(RepositoryTitle, null);
         UnstagedList.ItemsSource = null;
@@ -251,11 +253,7 @@ public partial class MainWindow : Window
         if (_repository == null)
             return;
 
-        string diff = await _repository.GetDiffAsync(change, staged);
-        if (diff.Trim().Length == 0)
-            diff = change.Kind == ChangeKind.Conflicted ? "Conflicted file: resolve it, then stage it."
-                                                        : "No text changes.";
-        ShowChangesDiff(diff, change.DisplayPath + (staged ? "  (staged)" : string.Empty));
+        await ShowSelectedChangeAsync(change, staged);
     }
 
     private static List<FileChange> Selected(ListBox list)
@@ -440,12 +438,12 @@ public partial class MainWindow : Window
 
         if (HistoryList.SelectedItem is not CommitInfo commit)
         {
+            ClearCommitFiles();
             ShowCommitDiff(null, string.Empty);
             return;
         }
 
-        string diff = await _repository.GetCommitDiffAsync(commit.Hash);
-        ShowCommitDiff(diff, commit.ShortHash + "  " + commit.Subject);
+        await ShowCommitAsync(commit);
     }
 
     // Diff views
@@ -454,6 +452,7 @@ public partial class MainWindow : Window
     {
         _changesDiffText = text;
         DiffTitle.Text = title;
+        ShowText(ImageView, DiffList);
         RenderDiff(DiffList, text);
     }
 
@@ -461,6 +460,7 @@ public partial class MainWindow : Window
     {
         _commitDiffText = text;
         CommitDiffTitle.Text = title;
+        ShowText(CommitImageView, CommitDiffList);
         RenderDiff(CommitDiffList, text);
     }
 
@@ -483,11 +483,13 @@ public partial class MainWindow : Window
         // Cleared first so no row is reused with the previous view's template
         list.ItemsSource = null;
         list.ItemTemplate = Resources[templateKey] as IDataTemplate;
+        ApplyDiffLayout(list);
+        bool whitespace = _settings.ShowWhitespace;
         list.ItemsSource = mode switch
         {
-            DiffViewMode.Split => DiffRow.Split(text),
+            DiffViewMode.Split => DiffRow.Split(text, whitespace),
             DiffViewMode.Raw => DiffRow.Raw(text),
-            _ => DiffRow.Unified(text)
+            _ => DiffRow.Unified(text, whitespace)
         };
         UpdateHints();
     }

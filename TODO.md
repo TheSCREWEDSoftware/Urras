@@ -30,12 +30,12 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 2: Better diffs
 
-11. [ ] Word-level highlighting inside changed lines
-12. [ ] Show whitespace in diffs: spaces, tabs, trailing spaces and CRLF or LF at line ends (keep the \r when
+11. [x] Word-level highlighting inside changed lines
+12. [x] Show whitespace in diffs: spaces, tabs, trailing spaces and CRLF or LF at line ends (keep the \r when
     reading diffs)
-13. [ ] Changed files per file (file list with a diff per file) or combined, as a setting, in History and Changes
-14. [ ] Wrap or scroll long lines
-15. [ ] Image diffs: side by side, then swipe and onion skin
+13. [x] Changed files per file (file list with a diff per file) or combined, as a setting, in History and Changes
+14. [x] Wrap or scroll long lines
+15. [x] Image diffs side by side (swipe and onion skin views still to do)
 16. [ ] Syntax highlighting
 17. [ ] Markdown preview for .md files, with a Diff / Preview switch (Markdown.Avalonia, MIT, approved)
 

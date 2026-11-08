@@ -13,6 +13,8 @@ you already have installed.
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved
+- Word-level highlights in changed lines, optional whitespace and CRLF/LF markers, wrapped or scrolling lines
+- Commits shown per file (a list of changed files) or combined; image files compared side by side
 - Commit with summary and description, amend the last commit (Ctrl+Enter to commit)
 - History with the full diff of each commit
 - Branches: switch, create, delete, check out remote branches
