@@ -81,14 +81,15 @@ Desktop) for ideas is fine; copying their code is not.
 ## Phase 7: Requires much
 
 41. [ ] Fully editable merge resolver
-42. [ ] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
+42. [x] Accounts window; tokens stored in Windows Credential Manager or the Linux keyring, never in settings
 43. [ ] GitHub: sign in, repository list for cloning, avatars, pull requests, notifications
-    - Co-authors by @username: search the connected platform's users (GitHub, GitLab, Gitea) in the co-author
-      box and add them with their private noreply address; profile pictures on the co-author chips
-    - Profile pictures in History and the commit details for the author and every co-author (from
-      `Co-authored-by:` lines), looked up by email through the signed-in accounts (GitHub, GitLab, Gitea), with
-      Gravatar as an optional fallback and coloured initials when there is no picture; cached on disk
-44. [ ] GitHub Enterprise Server (GitHub plus a server address)
+    - [x] Sign in with a personal access token (sign-in through the browser needs a registered OAuth app)
+    - [x] Co-authors by @username, with suggestions while typing and GitHub's private noreply address
+    - [x] Profile pictures in History and on co-author chips (your account, GitHub noreply addresses), cached on
+      disk; coloured initials for everyone else
+    - [ ] Pictures for other emails (asking GitHub which user owns a commit), and in the commit details
+    - [ ] Repository list for cloning, pull requests, notifications
+44. [x] GitHub Enterprise Server (GitHub plus a server address), same features as GitHub
 45. [ ] GitLab and GitLab Server
 46. [ ] Gitea
 47. [ ] Bitbucket

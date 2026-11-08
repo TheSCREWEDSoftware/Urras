@@ -172,6 +172,7 @@
         <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Padding="8,2" />
         <Button x:Name="AboutButton" DockPanel.Dock="Right" Content="About" Padding="8,2" Margin="0,0,6,0" />
         <Button x:Name="SettingsButton" DockPanel.Dock="Right" Content="Settings…" Padding="8,2" Margin="0,0,6,0" />
+        <Button x:Name="AccountsButton" DockPanel.Dock="Right" Content="Accounts…" Padding="8,2" Margin="0,0,6,0" />
         <TextBlock x:Name="AutoFetchText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.6"
                    Margin="0,0,12,0" />
         <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="Ready" />
@@ -424,8 +425,12 @@
                       </ItemsControl>
                       <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                     </DockPanel>
-                    <TextBlock Grid.Column="1" Text="{Binding Author}" TextTrimming="CharacterEllipsis"
-                               Opacity="0.7" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <DockPanel Grid.Column="1" Margin="8,0,0,0">
+                      <local:AvatarView DockPanel.Dock="Left" Email="{Binding Email}" PersonName="{Binding Author}"
+                                        Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Author}" TextTrimming="CharacterEllipsis" Opacity="0.7"
+                                 VerticalAlignment="Center" />
+                    </DockPanel>
                     <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono" Opacity="0.7"
                                Margin="8,0,0,0" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"

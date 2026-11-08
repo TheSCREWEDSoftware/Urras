@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Urras.Core.Accounts;
 using Urras.Core.Git;
 
 namespace Urras.App;
@@ -25,13 +26,20 @@ public partial class MainWindow
             if (e.Key != Key.Enter)
                 return;
             e.Handled = true;
-            AddTypedCoAuthor();
+            _ = AddTypedCoAuthorAsync();
         };
         CoAuthorBox.SelectionChanged += (_, _) =>
         {
-            if (CoAuthorBox.SelectedItem is string text && CoAuthor.Parse(text) is { } person)
+            if (CoAuthorBox.SelectedItem is not string text)
+                return;
+            if (_platformMatches.TryGetValue(text, out CoAuthor? found))
+                AddCoAuthor(found);
+            else if (CoAuthor.Parse(text) is { } person)
                 AddCoAuthor(person);
         };
+
+        // Suggestions: people from the history, and with an account, @username searches on the platform
+        CoAuthorBox.AsyncPopulator = SuggestCoAuthorsAsync;
     }
 
     private async Task ShowCoAuthorsAsync(bool show)
@@ -51,11 +59,48 @@ public partial class MainWindow
         CoAuthorBox.Focus();
     }
 
-    private void AddTypedCoAuthor()
+    private readonly Dictionary<string, CoAuthor> _platformMatches = new Dictionary<string, CoAuthor>();
+
+    private async Task<IEnumerable<object>> SuggestCoAuthorsAsync(string? text, CancellationToken cancellation)
+    {
+        string query = text?.Trim() ?? string.Empty;
+        if (!query.StartsWith('@') || _accounts == null)
+            return _knownPeople.Select(person => person.ToString())
+                               .Where(person => person.Contains(query, StringComparison.OrdinalIgnoreCase))
+                               .Cast<object>().ToList();
+
+        try
+        {
+            // Waits for a pause in typing before asking the platform
+            await Task.Delay(300, cancellation);
+            List<CoAuthor> found = await _accounts.SearchCoAuthorsAsync(query);
+            List<object> labels = new List<object>();
+            foreach (CoAuthor person in found)
+            {
+                string label = person.Label + (person.Name != person.Username ? "  ·  " + person.Name : string.Empty);
+                _platformMatches[label] = person;
+                labels.Add(label);
+            }
+
+            return labels;
+        }
+        catch (Exception exception) when (exception is TaskCanceledException or PlatformException)
+        {
+            return Array.Empty<object>();
+        }
+    }
+
+    private async Task AddTypedCoAuthorAsync()
     {
         string text = CoAuthorBox.Text?.Trim() ?? string.Empty;
         if (text.Length == 0)
             return;
+
+        if (text.StartsWith('@'))
+        {
+            await AddPlatformCoAuthorAsync(text);
+            return;
+        }
 
         // A full "Name <email>", or the one known person whose name or email matches what was typed
         CoAuthor? person = CoAuthor.Parse(text);
@@ -74,6 +119,28 @@ public partial class MainWindow
         }
 
         AddCoAuthor(person);
+    }
+
+    private async Task AddPlatformCoAuthorAsync(string login)
+    {
+        if (_accounts == null || _accounts.Accounts.Count == 0)
+        {
+            SetStatus("Add a GitHub account (Accounts…) to find co-authors by @username.", true);
+            return;
+        }
+
+        try
+        {
+            CoAuthor? person = await _accounts.FindCoAuthorAsync(login);
+            if (person == null)
+                SetStatus("No user " + login + " on GitHub.", true);
+            else
+                AddCoAuthor(person);
+        }
+        catch (PlatformException exception)
+        {
+            SetStatus("Couldn't look up " + login + ": " + exception.Message, true);
+        }
     }
 
     private void AddCoAuthor(CoAuthor person)
@@ -117,6 +184,15 @@ public partial class MainWindow
             };
 
             StackPanel content = new StackPanel { Orientation = Orientation.Horizontal };
+            content.Children.Add(new AvatarView
+            {
+                Email = person.Email,
+                PersonName = person.Name,
+                Width = 16,
+                Height = 16,
+                Margin = new Thickness(0, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
             content.Children.Add(new TextBlock
             {
                 Text = person.Label,

@@ -50,6 +50,9 @@ public sealed class AppSettings
     // Committing asks first when the staged changes have whitespace problems such as trailing spaces
     public bool CheckWhitespaceBeforeCommit { get; set; }
 
+    // Signed-in accounts; their tokens are in the system's credential store, not here
+    public List<Urras.Core.Accounts.Account> Accounts { get; set; } = new();
+
     // Commands added to the menus by the user
     public List<Urras.Core.Commands.CustomCommand> CustomCommands { get; set; } = new();
 

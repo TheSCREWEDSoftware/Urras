@@ -94,6 +94,7 @@ public partial class MainWindow : Window
         InitializeHistoryTools();
         InitializeLineStaging();
         InitializeBisect();
+        InitializeAccounts();
         InitializeCoAuthors();
         InitializeRepositoryTree();
         UpdateButtons();
