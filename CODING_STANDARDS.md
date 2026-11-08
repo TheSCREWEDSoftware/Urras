@@ -28,8 +28,7 @@ These rules are enforced by `.editorconfig` (formatting in your editor) and `.gi
 No spaces just inside parentheses: `if (ready)`, not `if( ready )` or `if ( ready )`.
 
 ### Braces
-Opening and closing braces go on their own lines. A single-statement body may omit the braces, but when one branch
-of an `if`/`else` needs braces, use them on every branch.
+Opening and closing braces go on their own lines. A single-line body may omit the braces.
 
 ```csharp
 if (status.HasChanges)
@@ -124,7 +123,7 @@ The app must build and run on Windows and Linux.
 
 ## 9. Comments
 
-- Comment code that isn't routine or self-explanatory, and explain *why*, not *what*. Keep comments short.
+- Comments are one line, and only where the code isn't routine or self-explanatory. Explain *why*, not *what*.
 - Put a comment on the line above the code, or at the end of the same line.
 - Don't put links in code comments. Put them in the pull request description, where Git history keeps them.
 
@@ -139,3 +138,23 @@ The app must build and run on Windows and Linux.
 
 - Core features come with tests in `tests/Urras.Core.Tests`, using real Git repositories in temporary folders.
 - Network calls are tested with a fake `HttpMessageHandler`; tests never reach the internet.
+
+## 12. Checking your work
+
+`check-standards.bat` (Windows) and `check-standards.sh` (Linux) check files and commit messages against these
+rules and the commit template. Run one without options for a menu, or pass an option:
+
+| Option | Checks |
+|---|---|
+| `--uncommitted` | Changed and new files that aren't committed yet (the default) |
+| `--staged` | What is about to be committed |
+| `--last` | The last commit: its message and the files it changed |
+| `--unpushed` | Commits not pushed yet |
+| `--history` | Every commit |
+| `--since-commit HASH` | Commits after a commit |
+| `--since-date DATE` | Commits since a date, such as `2026-11-01` or `"2 weeks ago"` |
+| `--all` | Every tracked file as it is now |
+| `--install-hooks` | Checks every commit before it is made (skip once with `git commit --no-verify`) |
+
+The tests also check that every file in the repository follows these rules. Rules that need judgement, such as
+naming constants instead of using magic numbers, are left to review.

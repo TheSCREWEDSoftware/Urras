@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Urras.Core\Urras.Core.csproj" />
+    <ProjectReference Include="..\..\tools\Urras.Standards\Urras.Standards.csproj" />
   </ItemGroup>
 
 </Project>

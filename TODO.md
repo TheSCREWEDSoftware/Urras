@@ -98,6 +98,10 @@ Desktop) for ideas is fine; copying their code is not.
 49. [x] Custom commands: your own programs and scripts in the Branch, file and commit menus and Quick Launch,
     with ${repo}, ${branch}, ${file}, ${filePath} and ${sha}
 50. [x] Statistics: contributors, commits per month, day and hour, most changed files, by period
+51. [ ] AI assistant with any provider: commit messages from the staged diff, explaining a commit, conflict
+    suggestions. Providers: an OpenAI-compatible endpoint (OpenAI, OpenRouter, LM Studio, Ollama and others),
+    Anthropic, or a command-line agent (Claude Code, Codex, Gemini CLI) given the diff on standard input. Keys in
+    the credential store; off by default.
 
 Pushing and pulling already work with every host through Git Credential Manager; accounts only add the website
 features.
