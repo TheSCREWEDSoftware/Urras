@@ -5,8 +5,7 @@ using Urras.Core.Tests;
 Type[] testClasses =
 {
     typeof(ParserTests), typeof(DiffParserTests), typeof(LayoutTests), typeof(BasicsTests), typeof(DiffViewTests),
-    typeof(RepositoryTests),
-    typeof(SettingsTests)
+    typeof(ActionsTests), typeof(RepositoryTests), typeof(SettingsTests)
 };
 int passed = 0;
 int failed = 0;

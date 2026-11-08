@@ -80,6 +80,10 @@ public sealed class CommitInfo
     public string Subject { get; }
 
     public string DateText => Date.LocalDateTime.ToString("yyyy-MM-dd HH:mm");
+
+    // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
+    public string Refs { get; init; } = string.Empty;
+    public bool HasRefs => Refs.Length > 0;
 }
 
 public sealed class BranchInfo

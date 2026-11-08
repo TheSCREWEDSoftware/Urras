@@ -1,6 +1,6 @@
 namespace Urras.Core.Git;
 
-public sealed class GitRepository
+public sealed partial class GitRepository
 {
     public const int DEFAULT_HISTORY_LIMIT = 300;
 

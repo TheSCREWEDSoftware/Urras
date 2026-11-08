@@ -47,6 +47,9 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<FileListMode>))]
     public FileListMode FileListMode { get; set; } = FileListMode.PerFile;
 
+    // Committing asks first when the staged changes have whitespace problems such as trailing spaces
+    public bool CheckWhitespaceBeforeCommit { get; set; }
+
     // Untracked files are left out of the change list and of Stage all
     public bool HideUntracked { get; set; }
 

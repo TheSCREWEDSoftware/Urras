@@ -142,7 +142,7 @@ public static class GitParsers
         };
     }
 
-    public const string LOG_FORMAT = "%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%s%x1e";
+    public const string LOG_FORMAT = "%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%s%x1f%D%x1e";
 
     public static List<CommitInfo> ParseLog(string output)
     {
@@ -160,7 +160,10 @@ public static class GitParsers
 
             DateTimeOffset.TryParse(fields[4], CultureInfo.InvariantCulture, DateTimeStyles.None,
                                     out DateTimeOffset date);
-            commits.Add(new CommitInfo(fields[0], fields[1], fields[2], fields[3], date, fields[5]));
+            commits.Add(new CommitInfo(fields[0], fields[1], fields[2], fields[3], date, fields[5])
+            {
+                Refs = fields.Length > 6 ? fields[6] : string.Empty
+            });
         }
 
         return commits;
