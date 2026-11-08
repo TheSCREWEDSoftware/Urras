@@ -65,6 +65,31 @@ public sealed class GitHubClient
         return result.RootElement.GetProperty("items").EnumerateArray().Select(ReadUser).ToList();
     }
 
+    // Every repository the signed-in user can see: their own, their organisations' and ones they collaborate on
+    public async Task<List<PlatformRepository>> GetRepositoriesAsync(int maxPages = 10)
+    {
+        List<PlatformRepository> repositories = new List<PlatformRepository>();
+        for (int page = 1; page <= maxPages; ++page)
+        {
+            using JsonDocument result = await GetAsync("/user/repos?per_page=100&sort=pushed&page=" + page);
+            List<JsonElement> items = result.RootElement.EnumerateArray().ToList();
+            foreach (JsonElement item in items)
+            {
+                repositories.Add(new PlatformRepository(
+                    item.GetProperty("full_name").GetString() ?? string.Empty,
+                    item.GetProperty("clone_url").GetString() ?? string.Empty,
+                    Text(item, "description"),
+                    item.TryGetProperty("private", out JsonElement isPrivate) && isPrivate.GetBoolean(),
+                    item.TryGetProperty("fork", out JsonElement fork) && fork.GetBoolean()));
+            }
+
+            if (items.Count < 100)
+                break;
+        }
+
+        return repositories;
+    }
+
     private static PlatformUser ReadUser(JsonElement user)
     {
         return new PlatformUser(user.GetProperty("id").GetInt64(), user.GetProperty("login").GetString() ?? "",

@@ -9,7 +9,7 @@ Type[] testClasses =
     typeof(RebaseTests), typeof(ConflictTests), typeof(BisectTests), typeof(ModuleTests), typeof(LfsTests),
     typeof(QuickLaunchTests), typeof(CoAuthorTests), typeof(CommandTests),
     typeof(StatisticsTests), typeof(AccountTests),
-    typeof(RepositoryTests), typeof(SettingsTests)
+    typeof(ImportTests), typeof(GroupingTests), typeof(RepositoryTests), typeof(SettingsTests)
 };
 int passed = 0;
 int failed = 0;

@@ -88,7 +88,8 @@ Desktop) for ideas is fine; copying their code is not.
     - [x] Profile pictures in History and on co-author chips (your account, GitHub noreply addresses), cached on
       disk; coloured initials for everyone else
     - [ ] Pictures for other emails (asking GitHub which user owns a commit), and in the commit details
-    - [ ] Repository list for cloning, pull requests, notifications
+    - [x] Repository list for cloning (Import ▾ → Clone from your GitHub account), into Owner/Name folders
+    - [ ] Pull requests, notifications
 44. [x] GitHub Enterprise Server (GitHub plus a server address), same features as GitHub
 45. [ ] GitLab and GitLab Server
 46. [ ] Gitea

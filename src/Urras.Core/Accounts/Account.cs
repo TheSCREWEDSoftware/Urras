@@ -47,3 +47,16 @@ public sealed class Account
 
 // A user found on a platform, for co-authors and pictures
 public sealed record PlatformUser(long Id, string Login, string? Name, string? AvatarUrl);
+
+// A repository on a platform, for cloning
+public sealed record PlatformRepository(string FullName, string CloneUrl, string? Description, bool IsPrivate,
+                                        bool IsFork)
+{
+    public string Name => FullName[(FullName.IndexOf('/') + 1)..];
+
+    public override string ToString()
+    {
+        return FullName + (IsPrivate ? "  ·  private" : string.Empty) + (IsFork ? "  ·  fork" : string.Empty) +
+               (string.IsNullOrEmpty(Description) ? string.Empty : "  ·  " + Description);
+    }
+}

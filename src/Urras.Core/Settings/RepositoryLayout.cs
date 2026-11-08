@@ -126,6 +126,88 @@ public static class RepositoryLayout
         return node;
     }
 
+    // One group per repository name, with each copy (fork or clone) inside it named by its owner, such as
+    // azerothcore-wotlk with Aceddian and TheSCREWEDSoftware. A name with a single copy is listed on its own.
+    public static List<RepositoryTreeNode> BuildByName(IEnumerable<string> repositories,
+                                                       Func<string, RemoteIdentity?> identify)
+    {
+        List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
+        foreach (IGrouping<string, (string Path, RemoteIdentity? Remote)> group in Identify(repositories, identify)
+                     .GroupBy(entry => (entry.Remote?.Name ?? Path.GetFileName(entry.Path)).ToLowerInvariant()))
+        {
+            List<(string Path, RemoteIdentity? Remote)> copies = group.ToList();
+            string name = copies[0].Remote?.Name ?? Path.GetFileName(copies[0].Path);
+            if (copies.Count == 1)
+            {
+                roots.Add(new RepositoryTreeNode(name, copies[0].Path, null, null));
+                continue;
+            }
+
+            RepositoryTreeNode node = new RepositoryTreeNode(name, null, "name:" + group.Key, null);
+            foreach ((string path, string label) in Labels(copies, copy => copy.Remote?.Owner ?? "local"))
+                node.Children.Add(new RepositoryTreeNode(label, path, null, null));
+            roots.Add(node);
+        }
+
+        Sort(roots);
+        return roots;
+    }
+
+    // One group per owner (user or organisation), like GitHub Desktop; repositories without a remote go under
+    // "Other"
+    public static List<RepositoryTreeNode> BuildByOwner(IEnumerable<string> repositories,
+                                                        Func<string, RemoteIdentity?> identify)
+    {
+        List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
+        foreach (IGrouping<string, (string Path, RemoteIdentity? Remote)> group in Identify(repositories, identify)
+                     .GroupBy(entry => entry.Remote?.Owner ?? "Other", StringComparer.OrdinalIgnoreCase))
+        {
+            List<(string Path, RemoteIdentity? Remote)> copies = group.ToList();
+            RepositoryTreeNode node = new RepositoryTreeNode(copies[0].Remote?.Owner ?? "Other", null,
+                                                             "owner:" + group.Key.ToLowerInvariant(), null);
+            foreach ((string path, string label) in Labels(copies,
+                                                           copy => copy.Remote?.Name ?? Path.GetFileName(copy.Path)))
+                node.Children.Add(new RepositoryTreeNode(label, path, null, null));
+            roots.Add(node);
+        }
+
+        Sort(roots);
+        return roots;
+    }
+
+    private static List<(string Path, RemoteIdentity? Remote)> Identify(IEnumerable<string> repositories,
+                                                                        Func<string, RemoteIdentity?> identify)
+    {
+        return repositories.Select(Normalize).Distinct(PathComparer)
+                           .Select(path => (path, identify(path))).ToList();
+    }
+
+    // Two copies with the same label (two clones of one fork) also show their folder name
+    private static IEnumerable<(string Path, string Label)> Labels(List<(string Path, RemoteIdentity? Remote)> copies,
+                                                                  Func<(string Path, RemoteIdentity? Remote), string>
+                                                                      label)
+    {
+        foreach ((string Path, RemoteIdentity? Remote) copy in copies)
+        {
+            string text = label(copy);
+            List<string> twins = copies.Where(other => string.Equals(label(other), text,
+                                                                     StringComparison.OrdinalIgnoreCase))
+                                       .Select(other => other.Path).ToList();
+            if (twins.Count == 1)
+            {
+                yield return (copy.Path, text);
+                continue;
+            }
+
+            // The folder's name tells them apart, or its parent's when the folders share a name
+            bool sameNames = twins.Select(System.IO.Path.GetFileName).Distinct(StringComparer.OrdinalIgnoreCase)
+                                  .Count() < twins.Count;
+            string where = sameNames ? System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(copy.Path) ?? "")
+                                     : System.IO.Path.GetFileName(copy.Path);
+            yield return (copy.Path, text + " (" + where + ")");
+        }
+    }
+
     private static RepositoryTreeNode ToNode(FolderTrie folder)
     {
         RepositoryTreeNode node = new RepositoryTreeNode(FolderName(folder.Folder), null, folder.Folder, null);

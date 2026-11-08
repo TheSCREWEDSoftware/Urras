@@ -9,7 +9,7 @@ using Urras.Core.Settings;
 
 namespace Urras.App;
 
-// The repository tree: grouping by folder or by a manual layout, status labels and group actions
+// The repository tree: grouped by name, folder or owner, or a manual layout; status labels and group actions
 public partial class MainWindow
 {
     private const int SUMMARY_PARALLELISM = 4;
@@ -25,8 +25,8 @@ public partial class MainWindow
 
     private void InitializeRepositoryTree()
     {
-        GroupByFolderBox.IsChecked = _settings.GroupByFolder;
-        GroupByFolderBox.Click += async (_, _) => await OnGroupByFolderToggledAsync();
+        GroupingBox.SelectedIndex = GroupingIndex();
+        GroupingBox.SelectionChanged += async (_, _) => await OnGroupingChangedAsync();
         NewGroupButton.Click += async (_, _) => await NewGroupAsync(null);
         RepositoryTree.SelectionChanged += async (_, _) => await OnTreeSelectionChangedAsync();
 
@@ -58,11 +58,10 @@ public partial class MainWindow
     {
         List<RepositoryTreeNode> tree;
         if (_settings.GroupByFolder)
-            tree = RepositoryLayout.BuildByFolder(_settings.Repositories);
+            tree = BuildAutomaticTree();
         else
         {
-            _settings.ManualLayout ??=
-                RepositoryLayout.FromTree(RepositoryLayout.BuildByFolder(_settings.Repositories));
+            _settings.ManualLayout ??= RepositoryLayout.FromTree(BuildAutomaticTree());
             RepositoryLayout.Reconcile(_settings.ManualLayout, _settings.Repositories);
             tree = RepositoryLayout.ToTree(_settings.ManualLayout);
         }
@@ -385,15 +384,17 @@ public partial class MainWindow
                                                          : " Your previous manual layout will be replaced.";
         bool confirm = await Dialogs.ConfirmAsync(
             this, "Turn off automatic grouping",
-            "This turns off grouping by folder. Folders you haven't touched keep their current layout, but " + change +
+            "This turns off automatic grouping. Groups you haven't touched keep their current layout, but " + change +
                 "." + replaced,
             "Switch to manual");
         if (!confirm)
             return false;
 
-        _settings.ManualLayout = RepositoryLayout.FromTree(RepositoryLayout.BuildByFolder(_settings.Repositories));
+        _settings.ManualLayout = RepositoryLayout.FromTree(BuildAutomaticTree());
         _settings.GroupByFolder = false;
-        GroupByFolderBox.IsChecked = false;
+        _suppressGrouping = true;
+        GroupingBox.SelectedIndex = MANUAL_INDEX;
+        _suppressGrouping = false;
         return true;
     }
 
@@ -516,28 +517,57 @@ public partial class MainWindow
         SaveLayout("Removed the group " + node.Name + ".");
     }
 
-    private async Task OnGroupByFolderToggledAsync()
+    private const int MANUAL_INDEX = 3;
+    private bool _suppressGrouping;
+
+    // The automatic list, grouped the way the settings say
+    private List<RepositoryTreeNode> BuildAutomaticTree()
     {
-        bool byFolder = GroupByFolderBox.IsChecked == true;
-        if (byFolder == _settings.GroupByFolder)
+        return _settings.Grouping switch
+        {
+            RepositoryGrouping.Folder => RepositoryLayout.BuildByFolder(_settings.Repositories),
+            RepositoryGrouping.Owner => RepositoryLayout.BuildByOwner(_settings.Repositories, RemoteIdentity.Read),
+            _ => RepositoryLayout.BuildByName(_settings.Repositories, RemoteIdentity.Read)
+        };
+    }
+
+    private int GroupingIndex()
+    {
+        return _settings.GroupByFolder ? (int)_settings.Grouping : MANUAL_INDEX;
+    }
+
+    private async Task OnGroupingChangedAsync()
+    {
+        int index = GroupingBox.SelectedIndex;
+        if (_suppressGrouping || index < 0 || index == GroupingIndex())
             return;
 
-        if (byFolder)
+        // Leaving the manual layout keeps it, so choosing Manual again brings it back
+        if (!_settings.GroupByFolder && index != MANUAL_INDEX)
         {
-            bool confirm = await Dialogs.ConfirmAsync(this, "Group by folder",
-                                                      "Group repositories by their folders on disk? Your manual " +
-                                                          "layout is kept and comes back if you turn this off.",
-                                                      "Group by folder");
+            bool confirm = await Dialogs.ConfirmAsync(this, "Automatic grouping",
+                                                      "Group repositories automatically? Your manual layout is " +
+                                                          "kept and comes back if you choose Manual again.",
+                                                      "Group automatically");
             if (!confirm)
             {
-                GroupByFolderBox.IsChecked = false;
+                _suppressGrouping = true;
+                GroupingBox.SelectedIndex = MANUAL_INDEX;
+                _suppressGrouping = false;
                 return;
             }
         }
 
-        _settings.GroupByFolder = byFolder;
-        SaveLayout(byFolder ? "Grouping repositories by folder."
-                            : "Manual layout: organise it from the right-click menu.");
+        _settings.GroupByFolder = index != MANUAL_INDEX;
+        if (index != MANUAL_INDEX)
+            _settings.Grouping = (RepositoryGrouping)index;
+        SaveLayout(index switch
+        {
+            0 => "Grouping repositories by name, with forks and clones inside.",
+            1 => "Grouping repositories by folder.",
+            2 => "Grouping repositories by owner.",
+            _ => "Manual layout: organise it from the right-click menu."
+        });
     }
 
     // Group actions

@@ -10,6 +10,19 @@ public enum FileListMode
     Combined
 }
 
+// How the automatic repository list is grouped
+public enum RepositoryGrouping
+{
+    // Each repository name, with every copy (fork or clone) inside it named by its owner
+    Name,
+
+    // The folders on disk
+    Folder,
+
+    // Each owner (user or organisation), like GitHub Desktop
+    Owner
+}
+
 public enum DiffViewMode
 {
     Unified,
@@ -34,6 +47,10 @@ public sealed class AppSettings
 
     // On: the repository list mirrors the folders on disk. Off: ManualLayout is used
     public bool GroupByFolder { get; set; } = true;
+
+    // How the automatic list groups repositories (GroupByFolder on means automatic)
+    [JsonConverter(typeof(JsonStringEnumConverter<RepositoryGrouping>))]
+    public RepositoryGrouping Grouping { get; set; } = RepositoryGrouping.Name;
 
     // Kept while grouping by folder too, so switching back restores it
     public LayoutGroup? ManualLayout { get; set; }

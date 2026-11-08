@@ -38,6 +38,53 @@ public static class Dialogs
         return string.IsNullOrWhiteSpace(result) ? null : result;
     }
 
+    // Ticks for several items, all ticked to start with unless chosen says otherwise; null when cancelled
+    public static async Task<List<T>?> ChooseManyAsync<T>(Window owner, string title, string label,
+                                                          IReadOnlyList<T> items, string action,
+                                                          Func<T, bool>? chosen = null)
+    {
+        Window dialog = CreateWindow(title);
+        List<(CheckBox Box, T Item)> boxes = items.Select(item => (new CheckBox
+        {
+            Content = item?.ToString(),
+            IsChecked = chosen?.Invoke(item) ?? true
+        }, item)).ToList();
+        TextBox filter = new TextBox { Watermark = "Filter" };
+        StackPanel list = new StackPanel { Spacing = 2 };
+        foreach ((CheckBox box, T _) in boxes)
+            list.Children.Add(box);
+        filter.TextChanged += (_, _) =>
+        {
+            string text = filter.Text ?? string.Empty;
+            foreach ((CheckBox box, T item) in boxes)
+                box.IsVisible = item?.ToString()?.Contains(text, StringComparison.OrdinalIgnoreCase) ?? true;
+        };
+
+        Button all = new Button { Content = "All" };
+        Button none = new Button { Content = "None" };
+        all.Click += (_, _) => boxes.Where(entry => entry.Box.IsVisible).ToList()
+                                    .ForEach(entry => entry.Box.IsChecked = true);
+        none.Click += (_, _) => boxes.Where(entry => entry.Box.IsVisible).ToList()
+                                     .ForEach(entry => entry.Box.IsChecked = false);
+        StackPanel selection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        selection.Children.Add(all);
+        selection.Children.Add(none);
+
+        Button ok = new Button { Content = action, IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        ok.Click += (_, _) => dialog.Close(boxes.Where(entry => entry.Box.IsChecked == true)
+                                                .Select(entry => entry.Item).ToList());
+        cancel.Click += (_, _) => dialog.Close(null);
+
+        StackPanel input = new StackPanel { Spacing = 8 };
+        if (items.Count > FILTER_THRESHOLD)
+            input.Children.Add(filter);
+        input.Children.Add(new ScrollViewer { Content = list, MaxHeight = LIST_HEIGHT * 1.5 });
+        input.Children.Add(selection);
+        dialog.Content = Layout(Paragraph(label), input, ok, cancel);
+        return await dialog.ShowDialog<List<T>?>(owner);
+    }
+
     // A commit message: summary on the first line, then a blank line and the description
     public static async Task<string?> MessageAsync(Window owner, string title, string initialText)
     {

@@ -189,13 +189,21 @@
       <!-- Repositories -->
       <DockPanel Grid.Column="0" Margin="10,6,6,10">
         <DockPanel DockPanel.Dock="Top">
-          <CheckBox x:Name="GroupByFolderBox" DockPanel.Dock="Right" Content="By folder"
-                    ToolTip.Tip="On: group repositories by their folders on disk. Off: your own groups and order." />
+          <ComboBox x:Name="GroupingBox" DockPanel.Dock="Right" Width="120"
+                    ToolTip.Tip="How the list is grouped: by repository name (forks and clones inside), by folder,
+by owner (like GitHub Desktop), or by hand">
+            <ComboBoxItem>By name</ComboBoxItem>
+            <ComboBoxItem>By folder</ComboBoxItem>
+            <ComboBoxItem>By owner</ComboBoxItem>
+            <ComboBoxItem>Manual</ComboBoxItem>
+          </ComboBox>
           <TextBlock Classes="header" Text="Repositories" />
         </DockPanel>
         <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
           <Button x:Name="AddRepositoryButton" Content="Add…" Margin="0,0,6,6" />
           <Button x:Name="CloneButton" Content="Clone…" Margin="0,0,6,6" />
+          <Button x:Name="ImportButton" Content="Import ▾" Margin="0,0,6,6"
+                  ToolTip.Tip="Add many repositories: from a folder, from GitHub Desktop, or cloned from GitHub" />
           <Button x:Name="NewGroupButton" Content="New group…" Margin="0,0,6,6" />
           <Button x:Name="RemoveRepositoryButton" Content="Remove" Margin="0,0,6,6"
                   ToolTip.Tip="Remove the selected repository from the list, or the selected group" />

@@ -45,6 +45,7 @@ public partial class MainWindow : Window
 
         AddRepositoryButton.Click += async (_, _) => await AddRepositoryAsync();
         CloneButton.Click += async (_, _) => await CloneRepositoryAsync();
+        ImportButton.Click += (_, _) => ShowImportMenu();
         RemoveRepositoryButton.Click += async (_, _) => await RemoveSelectedAsync();
 
         FetchButton.Click += async (_, _) => await RunGitAsync("Fetching…", repository => repository.FetchAsync(),
