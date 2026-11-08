@@ -34,6 +34,7 @@ public partial class MainWindow
         AddMenuItem(menu, "Reflog (find lost commits)…", ShowReflogAsync);
         AddMenuItem(menu, "Submodules…", ManageSubmodulesAsync);
         AddMenuItem(menu, "Worktrees…", ManageWorktreesAsync);
+        AddMenuItem(menu, "Git LFS…", ManageLfsAsync);
         AddMenuItem(menu, "Repository settings…", () => RepositorySettingsAsync(_repository?.Path));
         menu.Open(BranchMenuButton);
     }

@@ -29,7 +29,8 @@ you already have installed.
 - Open repositories and files in the file explorer, a terminal or VS Code; copy paths and commit SHAs
 - Background fetching of every repository (Settings)
 - Tags, checking out a commit, revert, cherry-pick, stashes, merge and rebase
-- Bisect from History with a banner to mark commits; submodules and worktrees from the Branch menu
+- Bisect from History with a banner to mark commits; submodules, worktrees and Git LFS (with locks) from
+  the Branch menu
 - Interactive rebase from History: reorder, reword, edit, squash, fix up or drop commits, with a backup tag
 - Conflict helper: a banner while a merge, rebase, cherry-pick or revert is stopped, taking one side or marking
   files resolved, then Continue or Abort

@@ -363,4 +363,78 @@ public static class GitParsers
         Flush();
         return worktrees;
     }
+
+    // "Listing tracked patterns\n    *.png (.gitattributes)\n    *.psd (art/.gitattributes)\nListing excluded patterns"
+    public static List<string> ParseLfsPatterns(string output)
+    {
+        List<string> patterns = new List<string>();
+        bool tracked = false;
+        foreach (string raw in output.Split('\n'))
+        {
+            string line = raw.TrimEnd('\r');
+            if (line.StartsWith("Listing ", StringComparison.Ordinal))
+            {
+                tracked = line.Contains("tracked", StringComparison.Ordinal) && !line.Contains("excluded");
+                continue;
+            }
+
+            string trimmed = line.Trim();
+            if (!tracked || trimmed.Length == 0)
+                continue;
+
+            int source = trimmed.LastIndexOf(" (", StringComparison.Ordinal);
+            patterns.Add(source > 0 ? trimmed[..source] : trimmed);
+        }
+
+        return patterns;
+    }
+
+    // "<oid> * path" when downloaded, "<oid> - path" when only the pointer is checked out
+    public static List<LfsFile> ParseLfsFiles(string output)
+    {
+        List<LfsFile> files = new List<LfsFile>();
+        foreach (string raw in output.Split('\n'))
+        {
+            string line = raw.TrimEnd('\r');
+            int first = line.IndexOf(' ');
+            if (first < 0 || line.Length < first + 3)
+                continue;
+
+            files.Add(new LfsFile(line[(first + 3)..], line[..first], line[first + 1] == '*'));
+        }
+
+        return files;
+    }
+
+    // [{"id":"1","path":"art/a.psd","owner":{"name":"Ana"},"locked_at":"2026-11-08T10:00:00Z"}]
+    public static List<LfsLock> ParseLfsLocks(string json)
+    {
+        List<LfsLock> locks = new List<LfsLock>();
+        if (string.IsNullOrWhiteSpace(json))
+            return locks;
+
+        try
+        {
+            using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+                return locks;
+
+            foreach (System.Text.Json.JsonElement item in document.RootElement.EnumerateArray())
+            {
+                string id = item.TryGetProperty("id", out var idValue) ? idValue.ToString() : string.Empty;
+                string path = item.TryGetProperty("path", out var pathValue) ? pathValue.GetString() ?? "" : "";
+                string owner = item.TryGetProperty("owner", out var ownerValue) &&
+                               ownerValue.TryGetProperty("name", out var name) ? name.GetString() ?? "" : "";
+                DateTimeOffset lockedAt = item.TryGetProperty("locked_at", out var at) &&
+                                          at.TryGetDateTimeOffset(out DateTimeOffset parsed) ? parsed : default;
+                locks.Add(new LfsLock(id, path, owner, lockedAt));
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Not JSON (an old git-lfs or an error message): no locks to show
+        }
+
+        return locks;
+    }
 }
