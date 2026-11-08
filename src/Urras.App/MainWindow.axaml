@@ -23,6 +23,10 @@
       <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace" />
       <Setter Property="FontSize" Value="12" />
     </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
     <Style Selector="GridSplitter">
       <Setter Property="Background" Value="#22FFFFFF" />
     </Style>
@@ -153,8 +157,17 @@
         </TabItem>
 
         <TabItem Header="History">
-          <Grid RowDefinitions="*,4,2*">
-            <ListBox x:Name="HistoryList" Grid.Row="0" Classes="files" Margin="0,6,0,6">
+          <Grid RowDefinitions="Auto,*,4,2*">
+            <!-- Column titles; the padding matches the list items below so the columns line up -->
+            <Border Grid.Row="0" Margin="0,6,0,0" Padding="8,4" Background="#1AFFFFFF">
+              <Grid ColumnDefinitions="80,*,170,130">
+                <TextBlock Grid.Column="0" Classes="columnHeader" Text="Commit" />
+                <TextBlock Grid.Column="1" Classes="columnHeader" Text="Summary" />
+                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
+              </Grid>
+            </Border>
+            <ListBox x:Name="HistoryList" Grid.Row="1" Classes="files" Margin="0,0,0,6">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Grid ColumnDefinitions="80,*,170,130">
@@ -167,8 +180,8 @@
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
-            <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
-            <ListBox x:Name="CommitDiffList" Grid.Row="2" Classes="diff" Margin="0,6,0,4">
+            <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
+            <ListBox x:Name="CommitDiffList" Grid.Row="3" Classes="diff" Margin="0,6,0,4">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Classes="mono" />
