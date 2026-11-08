@@ -282,4 +282,85 @@ public static class GitParsers
 
         return branches;
     }
+
+    // "-a1b2c3 libs/raylib", " a1b2c3 libs/raylib (v5.0)", "+a1b2c3 libs/raylib (heads/main)"
+    public static List<SubmoduleInfo> ParseSubmodules(string output)
+    {
+        List<SubmoduleInfo> modules = new List<SubmoduleInfo>();
+        foreach (string raw in output.Split('\n'))
+        {
+            string line = raw.TrimEnd('\r');
+            if (line.Length < 3)
+                continue;
+
+            SubmoduleState state = line[0] switch
+            {
+                '-' => SubmoduleState.NotInitialized,
+                '+' => SubmoduleState.DifferentCommit,
+                'U' => SubmoduleState.Conflicted,
+                _ => SubmoduleState.UpToDate
+            };
+            string rest = line[1..];
+            int space = rest.IndexOf(' ');
+            if (space < 0)
+                continue;
+
+            string commit = rest[..space];
+            string pathAndDescription = rest[(space + 1)..];
+            string description = string.Empty;
+            if (pathAndDescription.EndsWith(')') && pathAndDescription.LastIndexOf(" (", StringComparison.Ordinal)
+                    is var open and > 0)
+            {
+                description = pathAndDescription[(open + 2)..^1];
+                pathAndDescription = pathAndDescription[..open];
+            }
+
+            modules.Add(new SubmoduleInfo(pathAndDescription, commit, state, description));
+        }
+
+        return modules;
+    }
+
+    // Blocks separated by blank lines: "worktree <path>", "HEAD <sha>", "branch refs/heads/x" or "detached",
+    // "bare", "locked [reason]", "prunable [reason]". The first block is the main worktree.
+    public static List<WorktreeInfo> ParseWorktrees(string output)
+    {
+        List<WorktreeInfo> worktrees = new List<WorktreeInfo>();
+        string? path = null;
+        string? head = null;
+        string? branch = null;
+        bool locked = false;
+        bool prunable = false;
+
+        void Flush()
+        {
+            if (path != null)
+                worktrees.Add(new WorktreeInfo(path, head, branch, worktrees.Count == 0, locked, prunable));
+            path = head = branch = null;
+            locked = prunable = false;
+        }
+
+        foreach (string raw in output.Split('\n'))
+        {
+            string line = raw.TrimEnd('\r');
+            if (line.Length == 0)
+                Flush();
+            else if (line.StartsWith("worktree ", StringComparison.Ordinal))
+            {
+                Flush();
+                path = line["worktree ".Length..];
+            }
+            else if (line.StartsWith("HEAD ", StringComparison.Ordinal))
+                head = line["HEAD ".Length..];
+            else if (line.StartsWith("branch ", StringComparison.Ordinal))
+                branch = line["branch ".Length..].Replace("refs/heads/", string.Empty);
+            else if (line.StartsWith("locked", StringComparison.Ordinal))
+                locked = true;
+            else if (line.StartsWith("prunable", StringComparison.Ordinal))
+                prunable = true;
+        }
+
+        Flush();
+        return worktrees;
+    }
 }
