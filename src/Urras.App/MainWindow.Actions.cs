@@ -354,6 +354,7 @@ public partial class MainWindow
             ? ("Take the version being rebased onto", "Take your commit's version")
             : ("Take the current branch's version", "Take the incoming version");
 
+        AddMenuItem(menu, "Resolve conflicts…", () => ResolveInConflictViewAsync(change.Path));
         AddMenuItem(menu, ours, () => RunGitAsync("Resolving…",
                                                   repository => repository.ResolveWithSideAsync(
                                                       new[] { change.Path }, true),
@@ -367,6 +368,24 @@ public partial class MainWindow
                                                                     new[] { change.Path }),
                                                                 "Marked " + change.Path + " as resolved."));
         menu.Items.Add(new Separator());
+    }
+
+    private async Task ResolveInConflictViewAsync(string path)
+    {
+        if (_repository == null)
+            return;
+
+        ConflictFile? file = await _repository.GetConflictAsync(path);
+        if (file == null)
+        {
+            SetStatus(path + " has no conflict markers left; mark it as resolved, or use one side.", false);
+            return;
+        }
+
+        ConflictWindow window = new ConflictWindow(path, file, _operation == OperationState.Rebase);
+        if (await window.ShowDialog<bool>(this))
+            await RunGitAsync("Saving " + path + "…", repository => repository.SaveResolvedAsync(path, file),
+                              "Resolved " + path + ".");
     }
 
     // Asks before committing staged whitespace problems, when that check is on; false cancels the commit

@@ -32,6 +32,7 @@ you already have installed.
 - Interactive rebase from History: reorder, reword, edit, squash, fix up or drop commits, with a backup tag
 - Conflict helper: a banner while a merge, rebase, cherry-pick or revert is stopped, taking one side or marking
   files resolved, then Continue or Abort
+- Conflict view: both sides of every conflict next to each other, a choice per conflict and the result below
 - Repository settings: line-ending rules written to `.gitattributes` and `.editorconfig`, and normalizing
   existing files after previewing them
 - Looking into the past: history of a file or folder, blame, browsing the files at any commit, searching commits

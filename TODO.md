@@ -67,7 +67,8 @@ Desktop) for ideas is fine; copying their code is not.
 33. [x] Commit graph with branch lanes, all branches or the current one, and branch, remote and tag badges
 34. [x] Interactive rebase: pick, reword, edit, squash, fixup, drop, reorder (buttons or Alt+arrows; drag to
     reorder still to do), backup tag
-35. [ ] Side-by-side conflict view: theirs, ours and result, with a choice per block
+35. [x] Side-by-side conflict view: theirs, ours and result, with a choice per block (right-click a conflicted
+    file, Resolve conflicts…)
 36. [ ] Rendered Markdown diff: old and new rendered side by side with changed blocks highlighted
 
 ## Phase 6: Project needs
