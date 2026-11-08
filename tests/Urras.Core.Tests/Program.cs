@@ -8,8 +8,8 @@ Type[] testClasses =
     typeof(ActionsTests), typeof(HistoryTests), typeof(SyntaxTests), typeof(GraphTests), typeof(LineStagingTests),
     typeof(RebaseTests), typeof(ConflictTests), typeof(BisectTests), typeof(ModuleTests), typeof(LfsTests),
     typeof(QuickLaunchTests), typeof(CoAuthorTests), typeof(CommandTests), typeof(StatisticsTests),
-    typeof(AccountTests), typeof(ImportTests), typeof(GroupingTests), typeof(PreferenceTests),
-    typeof(StandardsTests), typeof(MarkdownTests), typeof(PlatformTests), typeof(AssistantTests),
+    typeof(AccountTests), typeof(ImportTests), typeof(GroupingTests), typeof(PreferenceTests), typeof(StandardsTests),
+    typeof(MarkdownTests), typeof(PlatformTests), typeof(AssistantTests), typeof(DeviceSignInTests),
     typeof(RepositoryTests), typeof(SettingsTests)
 };
 int passed = 0;

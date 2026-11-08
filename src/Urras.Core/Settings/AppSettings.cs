@@ -77,6 +77,10 @@ public sealed class AppSettings
     // Committing asks first when the staged changes have whitespace problems such as trailing spaces
     public bool CheckWhitespaceBeforeCommit { get; set; }
 
+    // OAuth app ids for signing in through the browser, when Urras's own aren't set or for your own servers
+    public string GitHubClientId { get; set; } = string.Empty;
+    public string GitLabClientId { get; set; } = string.Empty;
+
     // Signed-in accounts; their tokens are in the system's credential store, not here
     public List<Urras.Core.Accounts.Account> Accounts { get; set; } = new();
 

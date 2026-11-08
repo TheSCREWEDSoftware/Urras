@@ -39,6 +39,8 @@ public sealed class OptionsWindow : Window
     private readonly ContentControl _page = new ContentControl();
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
     private readonly StackPanel _accountList = new StackPanel { Spacing = 10 };
+    private readonly TextBox _githubAppId = new TextBox { Watermark = "GitHub OAuth app client id" };
+    private readonly TextBox _gitlabAppId = new TextBox { Watermark = "GitLab application id" };
 
     // Integrations
     private readonly ComboBox _editor;
@@ -199,10 +201,17 @@ public sealed class OptionsWindow : Window
             signIn.Children.Add(button);
         }
 
+        _githubAppId.Text = _settings.GitHubClientId;
+        _gitlabAppId.Text = _settings.GitLabClientId;
         return Page(Heading("Accounts"), _accountList, signIn,
                     Note("Accounts let you add co-authors by @username, show profile pictures, see pull requests " +
                          "and notifications, and clone your repositories. Tokens are kept in your system's " +
-                         "credential store."));
+                         "credential store."),
+                    Heading("Signing in through the browser"),
+                    Note("GitHub and GitLab sign in through the browser once Urras is registered with them as an " +
+                         "app; docs/oauth.md explains the two-minute setup. Until then, or for other platforms, " +
+                         "you paste a token."),
+                    Label("GitHub client id"), _githubAppId, Label("GitLab application id"), _gitlabAppId);
     }
 
     private void ShowAccounts()
@@ -392,6 +401,8 @@ public sealed class OptionsWindow : Window
 
     private async Task SaveAsync()
     {
+        _settings.GitHubClientId = _githubAppId.Text?.Trim() ?? string.Empty;
+        _settings.GitLabClientId = _gitlabAppId.Text?.Trim() ?? string.Empty;
         _settings.Editor = Program(_editor, _editorPath, _editorArguments);
         _settings.Shell = Program(_shell, _shellPath, _shellArguments);
 

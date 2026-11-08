@@ -53,12 +53,9 @@ public partial class MainWindow
                 return;
         }
 
-        await Report(SystemShell.OpenFile(TokenPage(kind, server?.TrimEnd('/') ?? string.Empty)));
-        string hint = kind == AccountKind.Bitbucket
-            ? "Paste an access token, or username:app-password for an app password."
-            : "Paste a personal access token from the page that opened.";
-        string? token = await Dialogs.PromptAsync(owner, "Sign in to " + name,
-                                                  hint + " It is kept in your system's credential store.");
+        string? token = await SignInThroughBrowserAsync(owner, kind, name, server ?? string.Empty);
+        if (token == DeviceSignInWindow.TOKEN_INSTEAD)
+            token = await AskForTokenAsync(owner, kind, name, server);
         if (token == null)
             return;
 
@@ -72,6 +69,36 @@ public partial class MainWindow
             SetStatus("Couldn't add the account: " + exception.Message, true);
             await Dialogs.ShowTextAsync(owner, "Couldn't add the account", exception.Message);
         }
+    }
+
+    // The browser flow when the platform supports it and an app id is set; TOKEN_INSTEAD otherwise
+    private async Task<string?> SignInThroughBrowserAsync(Window owner, AccountKind kind, string name, string server)
+    {
+        string? appId = kind is AccountKind.GitLab ? _settings.GitLabClientId : _settings.GitHubClientId;
+        DeviceSignIn? flow = DeviceSignIn.For(kind, server, AccountsHttp, appId);
+        if (flow == null)
+            return DeviceSignInWindow.TOKEN_INSTEAD;
+
+        try
+        {
+            DeviceCode code = await flow.StartAsync();
+            return await new DeviceSignInWindow(name, flow, code).ShowDialog<string?>(owner);
+        }
+        catch (PlatformException exception)
+        {
+            SetStatus("Browser sign-in isn't available (" + exception.Message + "); paste a token instead.", true);
+            return DeviceSignInWindow.TOKEN_INSTEAD;
+        }
+    }
+
+    private async Task<string?> AskForTokenAsync(Window owner, AccountKind kind, string name, string? server)
+    {
+        await Report(SystemShell.OpenFile(TokenPage(kind, server?.TrimEnd('/') ?? string.Empty)));
+        string hint = kind == AccountKind.Bitbucket
+            ? "Paste an access token, or username:app-password for an app password."
+            : "Paste a personal access token from the page that opened.";
+        return await Dialogs.PromptAsync(owner, "Sign in to " + name,
+                                         hint + " It is kept in your system's credential store.");
     }
 
     // Where each platform creates tokens, with the right permissions ticked where the page allows it
