@@ -9,7 +9,8 @@ you already have installed.
 
 - Repository list: add existing folders, create new repositories, clone
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
-- Diffs for modified, new, deleted and renamed files
+- Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
+  `git` output; the choice is saved
 - Commit with summary and description, amend the last commit (Ctrl+Enter to commit)
 - History with the full diff of each commit
 - Branches: switch, create, delete, check out remote branches

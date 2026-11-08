@@ -16,8 +16,13 @@
       <Setter Property="MinHeight" Value="0" />
     </Style>
     <Style Selector="ListBox.diff ListBoxItem">
-      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="Padding" Value="0" />
       <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="TextBlock.lineNumber">
+      <Setter Property="Foreground" Value="#8B949E" />
+      <Setter Property="TextAlignment" Value="Right" />
+      <Setter Property="Margin" Value="0,0,8,0" />
     </Style>
     <Style Selector="TextBlock.mono">
       <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace" />
@@ -31,6 +36,41 @@
       <Setter Property="Background" Value="#22FFFFFF" />
     </Style>
   </Window.Styles>
+
+  <Window.Resources>
+    <!-- Diff row templates; MainWindow picks one by the diff view setting -->
+    <DataTemplate x:Key="RawDiffTemplate">
+      <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" Classes="mono" Margin="6,0" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="UnifiedDiffTemplate">
+      <Grid ColumnDefinitions="52,52,20,*" Background="{Binding Background}">
+        <TextBlock Grid.Column="0" Text="{Binding OldNumber}" Classes="mono lineNumber" />
+        <TextBlock Grid.Column="1" Text="{Binding NewNumber}" Classes="mono lineNumber" />
+        <TextBlock Grid.Column="2" Text="{Binding Marker}" Foreground="{Binding MarkerForeground}" Classes="mono" />
+        <TextBlock Grid.Column="3" Text="{Binding Text}" Foreground="{Binding Foreground}" Classes="mono"
+                   TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Text="{Binding FullText}" Foreground="{Binding Foreground}"
+                   FontWeight="{Binding Weight}" Classes="mono" Margin="8,0" TextTrimming="CharacterEllipsis" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="SplitDiffTemplate">
+      <Grid ColumnDefinitions="52,*,52,*" Background="{Binding Background}">
+        <Border Grid.Column="0" Grid.ColumnSpan="2" Background="{Binding LeftBackground}" />
+        <Border Grid.Column="2" Grid.ColumnSpan="2" Background="{Binding RightBackground}"
+                BorderBrush="#33FFFFFF" BorderThickness="1,0,0,0" />
+        <TextBlock Grid.Column="0" Text="{Binding OldNumber}" Classes="mono lineNumber" />
+        <TextBlock Grid.Column="1" Text="{Binding LeftText}" Foreground="{Binding Foreground}" Classes="mono"
+                   Margin="0,0,6,0" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="2" Text="{Binding NewNumber}" Classes="mono lineNumber" />
+        <TextBlock Grid.Column="3" Text="{Binding RightText}" Foreground="{Binding Foreground}" Classes="mono"
+                   Margin="0,0,6,0" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Text="{Binding FullText}" Foreground="{Binding Foreground}"
+                   FontWeight="{Binding Weight}" Classes="mono" Margin="8,0" TextTrimming="CharacterEllipsis" />
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
 
   <DockPanel>
 
@@ -146,13 +186,17 @@
 
             <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 
-            <ListBox x:Name="DiffList" Grid.Column="2" Classes="diff" Margin="6,6,0,4">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Classes="mono" />
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
+            <DockPanel Grid.Column="2" Margin="6,6,0,4">
+              <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                <ComboBox x:Name="DiffModeBox" DockPanel.Dock="Right" Width="170" ToolTip.Tip="Diff view">
+                  <ComboBoxItem>Unified</ComboBoxItem>
+                  <ComboBoxItem>Split</ComboBoxItem>
+                  <ComboBoxItem>Raw (git output)</ComboBoxItem>
+                </ComboBox>
+                <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
+              </DockPanel>
+              <ListBox x:Name="DiffList" Classes="diff" />
+            </DockPanel>
           </Grid>
         </TabItem>
 
@@ -181,13 +225,17 @@
               </ListBox.ItemTemplate>
             </ListBox>
             <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
-            <ListBox x:Name="CommitDiffList" Grid.Row="3" Classes="diff" Margin="0,6,0,4">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" Classes="mono" />
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
+            <DockPanel Grid.Row="3" Margin="0,6,0,4">
+              <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                <ComboBox x:Name="CommitDiffModeBox" DockPanel.Dock="Right" Width="170" ToolTip.Tip="Diff view">
+                  <ComboBoxItem>Unified</ComboBoxItem>
+                  <ComboBoxItem>Split</ComboBoxItem>
+                  <ComboBoxItem>Raw (git output)</ComboBoxItem>
+                </ComboBox>
+                <TextBlock x:Name="CommitDiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
+              </DockPanel>
+              <ListBox x:Name="CommitDiffList" Classes="diff" />
+            </DockPanel>
           </Grid>
         </TabItem>
 

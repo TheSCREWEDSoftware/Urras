@@ -1,5 +1,6 @@
 using System.Text;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -44,6 +45,9 @@ public partial class MainWindow : Window
     private bool _refreshing;
     private bool _refreshPending;
     private bool _suppressSelection;
+    private bool _updatingDiffMode;
+    private string? _changesDiffText;
+    private string? _commitDiffText;
 
     public MainWindow()
     {
@@ -86,6 +90,11 @@ public partial class MainWindow : Window
 
         HistoryList.SelectionChanged += async (_, _) => await OnCommitSelectedAsync();
         LogToggle.Click += (_, _) => LogBox.IsVisible = LogToggle.IsChecked == true;
+
+        DiffModeBox.SelectedIndex = (int)_settings.DiffView;
+        CommitDiffModeBox.SelectedIndex = (int)_settings.DiffView;
+        DiffModeBox.SelectionChanged += (_, _) => OnDiffModeChanged(DiffModeBox);
+        CommitDiffModeBox.SelectionChanged += (_, _) => OnDiffModeChanged(CommitDiffModeBox);
 
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         Activated += async (_, _) => await RefreshAsync();
@@ -205,8 +214,8 @@ public partial class MainWindow : Window
         SummaryBox.Text = string.Empty;
         DescriptionBox.Text = string.Empty;
         AmendBox.IsChecked = false;
-        DiffList.ItemsSource = null;
-        CommitDiffList.ItemsSource = null;
+        ShowChangesDiff(null, string.Empty);
+        ShowCommitDiff(null, string.Empty);
         await RefreshAsync();
     }
 
@@ -296,7 +305,7 @@ public partial class MainWindow : Window
             else if (StagedList.SelectedItem is FileChange staged)
                 await ShowFileDiffAsync(staged, true);
             else
-                DiffList.ItemsSource = null;
+                ShowChangesDiff(null, string.Empty);
 
             if (!_busy && StatusText.Text == "Ready")
                 SetStatus(DescribeStatus(status), false);
@@ -319,8 +328,8 @@ public partial class MainWindow : Window
         HistoryList.ItemsSource = null;
         _branches = new List<BranchInfo>();
         BranchBox.ItemsSource = null;
-        DiffList.ItemsSource = null;
-        CommitDiffList.ItemsSource = null;
+        ShowChangesDiff(null, string.Empty);
+        ShowCommitDiff(null, string.Empty);
         UnstagedHeader.Text = "Changes";
         StagedHeader.Text = "Staged";
         PullButton.Content = "Pull";
@@ -348,7 +357,7 @@ public partial class MainWindow : Window
         if (list.SelectedItem is not FileChange change)
         {
             if (otherList.SelectedItem == null)
-                DiffList.ItemsSource = null;
+                ShowChangesDiff(null, string.Empty);
             return;
         }
 
@@ -368,7 +377,7 @@ public partial class MainWindow : Window
         if (diff.Trim().Length == 0)
             diff = change.Kind == ChangeKind.Conflicted ? "Conflicted file: resolve it, then stage it."
                                                         : "No text changes.";
-        DiffList.ItemsSource = DiffLine.FromText(diff);
+        ShowChangesDiff(diff, change.DisplayPath + (staged ? "  (staged)" : string.Empty));
     }
 
     private static List<FileChange> Selected(ListBox list)
@@ -546,11 +555,72 @@ public partial class MainWindow : Window
 
         if (HistoryList.SelectedItem is not CommitInfo commit)
         {
-            CommitDiffList.ItemsSource = null;
+            ShowCommitDiff(null, string.Empty);
             return;
         }
 
-        CommitDiffList.ItemsSource = DiffLine.FromText(await _repository.GetCommitDiffAsync(commit.Hash));
+        string diff = await _repository.GetCommitDiffAsync(commit.Hash);
+        ShowCommitDiff(diff, commit.ShortHash + "  " + commit.Subject);
+    }
+
+    // Diff views
+
+    private void ShowChangesDiff(string? text, string title)
+    {
+        _changesDiffText = text;
+        DiffTitle.Text = title;
+        RenderDiff(DiffList, text);
+    }
+
+    private void ShowCommitDiff(string? text, string title)
+    {
+        _commitDiffText = text;
+        CommitDiffTitle.Text = title;
+        RenderDiff(CommitDiffList, text);
+    }
+
+    private void RenderDiff(ListBox list, string? text)
+    {
+        if (text == null)
+        {
+            list.ItemsSource = null;
+            return;
+        }
+
+        DiffViewMode mode = _settings.DiffView;
+        string templateKey = mode switch
+        {
+            DiffViewMode.Split => "SplitDiffTemplate",
+            DiffViewMode.Raw => "RawDiffTemplate",
+            _ => "UnifiedDiffTemplate"
+        };
+        // Cleared first so no row is reused with the previous view's template
+        list.ItemsSource = null;
+        list.ItemTemplate = Resources[templateKey] as IDataTemplate;
+        list.ItemsSource = mode switch
+        {
+            DiffViewMode.Split => DiffRow.Split(text),
+            DiffViewMode.Raw => DiffRow.Raw(text),
+            _ => DiffRow.Unified(text)
+        };
+    }
+
+    private void OnDiffModeChanged(ComboBox source)
+    {
+        if (_updatingDiffMode || source.SelectedIndex < 0)
+            return;
+
+        _settings.DiffView = (DiffViewMode)source.SelectedIndex;
+        _settings.Save();
+
+        // Both selectors show the same setting
+        _updatingDiffMode = true;
+        DiffModeBox.SelectedIndex = source.SelectedIndex;
+        CommitDiffModeBox.SelectedIndex = source.SelectedIndex;
+        _updatingDiffMode = false;
+
+        RenderDiff(DiffList, _changesDiffText);
+        RenderDiff(CommitDiffList, _commitDiffText);
     }
 
     // Running commands
