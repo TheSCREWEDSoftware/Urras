@@ -76,7 +76,7 @@ Desktop) for ideas is fine; copying their code is not.
 37. [ ] Git LFS: status, pull, locks
 38. [ ] Submodules and worktrees
 39. [ ] Quick Launch (Ctrl+P)
-40. [ ] Bisect
+40. [x] Bisect: start from History (one commit, or two selected), mark Good, Bad or Skip from the banner
 
 ## Phase 7: Requires much
 

@@ -6,7 +6,8 @@ Type[] testClasses =
 {
     typeof(ParserTests), typeof(DiffParserTests), typeof(LayoutTests), typeof(BasicsTests), typeof(DiffViewTests),
     typeof(ActionsTests), typeof(HistoryTests), typeof(SyntaxTests), typeof(GraphTests), typeof(LineStagingTests),
-    typeof(RebaseTests), typeof(ConflictTests), typeof(RepositoryTests), typeof(SettingsTests)
+    typeof(RebaseTests), typeof(ConflictTests), typeof(BisectTests),
+    typeof(RepositoryTests), typeof(SettingsTests)
 };
 int passed = 0;
 int failed = 0;

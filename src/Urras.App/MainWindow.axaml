@@ -224,7 +224,22 @@
 
       <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 
-      <TabControl x:Name="MainTabs" Grid.Column="2" Margin="6,0,10,6">
+      <DockPanel Grid.Column="2">
+      <!-- Shown while a bisect is running, in every tab -->
+      <Border x:Name="BisectBanner" DockPanel.Dock="Top" IsVisible="False" Background="#33B083F0"
+              BorderBrush="#B083F0" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="6,6,10,0">
+        <DockPanel>
+          <Button x:Name="BisectStopButton" DockPanel.Dock="Right" Content="Stop bisect" Margin="6,0,0,0" />
+          <Button x:Name="BisectSkipButton" DockPanel.Dock="Right" Content="Skip" Margin="6,0,0,0"
+                  ToolTip.Tip="Can't test this commit (for example it doesn't build); try another" />
+          <Button x:Name="BisectBadButton" DockPanel.Dock="Right" Content="Bad" Margin="6,0,0,0"
+                  ToolTip.Tip="The problem is here" />
+          <Button x:Name="BisectGoodButton" DockPanel.Dock="Right" Content="Good"
+                  ToolTip.Tip="The problem is not here yet" />
+          <TextBlock x:Name="BisectText" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </DockPanel>
+      </Border>
+      <TabControl x:Name="MainTabs" Margin="6,0,10,6">
 
         <TabItem Header="Changes">
           <DockPanel>
@@ -445,6 +460,7 @@
         </TabItem>
 
       </TabControl>
+      </DockPanel>
     </Grid>
   </DockPanel>
 </Window>

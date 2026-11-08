@@ -93,6 +93,7 @@ public partial class MainWindow : Window
         InitializeActions();
         InitializeHistoryTools();
         InitializeLineStaging();
+        InitializeBisect();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -154,6 +155,7 @@ public partial class MainWindow : Window
             _status = status;
             _history = history;
             UpdateSearchState();
+            await UpdateBisectBannerAsync();
 
             _suppressSelection = true;
             try

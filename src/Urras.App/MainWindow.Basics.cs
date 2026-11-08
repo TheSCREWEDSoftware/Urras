@@ -283,6 +283,7 @@ public partial class MainWindow
             AddMenuItem(menu, "Use this message", () => UseMessageOfAsync(commit.Hash));
             AddCommitActions(menu, commit);
             AddHistoryBrowseItems(menu, commit);
+            AddBisectItems(menu, commit);
         };
         return menu;
     }
