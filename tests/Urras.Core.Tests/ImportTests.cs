@@ -46,6 +46,7 @@ public static class ImportTests
             byte[] content = Encoding.Latin1.GetBytes("\u0001path\u0002" + fake + "\u0000")
                 .Concat(Encoding.Unicode.GetBytes("x" + fake + "\u0000")).ToArray();
             File.WriteAllBytes(Path.Combine(database, "000003.log"), content);
+            Assert.True(RepositoryImport.GitHubDesktopPaths(appData).Contains(fake), "path read from the log");
             List<string> found = RepositoryImport.FromGitHubDesktop(appData);
             Assert.Equal(OperatingSystem.IsWindows() ? found.Count : 0, found.Count,
                          "paths that don't exist here are left out");

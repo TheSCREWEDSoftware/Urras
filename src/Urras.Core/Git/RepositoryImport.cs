@@ -69,38 +69,39 @@ public static partial class RepositoryImport
         return Directory.Exists(git) || File.Exists(git);
     }
 
-    // GitHub Desktop's list is a browser database holding the paths as plain text; returns those that exist
+    // GitHub Desktop keeps its list in a browser database (LevelDB); returns the listed paths that exist here
     public static List<string> FromGitHubDesktop(string? appData = null)
+    {
+        return GitHubDesktopPaths(appData).Where(path => Directory.Exists(path) && IsRepository(path))
+                                          .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    // Every Windows path in GitHub Desktop's database, read through the compression older entries are stored with
+    public static HashSet<string> GitHubDesktopPaths(string? appData = null)
     {
         appData ??= Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         string database = Path.Combine(appData, "GitHub Desktop", "IndexedDB");
-        if (!Directory.Exists(database))
-            return new List<string>();
-
         HashSet<string> paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string file in Directory.EnumerateFiles(database, "*", SearchOption.AllDirectories)
-                                         .Where(file => file.EndsWith(".log") || file.EndsWith(".ldb")))
-        {
-            byte[] bytes;
-            try
-            {
-                bytes = File.ReadAllBytes(file);
-            }
-            catch (IOException)
-            {
-                // GitHub Desktop has it open; the other files usually hold the same paths
-                continue;
-            }
+        if (!Directory.Exists(database))
+            return paths;
 
-            foreach (string text in new[] { Encoding.Latin1.GetString(bytes), Encoding.Unicode.GetString(bytes),
-                                            Encoding.Unicode.GetString(bytes, 1, Math.Max(0, bytes.Length - 1)) })
-            {
-                foreach (Match match in WindowsPathRegex().Matches(text))
-                    paths.Add(match.Value.TrimEnd('\\', ' '));
-            }
+        foreach (string file in Directory.EnumerateFiles(database, "*", SearchOption.AllDirectories))
+        {
+            foreach (byte[] chunk in LevelDbText.Contents(file))
+                AddPathsIn(chunk, paths);
         }
 
-        return paths.Where(path => Directory.Exists(path) && IsRepository(path))
-                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToList();
+        return paths;
+    }
+
+    // Strings are stored as one byte per character, or two when they hold other characters; both are searched
+    private static void AddPathsIn(byte[] bytes, HashSet<string> paths)
+    {
+        foreach (string text in new[] { Encoding.Latin1.GetString(bytes), Encoding.Unicode.GetString(bytes),
+                                        Encoding.Unicode.GetString(bytes, 1, Math.Max(0, bytes.Length - 1)) })
+        {
+            foreach (Match match in WindowsPathRegex().Matches(text))
+                paths.Add(match.Value.TrimEnd('\\', ' '));
+        }
     }
 }
