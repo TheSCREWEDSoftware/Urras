@@ -36,7 +36,8 @@ Desktop) for ideas is fine; copying their code is not.
 13. [x] Changed files per file (file list with a diff per file) or combined, as a setting, in History and Changes
 14. [x] Wrap or scroll long lines
 15. [x] Image diffs side by side (swipe and onion skin views still to do)
-16. [ ] Syntax highlighting
+16. [x] Syntax highlighting (built in: C#, C/C++, shaders, JSON, XML/XAML/project files, CMake, Markdown,
+    JavaScript/TypeScript, Python, shell, PowerShell, batch, YAML, INI/TOML, Lua)
 17. [ ] Markdown preview for .md files, with a Diff / Preview switch (Markdown.Avalonia, MIT, approved)
 
 ## Phase 3: Everyday Git actions

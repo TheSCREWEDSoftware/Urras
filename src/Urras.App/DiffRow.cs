@@ -1,6 +1,7 @@
 using System.Text;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Syntax;
 
 namespace Urras.App;
 
@@ -25,6 +26,27 @@ public sealed class DiffRow
     private static readonly IBrush FileBackground = Brush("#1FFFFFFF");
     private static readonly IBrush EmptySideBackground = Brush("#0AFFFFFF");
     private static readonly IReadOnlyList<TextSegment> NoSegments = Array.Empty<TextSegment>();
+
+    // Syntax colours, close to Visual Studio's dark theme so they read well on the red and green line backgrounds
+    private static readonly Dictionary<SyntaxKind, IBrush> SyntaxBrushes = new Dictionary<SyntaxKind, IBrush>
+    {
+        [SyntaxKind.Keyword] = Brush("#569CD6"),
+        [SyntaxKind.Type] = Brush("#4EC9B0"),
+        [SyntaxKind.String] = Brush("#CE9178"),
+        [SyntaxKind.Number] = Brush("#B5CEA8"),
+        [SyntaxKind.Comment] = Brush("#7CA668"),
+        [SyntaxKind.Preprocessor] = Brush("#C586C0"),
+        [SyntaxKind.Tag] = Brush("#569CD6"),
+        [SyntaxKind.Attribute] = Brush("#9CDCFE"),
+        [SyntaxKind.Heading] = Brush("#569CD6"),
+        [SyntaxKind.Emphasis] = Brush("#DCDCAA"),
+        [SyntaxKind.Code] = Brush("#CE9178")
+    };
+
+    public static IBrush? SyntaxBrush(SyntaxKind kind)
+    {
+        return SyntaxBrushes.GetValueOrDefault(kind);
+    }
 
     public string OldNumber { get; private init; } = string.Empty;
     public string NewNumber { get; private init; } = string.Empty;
@@ -72,6 +94,7 @@ public sealed class DiffRow
     {
         List<DiffLine> lines = DiffParser.Parse(text);
         Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(DiffParser.ToSplit(lines));
+        Dictionary<DiffLine, SyntaxKind[]> syntax = SyntaxColours(lines);
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (DiffLine line in lines)
@@ -82,7 +105,9 @@ public sealed class DiffRow
                 break;
             }
 
-            rows.Add(line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line), showWhitespace) : FullWidth(line));
+            rows.Add(line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line), syntax.GetValueOrDefault(line),
+                                               showWhitespace)
+                                 : FullWidth(line));
         }
 
         return rows;
@@ -90,8 +115,10 @@ public sealed class DiffRow
 
     public static List<DiffRow> Split(string text, bool showWhitespace)
     {
-        List<SplitDiffRow> splitRows = DiffParser.ToSplit(DiffParser.Parse(text));
+        List<DiffLine> lines = DiffParser.Parse(text);
+        List<SplitDiffRow> splitRows = DiffParser.ToSplit(lines);
         Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(splitRows);
+        Dictionary<DiffLine, SyntaxKind[]> syntax = SyntaxColours(lines);
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (SplitDiffRow splitRow in splitRows)
@@ -115,8 +142,10 @@ public sealed class DiffRow
                 OldNumber = Number(left?.OldNumber),
                 NewNumber = Number(right?.NewNumber),
                 LeftSegments = left == null ? NoSegments : BuildSegments(left, words.GetValueOrDefault(left),
+                                                                         syntax.GetValueOrDefault(left),
                                                                          showWhitespace),
                 RightSegments = right == null ? NoSegments : BuildSegments(right, words.GetValueOrDefault(right),
+                                                                           syntax.GetValueOrDefault(right),
                                                                            showWhitespace),
                 LeftBackground = SideBackground(left),
                 RightBackground = SideBackground(right)
@@ -124,6 +153,42 @@ public sealed class DiffRow
         }
 
         return rows;
+    }
+
+    // Syntax colours for every code line: each file uses its own language, and the old and new sides each carry
+    // their own state (such as an open block comment) from line to line
+    private static Dictionary<DiffLine, SyntaxKind[]> SyntaxColours(IEnumerable<DiffLine> lines)
+    {
+        Dictionary<DiffLine, SyntaxKind[]> colours = new Dictionary<DiffLine, SyntaxKind[]>();
+        SyntaxLanguage? language = null;
+        SyntaxState oldState = default;
+        SyntaxState newState = default;
+
+        foreach (DiffLine line in lines)
+        {
+            if (line.Kind == DiffLineKind.FileHeader)
+                language = SyntaxLanguage.ForPath(line.Text);
+            if (line.Kind is DiffLineKind.FileHeader or DiffLineKind.HunkHeader)
+            {
+                oldState = default;
+                newState = default;
+            }
+
+            if (language == null || !line.IsCode)
+                continue;
+
+            if (line.Kind == DiffLineKind.Removed)
+            {
+                colours[line] = SyntaxHighlighter.Classify(line.Text, language, ref oldState);
+                continue;
+            }
+
+            if (line.Kind == DiffLineKind.Context)
+                SyntaxHighlighter.Classify(line.Text, language, ref oldState);
+            colours[line] = SyntaxHighlighter.Classify(line.Text, language, ref newState);
+        }
+
+        return colours;
     }
 
     // Word highlights for every removed line that has a matching added line
@@ -144,9 +209,10 @@ public sealed class DiffRow
         return words;
     }
 
-    private static DiffRow UnifiedCode(DiffLine line, List<InlineSegment>? words, bool showWhitespace)
+    private static DiffRow UnifiedCode(DiffLine line, List<InlineSegment>? words, SyntaxKind[]? syntax,
+                                       bool showWhitespace)
     {
-        IReadOnlyList<TextSegment> segments = BuildSegments(line, words, showWhitespace);
+        IReadOnlyList<TextSegment> segments = BuildSegments(line, words, syntax, showWhitespace);
         return line.Kind switch
         {
             DiffLineKind.Added => new DiffRow
@@ -174,9 +240,9 @@ public sealed class DiffRow
         };
     }
 
-    // Splits a line into coloured segments: changed words, whitespace markers and trailing whitespace
+    // Splits a line into coloured segments: syntax, changed words, whitespace markers and trailing whitespace
     private static IReadOnlyList<TextSegment> BuildSegments(DiffLine line, List<InlineSegment>? words,
-                                                             bool showWhitespace)
+                                                             SyntaxKind[]? syntax, bool showWhitespace)
     {
         string text = line.Text;
         IBrush? wordBackground = line.Kind switch
@@ -201,14 +267,15 @@ public sealed class DiffRow
         int trailingStart = text.TrimEnd(' ', '\t').Length;
         List<TextSegment> segments = new List<TextSegment>();
         StringBuilder current = new StringBuilder();
-        (bool Changed, bool Whitespace, bool Trailing) currentStyle = default;
+        (bool Changed, bool Whitespace, bool Trailing, SyntaxKind Kind) currentStyle = default;
 
         for (int i = 0; i < text.Length; ++i)
         {
             char character = text[i];
             bool whitespace = showWhitespace && (character == ' ' || character == '\t');
             bool trailing = showWhitespace && i >= trailingStart;
-            (bool, bool, bool) style = (changed[i], whitespace, trailing);
+            SyntaxKind kind = syntax != null && i < syntax.Length ? syntax[i] : SyntaxKind.Plain;
+            (bool, bool, bool, SyntaxKind) style = (changed[i], whitespace, trailing, kind);
 
             if (current.Length > 0 && style != currentStyle)
             {
@@ -238,12 +305,13 @@ public sealed class DiffRow
         return segments;
     }
 
-    private static TextSegment Segment(string text, (bool Changed, bool Whitespace, bool Trailing) style,
+    private static TextSegment Segment(string text,
+                                       (bool Changed, bool Whitespace, bool Trailing, SyntaxKind Kind) style,
                                        IBrush? wordBackground)
     {
         IBrush? background = style.Trailing ? TrailingWhitespaceBackground :
                              style.Changed ? wordBackground : null;
-        return new TextSegment(text, style.Whitespace ? WhitespaceBrush : null, background);
+        return new TextSegment(text, style.Whitespace ? WhitespaceBrush : SyntaxBrush(style.Kind), background);
     }
 
     private static DiffRow FullWidth(DiffLine line)

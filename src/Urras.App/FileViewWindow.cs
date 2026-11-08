@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Urras.Core.Git;
+using Urras.Core.Syntax;
 
 namespace Urras.App;
 
@@ -19,7 +20,7 @@ public sealed class FileViewWindow : Window
     private static readonly FontFamily MonoFont =
         new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace");
 
-    private sealed record NumberedLine(int Number, string Text);
+    private sealed record NumberedLine(int Number, IReadOnlyList<TextSegment> Segments);
 
     public FileViewWindow(string title, string path, byte[]? contents)
     {
@@ -28,19 +29,23 @@ public sealed class FileViewWindow : Window
         Height = WINDOW_HEIGHT;
         Content = contents == null ? Message("This file does not exist at this revision.")
                   : ImageFiles.IsImage(path) ? ImageView(contents)
-                                             : TextView(contents);
+                                             : TextView(path, contents);
     }
 
-    private static Control TextView(byte[] contents)
+    private static Control TextView(string path, byte[] contents)
     {
         // A NUL byte early on means a binary file, which has no lines to show
         if (contents.Take(8000).Contains((byte)0))
             return Message("Binary file (" + contents.Length + " bytes).");
 
-        string[] lines = Encoding.UTF8.GetString(contents).Replace("\r\n", "\n").Split('\n');
-        List<NumberedLine> numbered = lines.Select((text, index) => new NumberedLine(index + 1, text)).ToList();
-        if (numbered.Count > 1 && numbered[^1].Text.Length == 0)
-            numbered.RemoveAt(numbered.Count - 1);
+        List<string> lines = Encoding.UTF8.GetString(contents).Replace("\r\n", "\n").Split('\n').ToList();
+        if (lines.Count > 1 && lines[^1].Length == 0)
+            lines.RemoveAt(lines.Count - 1);
+
+        SyntaxLanguage? language = SyntaxLanguage.ForPath(path);
+        List<SyntaxKind[]>? kinds = language == null ? null : SyntaxHighlighter.ClassifyLines(lines, language);
+        List<NumberedLine> numbered = lines.Select((text, index) =>
+            new NumberedLine(index + 1, Segments(text, kinds?[index]))).ToList();
 
         return new ListBox { ItemsSource = numbered, ItemTemplate = new FuncDataTemplate<NumberedLine>(Row) };
     }
@@ -56,11 +61,29 @@ public sealed class FileViewWindow : Window
             TextAlignment = TextAlignment.Right,
             Margin = new Thickness(0, 0, 12, 0)
         };
-        TextBlock text = new TextBlock { Text = line.Text.Replace("\t", "    "), FontFamily = MonoFont };
+        SegmentedTextBlock text = new SegmentedTextBlock { Segments = line.Segments, FontFamily = MonoFont };
         Grid.SetColumn(text, 1);
         grid.Children.Add(number);
         grid.Children.Add(text);
         return grid;
+    }
+
+    // Runs of one syntax colour; tabs become four spaces
+    private static IReadOnlyList<TextSegment> Segments(string text, SyntaxKind[]? kinds)
+    {
+        List<TextSegment> segments = new List<TextSegment>();
+        int start = 0;
+        for (int i = 1; i <= text.Length; ++i)
+        {
+            if (i < text.Length && (kinds == null || kinds[i] == kinds[start]))
+                continue;
+
+            IBrush? brush = kinds == null ? null : DiffRow.SyntaxBrush(kinds[start]);
+            segments.Add(new TextSegment(text[start..i].Replace("\t", "    "), brush));
+            start = i;
+        }
+
+        return segments;
     }
 
     private static Control ImageView(byte[] contents)
