@@ -8,7 +8,7 @@ namespace Urras.App;
 // Diff options (whitespace, wrapping, per file or combined), the per-file list of a commit, and image diffs
 public partial class MainWindow
 {
-    private CommitInfo? _shownCommit;
+    private DiffSource? _shownSource;
 
     private void InitializeDiffOptions()
     {
@@ -151,64 +151,77 @@ public partial class MainWindow
 
     // History tab
 
-    private async Task ShowCommitAsync(CommitInfo commit)
+    // What the history diff pane shows: one commit (From is null), or the difference between two revisions
+    private sealed record DiffSource(string Title, string Target, string? From);
+
+    private Task ShowCommitAsync(CommitInfo commit)
+    {
+        return ShowSourceAsync(new DiffSource(commit.ShortHash + "  " + commit.Subject, commit.Hash, null));
+    }
+
+    private async Task ShowSourceAsync(DiffSource source)
     {
         if (_repository == null)
             return;
 
-        _shownCommit = commit;
-        string title = commit.ShortHash + "  " + commit.Subject;
+        _shownSource = source;
         if (_settings.FileListMode == FileListMode.Combined)
         {
-            ShowCommitDiff(await _repository.GetCommitDiffAsync(commit.Hash), title);
+            string diff = source.From == null ? await _repository.GetCommitDiffAsync(source.Target)
+                                              : await _repository.GetCompareDiffAsync(source.From, source.Target);
+            ShowCommitDiff(diff.Length > 0 ? diff : "No differences.", source.Title);
             return;
         }
 
-        List<FileChange> files = await _repository.GetCommitFilesAsync(commit.Hash);
+        List<FileChange> files = source.From == null ? await _repository.GetCommitFilesAsync(source.Target)
+                                                     : await _repository.GetCompareFilesAsync(source.From,
+                                                                                              source.Target);
         _suppressSelection = true;
         CommitFilesList.ItemsSource = files;
         CommitFilesList.SelectedItem = files.FirstOrDefault();
         _suppressSelection = false;
 
         if (files.Count == 0)
-            ShowCommitDiff("No file changes in this commit.", title);
+            ShowCommitDiff("No file changes.", source.Title);
         else
-            await ShowCommitFileAsync(commit, files[0]);
+            await ShowSourceFileAsync(source, files[0]);
     }
 
     private async Task OnCommitFileSelectedAsync()
     {
-        if (_suppressSelection || _shownCommit == null || CommitFilesList.SelectedItem is not FileChange file)
+        if (_suppressSelection || _shownSource == null || CommitFilesList.SelectedItem is not FileChange file)
             return;
 
-        await ShowCommitFileAsync(_shownCommit, file);
+        await ShowSourceFileAsync(_shownSource, file);
     }
 
-    private async Task ShowCommitFileAsync(CommitInfo commit, FileChange file)
+    private async Task ShowSourceFileAsync(DiffSource source, FileChange file)
     {
         if (_repository == null)
             return;
 
-        string title = commit.ShortHash + "  " + file.DisplayPath;
+        string title = source.Title + "  ·  " + file.DisplayPath;
         if (ImageFiles.IsImage(file.Path))
         {
-            string commitBase = await _repository.GetCommitBaseAsync(commit.Hash);
+            string from = source.From ?? await _repository.GetCommitBaseAsync(source.Target);
             string oldPath = file.OriginalPath ?? file.Path;
-            byte[]? before = file.Kind == ChangeKind.Added ? null : await _repository.GetBlobAsync(commitBase, oldPath);
+            byte[]? before = file.Kind == ChangeKind.Added ? null : await _repository.GetBlobAsync(from, oldPath);
             byte[]? after = file.Kind == ChangeKind.Deleted ? null
-                                                            : await _repository.GetBlobAsync(commit.Hash, file.Path);
+                                                            : await _repository.GetBlobAsync(source.Target, file.Path);
             _commitDiffText = null;
             CommitDiffTitle.Text = title;
             ShowImage(CommitImageView, CommitDiffList, before, after);
             return;
         }
 
-        ShowCommitDiff(await _repository.GetCommitFileDiffAsync(commit.Hash, file), title);
+        string diff = source.From == null ? await _repository.GetCommitFileDiffAsync(source.Target, file)
+                                          : await _repository.GetCompareDiffAsync(source.From, source.Target, file);
+        ShowCommitDiff(diff, title);
     }
 
     private void ClearCommitFiles()
     {
-        _shownCommit = null;
+        _shownSource = null;
         CommitFilesList.ItemsSource = null;
     }
 

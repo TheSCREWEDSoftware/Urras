@@ -29,6 +29,9 @@ you already have installed.
   files resolved, then Continue or Abort
 - Repository settings: line-ending rules written to `.gitattributes` and `.editorconfig`, and normalizing
   existing files after previewing them
+- Looking into the past: history of a file or folder, blame, browsing the files at any commit, searching commits
+  by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
+  finding lost commits
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

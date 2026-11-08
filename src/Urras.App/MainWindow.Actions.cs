@@ -28,8 +28,10 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Merge a branch into the current one…", MergeBranchAsync);
         AddMenuItem(menu, "Rebase the current branch onto…", RebaseBranchAsync);
+        AddMenuItem(menu, "Compare with a branch…", CompareWithBranchAsync);
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Tags…", ManageTagsAsync);
+        AddMenuItem(menu, "Reflog (find lost commits)…", ShowReflogAsync);
         AddMenuItem(menu, "Repository settings…", () => RepositorySettingsAsync(_repository?.Path));
         menu.Open(BranchMenuButton);
     }

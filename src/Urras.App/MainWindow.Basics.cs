@@ -246,6 +246,7 @@ public partial class MainWindow
 
             string fullPath = Path.Combine(_repository.Path, change.Path);
             AddConflictItems(menu, change);
+            AddFileHistoryItems(menu, change);
             if (change.Kind != ChangeKind.Deleted)
             {
                 AddMenuItem(menu, "Open file", () => Report(SystemShell.OpenFile(fullPath)));
@@ -274,6 +275,7 @@ public partial class MainWindow
             AddMenuItem(menu, "Copy summary", () => CopyAsync(commit.Subject));
             AddMenuItem(menu, "Use this message", () => UseMessageOfAsync(commit.Hash));
             AddCommitActions(menu, commit);
+            AddHistoryBrowseItems(menu, commit);
         };
         return menu;
     }

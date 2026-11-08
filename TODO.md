@@ -53,12 +53,12 @@ Desktop) for ideas is fine; copying their code is not.
 
 ## Phase 4: Look into the past
 
-26. [ ] File and directory history
-27. [ ] Blame
-28. [ ] Browse the file tree at any commit
-29. [ ] Search commits by message, author, file or content
-30. [ ] Compare two commits or branches
-31. [ ] Reflog, to restore lost commits
+26. [x] File and directory history
+27. [x] Blame
+28. [x] Browse the file tree at any commit
+29. [x] Search commits by message, author, file or content
+30. [x] Compare two commits or branches
+31. [x] Reflog, to restore lost commits
 
 ## Phase 5: The big ones
 

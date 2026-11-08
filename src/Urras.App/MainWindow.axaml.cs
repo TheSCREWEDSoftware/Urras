@@ -91,6 +91,7 @@ public partial class MainWindow : Window
         InitializeBasics();
         InitializeDiffOptions();
         InitializeActions();
+        InitializeHistoryTools();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -141,11 +142,12 @@ public partial class MainWindow : Window
 
             RepositoryStatus status = await _repository.GetStatusAsync();
             List<BranchInfo> branches = await _repository.GetBranchesAsync();
-            List<CommitInfo> history = await _repository.GetHistoryAsync();
+            List<CommitInfo> history = await _repository.GetHistoryAsync(filter: _historyFilter);
             await ApplyLineEndingWarningsAsync(status);
             await UpdateOperationBannerAsync(status);
             _status = status;
             _history = history;
+            UpdateSearchState();
 
             _suppressSelection = true;
             try
@@ -435,6 +437,9 @@ public partial class MainWindow : Window
     private async Task OnCommitSelectedAsync()
     {
         if (_suppressSelection || _repository == null)
+            return;
+
+        if (await CompareSelectedCommitsAsync())
             return;
 
         if (HistoryList.SelectedItem is not CommitInfo commit)

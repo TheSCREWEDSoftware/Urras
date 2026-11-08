@@ -299,9 +299,22 @@
         </TabItem>
 
         <TabItem Header="History">
-          <Grid RowDefinitions="Auto,*,4,2*">
+          <Grid RowDefinitions="Auto,Auto,*,4,2*">
+            <!-- Search: Enter to search, Clear to show the whole history again -->
+            <DockPanel Grid.Row="0" Margin="0,6,0,0">
+              <ComboBox x:Name="SearchModeBox" DockPanel.Dock="Left" Width="150" Margin="0,0,6,0">
+                <ComboBoxItem>Message</ComboBoxItem>
+                <ComboBoxItem>Author</ComboBoxItem>
+                <ComboBoxItem>File or folder</ComboBoxItem>
+                <ComboBoxItem>Content</ComboBoxItem>
+              </ComboBox>
+              <Button x:Name="ClearSearchButton" DockPanel.Dock="Right" Content="Clear" Margin="6,0,0,0" />
+              <TextBlock x:Name="HistoryFilterText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.7"
+                         Margin="8,0,0,0" MaxWidth="420" TextTrimming="CharacterEllipsis" />
+              <TextBox x:Name="SearchBox" Watermark="Search the history, then press Enter" />
+            </DockPanel>
             <!-- Column titles; the padding matches the list items below so the columns line up -->
-            <Border Grid.Row="0" Margin="0,6,0,0" Padding="8,4" Background="#1AFFFFFF">
+            <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="#1AFFFFFF">
               <Grid ColumnDefinitions="80,*,170,130">
                 <TextBlock Grid.Column="0" Classes="columnHeader" Text="Commit" />
                 <TextBlock Grid.Column="1" Classes="columnHeader" Text="Summary" />
@@ -309,8 +322,9 @@
                 <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
               </Grid>
             </Border>
-            <TextBlock x:Name="HistoryHint" Grid.Row="1" Classes="hint" Text="No commits yet" ZIndex="1" />
-            <ListBox x:Name="HistoryList" Grid.Row="1" Classes="files" Margin="0,0,0,6">
+            <TextBlock x:Name="HistoryHint" Grid.Row="2" Classes="hint" Text="No commits yet" ZIndex="1" />
+            <ListBox x:Name="HistoryList" Grid.Row="2" Classes="files" Margin="0,0,0,6" SelectionMode="Multiple"
+                     ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Grid ColumnDefinitions="80,*,170,130">
@@ -329,8 +343,8 @@
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
-            <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
-            <DockPanel Grid.Row="3" Margin="0,6,0,4">
+            <GridSplitter Grid.Row="3" ResizeDirection="Rows" />
+            <DockPanel Grid.Row="4" Margin="0,6,0,4">
               <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                 <ComboBox x:Name="CommitDiffModeBox" DockPanel.Dock="Right" Width="170" ToolTip.Tip="Diff view">
                   <ComboBoxItem>Unified</ComboBoxItem>
