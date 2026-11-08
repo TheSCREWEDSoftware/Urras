@@ -183,9 +183,11 @@ public partial class MainWindow
         switch (action)
         {
             case "Show changes":
+            {
                 MainTabs.SelectedIndex = HISTORY_TAB;
                 await ShowSourceAsync(new DiffSource(entry.ShortHash + "  " + entry.Action, entry.Hash, null));
                 break;
+            }
             case "Create branch here…":
             {
                 string? name = await Dialogs.PromptAsync(this, "Create branch",

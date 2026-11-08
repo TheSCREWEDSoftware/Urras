@@ -34,18 +34,22 @@ public partial class MainWindow
                                   "LFS files downloaded.");
                 break;
             case "Track a pattern…":
+            {
                 string? pattern = await Dialogs.PromptAsync(this, "Track with LFS",
                                                             "Files to store with LFS (for example *.psd or art/**):");
                 if (pattern != null)
                     await RunGitAsync("Tracking " + pattern + "…", repository => repository.LfsTrackAsync(pattern),
                                       "Tracking " + pattern + "; commit .gitattributes to share it.");
                 break;
+            }
             case "Stop tracking…" when patterns.Count > 0:
+            {
                 string? untrack = await Dialogs.ChooseAsync(this, "Stop tracking", "Pattern:", patterns);
                 if (untrack != null)
                     await RunGitAsync("Untracking " + untrack + "…", repository => repository.LfsUntrackAsync(untrack),
                                       "No longer tracking " + untrack + ".");
                 break;
+            }
             case "Lock" when file != null:
                 await RunGitAsync("Locking " + file.Path + "…", repository => repository.LfsLockAsync(file.Path),
                                   "Locked " + file.Path + ".");

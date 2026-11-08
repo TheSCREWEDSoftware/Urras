@@ -70,19 +70,25 @@ public sealed class QuickLaunchWindow : Window
         switch (e.Key)
         {
             case Key.Enter:
+            {
                 e.Handled = true;
                 Choose();
                 break;
+            }
             case Key.Escape:
+            {
                 e.Handled = true;
                 Close(null);
                 break;
+            }
             case Key.Down or Key.Up:
+            {
                 e.Handled = true;
                 int count = _list.ItemCount;
                 if (count > 0)
                     _list.SelectedIndex = Math.Clamp(_list.SelectedIndex + (e.Key == Key.Down ? 1 : -1), 0, count - 1);
                 break;
+            }
             default:
                 break;
         }

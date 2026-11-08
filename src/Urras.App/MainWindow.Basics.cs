@@ -176,7 +176,7 @@ public partial class MainWindow
         ContextMenu menu = new ContextMenu();
         foreach (CommitInfo commit in _history.DistinctBy(commit => commit.Subject).Take(RECENT_MESSAGE_COUNT))
         {
-            MenuItem item = new MenuItem { Header = commit.Subject };
+            MenuItem item = new MenuItem { Header = Literal(commit.Subject) };
             item.Click += async (_, _) => await UseMessageOfAsync(commit.Hash);
             menu.Items.Add(item);
         }

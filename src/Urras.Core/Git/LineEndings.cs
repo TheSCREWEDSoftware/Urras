@@ -202,6 +202,7 @@ public sealed class EditorConfig
             switch (character)
             {
                 case '*':
+                {
                     if (i + 1 < glob.Length && glob[i + 1] == '*')
                     {
                         pattern.Append(".*");
@@ -210,6 +211,7 @@ public sealed class EditorConfig
                     else
                         pattern.Append("[^/]*");
                     break;
+                }
                 case '?':
                     pattern.Append("[^/]");
                     break;

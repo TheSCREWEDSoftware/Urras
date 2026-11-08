@@ -252,11 +252,13 @@ public partial class MainWindow
                                   "Applied and dropped " + stash.Reference + ".");
                 break;
             case "Show changes":
+            {
                 MainTabs.SelectedIndex = 1;
                 ClearCommitFiles();
                 ShowCommitDiff(await _repository.GetStashDiffAsync(stash.Reference),
                                stash.Reference + "  " + stash.Message);
                 break;
+            }
             case "Drop":
                 if (await Dialogs.ConfirmAsync(this, "Drop stash",
                                                "Drop " + stash.Reference + "? Its changes are lost.", "Drop"))

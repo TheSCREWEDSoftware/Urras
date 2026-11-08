@@ -55,7 +55,7 @@ public partial class MainWindow
 
     private void AddLineItem(ContextMenu menu, string header, HashSet<int> lines, Func<Task> action)
     {
-        MenuItem item = new MenuItem { Header = header, IsEnabled = lines.Count > 0 };
+        MenuItem item = new MenuItem { Header = Literal(header), IsEnabled = lines.Count > 0 };
         item.Click += async (_, _) => await action();
         menu.Items.Add(item);
     }

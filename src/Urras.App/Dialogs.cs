@@ -46,7 +46,7 @@ public static class Dialogs
         Window dialog = CreateWindow(title);
         List<(CheckBox Box, T Item)> boxes = items.Select(item => (new CheckBox
         {
-            Content = item?.ToString(),
+            Content = item?.ToString()?.Replace("_", "__"),
             IsChecked = chosen?.Invoke(item) ?? true
         }, item)).ToList();
         TextBox filter = new TextBox { Watermark = "Filter" };

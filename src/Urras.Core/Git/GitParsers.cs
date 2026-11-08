@@ -68,9 +68,11 @@ public static class GitParsers
         switch (parts[1])
         {
             case "branch.oid":
+            {
                 status.IsUnborn = value == "(initial)";
                 status.HeadCommit = status.IsUnborn ? null : value;
                 break;
+            }
             case "branch.head":
                 status.Branch = value == "(detached)" ? null : value;
                 break;

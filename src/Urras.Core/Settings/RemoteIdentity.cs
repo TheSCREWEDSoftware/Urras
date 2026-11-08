@@ -35,7 +35,7 @@ public sealed record RemoteIdentity(string Owner, string Name, string Host)
         return url == null ? null : FromUrl(url);
     }
 
-    // https://github.com/Owner/Name.git, git@github.com:Owner/Name.git, ssh://git@host:22/group/sub/Name
+    // HTTPS (host/Owner/Name.git), scp-like SSH (git@host:Owner/Name.git), ssh:// with a port, and local paths
     public static RemoteIdentity? FromUrl(string url)
     {
         string text = url.Trim().TrimEnd('/');

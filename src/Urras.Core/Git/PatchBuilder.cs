@@ -166,29 +166,37 @@ public static partial class PatchBuilder
             switch (marker)
             {
                 case '+' when isSelected:
+                {
                     anySelected = true;
                     body.Add(line);
                     ++newCount;
                     break;
+                }
                 case '-' when isSelected:
+                {
                     anySelected = true;
                     body.Add(line);
                     ++oldCount;
                     break;
+                }
                 case '+':
+                {
                     allSelected = false;
                     if (reverse)
                         AddContext(body, text, ref oldCount, ref newCount);
                     else
                         lastKept = false;
                     break;
+                }
                 case '-':
+                {
                     allSelected = false;
                     if (reverse)
                         lastKept = false;
                     else
                         AddContext(body, text, ref oldCount, ref newCount);
                     break;
+                }
                 default:
                     AddContext(body, text, ref oldCount, ref newCount);
                     break;

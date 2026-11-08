@@ -22,6 +22,7 @@ public partial class MainWindow
                 await RunCustomCommandAsync(command, CurrentContext());
                 break;
             case "Add…":
+            {
                 if (await Dialogs.CustomCommandAsync(this, null) is { } added)
                 {
                     commands.Add(added);
@@ -29,7 +30,9 @@ public partial class MainWindow
                 }
 
                 break;
+            }
             case "Edit…" when command != null:
+            {
                 if (await Dialogs.CustomCommandAsync(this, command) is { } edited)
                 {
                     commands[commands.IndexOf(command)] = edited;
@@ -37,15 +40,20 @@ public partial class MainWindow
                 }
 
                 break;
+            }
             case "Remove" when command != null:
+            {
                 commands.Remove(command);
                 _settings.Save();
                 break;
+            }
             case "Move up" when command != null && commands.IndexOf(command) > 0:
+            {
                 int index = commands.IndexOf(command);
                 (commands[index - 1], commands[index]) = (commands[index], commands[index - 1]);
                 _settings.Save();
                 break;
+            }
             default:
                 return;
         }

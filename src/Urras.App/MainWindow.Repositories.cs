@@ -368,9 +368,15 @@ public partial class MainWindow
                     () => node.IsGroup ? RemoveGroupAsync(node) : RemoveRepositoryAsync(node));
     }
 
+    // Menus and buttons treat _ as an Alt shortcut marker (so 0_Engine showed as 0Engine); doubling it shows it
+    private static string Literal(string text)
+    {
+        return text.Replace("_", "__");
+    }
+
     private static void AddMenuItem(ContextMenu menu, string header, Func<Task> action)
     {
-        MenuItem item = new MenuItem { Header = header };
+        MenuItem item = new MenuItem { Header = Literal(header) };
         item.Click += async (_, _) => await action();
         menu.Items.Add(item);
     }

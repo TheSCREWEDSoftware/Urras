@@ -187,9 +187,11 @@ public static partial class DiffParser
             switch (line.Kind)
             {
                 case DiffLineKind.Context:
+                {
                     rows.Add(new SplitDiffRow(line, line));
                     ++i;
                     break;
+                }
                 case DiffLineKind.Removed:
                 case DiffLineKind.Added:
                 {
@@ -209,9 +211,11 @@ public static partial class DiffParser
                     break;
                 }
                 default:
+                {
                     rows.Add(new SplitDiffRow(null, null, line));
                     ++i;
                     break;
+                }
             }
         }
 

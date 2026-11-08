@@ -107,14 +107,19 @@ public sealed class RepositoryNode : INotifyPropertyChanged
         switch (summary.State)
         {
             case RepositoryState.LocalOnly:
+            {
                 text = branch + " · local only";
                 brush = LocalBrush;
                 break;
+            }
             case RepositoryState.NotPublished:
+            {
                 text = branch + " · not published";
                 brush = LocalBrush;
                 break;
+            }
             default:
+            {
                 text = branch + " · " + summary.UpstreamRemote;
                 if (summary.Ahead > 0)
                     text += " ↑" + summary.Ahead;
@@ -123,6 +128,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
                 if (summary.Ahead > 0 || summary.Behind > 0)
                     brush = AttentionBrush;
                 break;
+            }
         }
 
         if (summary.Changes > 0)

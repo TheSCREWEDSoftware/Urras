@@ -34,7 +34,7 @@ public partial class MainWindow
 
     private Button PinButton(string text, string path, Func<Task> unpin)
     {
-        Button button = new Button { Content = text, Padding = new Avalonia.Thickness(10, 3) };
+        Button button = new Button { Content = Literal(text), Padding = new Avalonia.Thickness(10, 3) };
         ToolTip.SetTip(button, path);
         ContextMenu menu = new ContextMenu();
         AddMenuItem(menu, "Unpin", unpin);

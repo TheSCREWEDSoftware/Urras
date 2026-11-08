@@ -57,21 +57,27 @@ public sealed class ChangeKindBadge : Control
         switch (file.Kind)
         {
             case ChangeKind.Added or ChangeKind.Untracked:
+            {
                 context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
                 context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + arm));
                 break;
+            }
             case ChangeKind.Deleted:
                 context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
                 break;
             case ChangeKind.Renamed or ChangeKind.Copied:
+            {
                 context.DrawLine(pen, new Point(middle - arm, middle), new Point(middle + arm, middle));
                 context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle - arm + 0.5));
                 context.DrawLine(pen, new Point(middle + arm, middle), new Point(middle, middle + arm - 0.5));
                 break;
+            }
             case ChangeKind.Conflicted:
+            {
                 context.DrawLine(pen, new Point(middle, middle - arm), new Point(middle, middle + 0.5));
                 context.DrawEllipse(brush, null, new Point(middle, middle + arm - 0.5), 0.9, 0.9);
                 break;
+            }
             default:
                 context.DrawEllipse(brush, null, new Point(middle, middle), 2, 2);
                 break;

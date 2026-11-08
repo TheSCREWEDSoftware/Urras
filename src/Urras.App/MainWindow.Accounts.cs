@@ -40,11 +40,13 @@ public partial class MainWindow
                 await AddGitHubAccountAsync(GitHubClient.GITHUB_API);
                 break;
             case "Add GitHub Enterprise account…":
+            {
                 string? host = await Dialogs.PromptAsync(this, "GitHub Enterprise", "Server address:",
                                                          "https://github.example.com");
                 if (host != null)
                     await AddGitHubAccountAsync(host.TrimEnd('/') + "/api/v3");
                 break;
+            }
             case "Remove" when account != null:
                 if (await Dialogs.ConfirmAsync(this, "Remove account",
                                                "Sign out of " + account + "? Its token is deleted from this computer.",

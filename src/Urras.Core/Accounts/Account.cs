@@ -19,7 +19,7 @@ public sealed class Account
     [JsonConverter(typeof(JsonStringEnumConverter<AccountKind>))]
     public AccountKind Kind { get; set; }
 
-    // API address, such as https://api.github.com or https://github.example.com/api/v3
+    // API address: GitHub's own, or a GitHub Enterprise server's address followed by /api/v3
     public string ApiUrl { get; set; } = string.Empty;
     public long Id { get; set; }
     public string Username { get; set; } = string.Empty;
