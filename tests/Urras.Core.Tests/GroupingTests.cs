@@ -92,4 +92,20 @@ public static class GroupingTests
                      "a folder with a similar name is not inside; the rest is grouped normally");
         Assert.Equal(3, tree.Count, "the empty pin adds nothing");
     }
+
+    public static void PutsPinnedRepositoriesFirst()
+    {
+        string engine = Path.GetFullPath("/f/Engine");
+        string game = Path.GetFullPath("/g/Game");
+        string inside = Path.Combine(engine, "Z_Urras");
+        List<RepositoryTreeNode> tree = RepositoryLayout.BuildWithPins(
+            new[] { inside, game, Path.GetFullPath("/g/Other") }, new[] { engine },
+            rest => rest.Select(path => new RepositoryTreeNode(Path.GetFileName(path), path, null, null)).ToList(),
+            new[] { game, inside, Path.GetFullPath("/not/in/the/list") });
+
+        Assert.Equal("Game|Engine|Other", string.Join("|", tree.Select(node => node.Name)),
+                     "pinned repository, pinned folder, then the rest");
+        Assert.True(tree[0].IsPinned && !tree[0].IsGroup, "pinned repository marked");
+        Assert.Equal("Z_Urras", tree[1].Children[0].Name, "a pinned repository inside a pinned folder stays there");
+    }
 }

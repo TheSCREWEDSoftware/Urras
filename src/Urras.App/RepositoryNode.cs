@@ -39,7 +39,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
     public RepositoryNode? Parent { get; }
     public ObservableCollection<RepositoryNode> Children { get; } = new ObservableCollection<RepositoryNode>();
 
-    public string Name => Source.Name;
+    public string Name => Source.IsPinned ? "📌 " + Source.Name : Source.Name;
     public string? Path => Source.RepositoryPath;
     public bool IsGroup => Source.IsGroup;
     public FontWeight NameWeight => IsGroup ? FontWeight.SemiBold : FontWeight.Normal;
@@ -146,8 +146,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
             summaries.TryGetValue(RepositoryLayout.Normalize(path), out RepositorySummary? summary) &&
             NeedsAttention(summary));
 
-        Detail = (Source.IsPinned ? "🔒 kept as on disk · " : string.Empty) +
-                 repositories.Count + (repositories.Count == 1 ? " repository" : " repositories") +
+        Detail = repositories.Count + (repositories.Count == 1 ? " repository" : " repositories") +
                  (attention > 0 ? " · " + attention + " need attention" : string.Empty);
         DetailBrush = attention > 0 ? AttentionBrush : MutedBrush;
     }

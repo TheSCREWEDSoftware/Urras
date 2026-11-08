@@ -211,11 +211,12 @@ public static class RepositoryLayout
         }
     }
 
-    // Repositories inside a pinned folder keep that folder's layout; the others are grouped by groupRest.
-    // A pin inside another pin is covered by the outer one.
+    // Pinned repositories come first, then pinned folders laid out as on disk, then the rest grouped by groupRest.
+    // A pin inside a pinned folder is covered by the folder.
     public static List<RepositoryTreeNode> BuildWithPins(IEnumerable<string> repositories,
                                                          IEnumerable<string> pinnedFolders,
-                                                         Func<IEnumerable<string>, List<RepositoryTreeNode>> groupRest)
+                                                         Func<IEnumerable<string>, List<RepositoryTreeNode>> groupRest,
+                                                         IEnumerable<string>? pinnedRepositories = null)
     {
         List<string> all = repositories.Select(Normalize).Distinct(PathComparer).ToList();
         List<string> pins = pinnedFolders.Select(Normalize).Distinct(PathComparer).ToList();
@@ -224,6 +225,14 @@ public static class RepositoryLayout
 
         List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
         HashSet<string> placed = new HashSet<string>(PathComparer);
+        foreach (string repository in (pinnedRepositories ?? Enumerable.Empty<string>()).Select(Normalize)
+                     .Where(path => all.Contains(path, PathComparer) && !pins.Any(pin => IsInside(path, pin)))
+                     .Distinct(PathComparer))
+        {
+            roots.Add(new RepositoryTreeNode(Path.GetFileName(repository), repository, null, null) { IsPinned = true });
+            placed.Add(repository);
+        }
+
         foreach (string pin in pins)
         {
             List<string> inside = all.Where(repository => IsInside(repository, pin)).ToList();

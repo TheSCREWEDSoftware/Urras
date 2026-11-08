@@ -154,7 +154,7 @@
           <Button x:Name="PushButton" Content="Push" />
           <Button x:Name="RefreshButton" Content="Refresh" ToolTip.Tip="Refresh (F5)" />
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="8">
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
           <!-- Fixed width, matching the repository panel, so the branch box doesn't move with the name -->
           <TextBlock x:Name="RepositoryTitle" Text="No repository" FontSize="16" FontWeight="SemiBold"
                      VerticalAlignment="Center" Width="286" TextTrimming="CharacterEllipsis" />
@@ -163,6 +163,11 @@
                   ToolTip.Tip="New or delete branch, merge, rebase, tags, repository settings" />
           <Button x:Name="StashMenuButton" Content="Stash ▾" ToolTip.Tip="Stash changes, or manage stashes" />
         </StackPanel>
+        <!-- Pinned repositories and folders, one click away -->
+        <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                      Margin="12,0,12,0">
+          <StackPanel x:Name="PinnedBar" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" />
+        </ScrollViewer>
       </DockPanel>
     </Border>
 

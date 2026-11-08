@@ -52,9 +52,11 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<RepositoryGrouping>))]
     public RepositoryGrouping Grouping { get; set; } = RepositoryGrouping.Name;
 
-    // Folders kept as they are on disk whatever the grouping, such as a project folder holding several
-    // repositories
+    // Folders pinned to the top of the list, laid out as on disk whatever the grouping, and to the toolbar
     public List<string> PinnedFolders { get; set; } = new List<string>();
+
+    // Repositories pinned to the top of the list and to the toolbar
+    public List<string> PinnedRepositories { get; set; } = new List<string>();
 
     // Kept while grouping by folder too, so switching back restores it
     public LayoutGroup? ManualLayout { get; set; }

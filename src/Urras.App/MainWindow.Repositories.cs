@@ -83,6 +83,7 @@ public partial class MainWindow
         _suppressSelection = false;
 
         SelectCurrentRepositoryNode();
+        UpdatePinnedBar();
         UpdateHints();
         _ = RefreshSummariesAsync();
     }
@@ -159,6 +160,7 @@ public partial class MainWindow
         AmendBox.IsChecked = false;
         ShowChangesDiff(null, string.Empty);
         ShowCommitDiff(null, string.Empty);
+        UpdatePinnedBar();
         await RefreshAsync();
     }
 
@@ -522,7 +524,7 @@ public partial class MainWindow
     private bool _suppressGrouping;
 
     // The automatic list, grouped the way the settings say
-    // Pinned folders come first, laid out as on disk; everything else follows the chosen grouping
+    // Pinned repositories and folders come first, folders laid out as on disk; the rest follows the grouping
     private List<RepositoryTreeNode> BuildAutomaticTree()
     {
         return RepositoryLayout.BuildWithPins(_settings.Repositories, _settings.PinnedFolders, rest =>
@@ -531,24 +533,34 @@ public partial class MainWindow
                 RepositoryGrouping.Folder => RepositoryLayout.BuildByFolder(rest),
                 RepositoryGrouping.Owner => RepositoryLayout.BuildByOwner(rest, RemoteIdentity.Read),
                 _ => RepositoryLayout.BuildByName(rest, RemoteIdentity.Read)
-            });
+            }, _settings.PinnedRepositories);
     }
 
-    // A group standing for a real folder can be kept as it is; a repository offers the folders above it
+    // Pin a folder group or a repository to the top of the list and to the toolbar
     private void AddPinItems(ContextMenu menu, RepositoryNode node)
     {
-        if (!_settings.GroupByFolder)
-            return;
-
         string? folder = node.Source.Folder;
         if (node.IsGroup && folder != null && Directory.Exists(folder))
         {
             bool pinned = _settings.PinnedFolders.Contains(folder, RepositoryLayout.PathComparer);
-            AddMenuItem(menu, pinned ? "Stop keeping this folder as it is" : "Keep this folder as it is",
-                        () => SetPinnedAsync(folder, !pinned));
+            AddMenuItem(menu, pinned ? "Unpin" : "Pin", () => SetPinnedAsync(folder, !pinned));
         }
-        else if (node.Path != null)
-            AddMenuItem(menu, "Keep its folder as it is…", () => PinFolderOfAsync(node.Path));
+        else if (node.Path is { } path)
+        {
+            bool pinned = _settings.PinnedRepositories.Contains(path, RepositoryLayout.PathComparer);
+            AddMenuItem(menu, pinned ? "Unpin" : "Pin", () => SetPinnedRepositoryAsync(path, !pinned));
+            AddMenuItem(menu, "Pin its folder…", () => PinFolderOfAsync(path));
+        }
+    }
+
+    private Task SetPinnedRepositoryAsync(string path, bool pinned)
+    {
+        _settings.PinnedRepositories.RemoveAll(existing => RepositoryLayout.PathComparer.Equals(existing, path));
+        if (pinned)
+            _settings.PinnedRepositories.Add(path);
+
+        SaveLayout(Path.GetFileName(path) + (pinned ? " is pinned." : " is unpinned."));
+        return Task.CompletedTask;
     }
 
     private async Task PinFolderOfAsync(string repository)
@@ -563,9 +575,9 @@ public partial class MainWindow
         if (folders.Count == 0)
             return;
 
-        string? chosen = await Dialogs.ChooseAsync(this, "Keep a folder as it is",
-                                                   "Which folder should stay laid out as on disk, whatever the " +
-                                                       "grouping?", folders);
+        string? chosen = await Dialogs.ChooseAsync(this, "Pin a folder",
+                                                   "Which folder should be pinned? It goes to the top of the list, " +
+                                                       "laid out as on disk, and to the toolbar.", folders);
         if (chosen != null)
             await SetPinnedAsync(chosen, true);
     }
@@ -576,8 +588,7 @@ public partial class MainWindow
         if (pinned)
             _settings.PinnedFolders.Add(folder);
 
-        SaveLayout(pinned ? Path.GetFileName(folder) + " is kept as it is on disk."
-                          : Path.GetFileName(folder) + " follows the grouping again.");
+        SaveLayout(Path.GetFileName(folder) + (pinned ? " is pinned." : " is unpinned."));
         return Task.CompletedTask;
     }
 

@@ -9,7 +9,8 @@ you already have installed.
 
 - Repository list: add existing folders, create new repositories, clone
 - Repository groups: by name (each repository with its forks and clones inside), by folder, by owner, or a
-  manual layout you can rename and reorder; folders can be kept as they are on disk whatever the grouping;
+  manual layout you can rename and reorder; pin repositories and folders to the top and to the
+  toolbar;
   fetch or pull a whole group; each repository shows its branch, remote, commits to push and pull, and
   uncommitted changes
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
