@@ -84,7 +84,7 @@ public sealed partial class GitRepository
 
     public async Task<List<StashInfo>> GetStashesAsync()
     {
-        GitResult result = await Run("stash", "list", "--format=%gd%x1f%H%x1f%gs%x1f%aI");
+        GitResult result = await Run("stash", "list", "--format=%gd%x1f%H%x1f%gs%x1f%aI%x1f%P%x1f%an");
         List<StashInfo> stashes = new List<StashInfo>();
         if (!result.Success)
             return stashes;
@@ -97,7 +97,12 @@ public sealed partial class GitRepository
 
             DateTimeOffset.TryParse(fields[3], System.Globalization.CultureInfo.InvariantCulture,
                                     System.Globalization.DateTimeStyles.None, out DateTimeOffset date);
-            stashes.Add(new StashInfo(fields[0], fields[1], fields[2], date));
+            stashes.Add(new StashInfo(fields[0], fields[1], fields[2], date)
+            {
+                // The first parent is the commit the stash was made on; the others hold the index and untracked files
+                Parent = fields.Length > 4 ? fields[4].Split(' ')[0] : null,
+                Author = fields.Length > 5 ? fields[5] : string.Empty
+            });
         }
 
         return stashes;

@@ -16,7 +16,8 @@ you already have installed.
   `git` output; the choice is saved
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
-- Commits shown per file (a list of changed files) or combined; image files compared side by side
+- Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or
+  as an onion skin
 - Commit with summary and description, amend the last commit (Ctrl+Enter to commit)
 - History with the full diff of each commit, a commit graph with branch lanes across every branch, and badges
   for branches, remote branches and tags

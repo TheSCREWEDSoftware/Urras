@@ -107,4 +107,30 @@ public static class GraphTests
         Assert.Equal("Modified",
                      new FileChange("a.cs", ChangeKind.Modified).KindDescription, "modified");
     }
+
+    public static async Task ListsStashesInTheHistory()
+    {
+        using TempRepository temp = await TempRepository.CreateAsync();
+        temp.Write("a.txt", "a\n");
+        await temp.CommitAllAsync("Base");
+        temp.Write("a.txt", "changed\n");
+        Assert.Success(await temp.Repository.StashAsync("Work in progress", false), "stash");
+        await Task.Delay(1100);
+        temp.Write("b.txt", "b\n");
+        await temp.CommitAllAsync("Later");
+
+        List<CommitInfo> all = await temp.Repository.GetHistoryAsync(allBranches: true);
+        Assert.Equal(3, all.Count, "two commits and the stash");
+        Assert.True(all[1].IsStash && all[1].Subject.Contains("Work in progress"), "the stash sits between them");
+        Assert.Equal(new RefBadge("stash@{0}", RefKind.Stash), all[1].RefBadges[0], "with a stash badge");
+        Assert.Equal(all[2].Hash, all[1].Parents[0], "branching off the commit it was made on");
+        Assert.Equal(1, all[1].Parents.Count, "the index commit is left out");
+
+        Assert.Equal(2, (await temp.Repository.GetHistoryAsync()).Count, "not in the current-branch history");
+        Assert.Equal(2, (await temp.Repository.GetHistoryAsync(filter: new HistoryFilter(HistorySearch.Message, "e"),
+                                                                allBranches: true)).Count(c => !c.IsStash),
+                     "nor while searching");
+        CommitGraph.Assign(all);
+        Assert.Equal(1, all[1].Graph!.Lane, "the stash gets its own lane");
+    }
 }

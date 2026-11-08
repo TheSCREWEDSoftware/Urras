@@ -261,7 +261,8 @@ public sealed partial class GitRepository
         if (!result.Success)
             throw new GitException(result.Message);
 
-        return GitParsers.ParseLog(result.Output);
+        List<CommitInfo> history = GitParsers.ParseLog(result.Output);
+        return allBranches && filter == null ? StashInfo.Merge(history, await GetStashesAsync()) : history;
     }
 
     public async Task<List<BranchInfo>> GetBranchesAsync()

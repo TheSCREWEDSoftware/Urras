@@ -44,6 +44,36 @@ public sealed class StashInfo
     public string Hash { get; }
     public string Message { get; }
     public DateTimeOffset Date { get; }
+    public string? Parent { get; init; }
+    public string Author { get; init; } = string.Empty;
+
+    // The stash as a row in the history, branching off the commit it was made on
+    public CommitInfo ToCommit()
+    {
+        return new CommitInfo(Hash, Hash[..Math.Min(7, Hash.Length)], Author, string.Empty, Date, Message)
+        {
+            Parents = Parent == null ? Array.Empty<string>() : new[] { Parent },
+            Refs = Reference,
+            Stash = this
+        };
+    }
+
+    // Puts stashes into a history listed newest first, each above the commit it was made on
+    public static List<CommitInfo> Merge(IReadOnlyList<CommitInfo> history, IEnumerable<StashInfo> stashes)
+    {
+        List<CommitInfo> merged = new List<CommitInfo>(history);
+        foreach (StashInfo stash in stashes.OrderBy(stash => stash.Date))
+        {
+            int parent = stash.Parent == null ? -1 : merged.FindIndex(commit => commit.Hash == stash.Parent);
+            if (parent < 0)
+                continue;
+
+            int byDate = merged.FindIndex(commit => commit.Stash == null && commit.Date <= stash.Date);
+            merged.Insert(byDate < 0 ? parent : Math.Min(byDate, parent), stash.ToCommit());
+        }
+
+        return merged;
+    }
 
     public override string ToString()
     {

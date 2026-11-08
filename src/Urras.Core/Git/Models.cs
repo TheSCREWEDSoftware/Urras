@@ -115,6 +115,10 @@ public sealed class CommitInfo
 
     // Full hashes of the parent commits: none for the first commit, two or more for a merge
     public IReadOnlyList<string> Parents { get; init; } = Array.Empty<string>();
+
+    // Set when this row is a stash rather than a commit
+    public StashInfo? Stash { get; init; }
+    public bool IsStash => Stash != null;
     public bool IsMerge => Parents.Count > 1;
 
     // Lanes and lines drawn beside the commit; set by the history view
@@ -149,7 +153,8 @@ public enum RefKind
     Head,
     Local,
     Remote,
-    Tag
+    Tag,
+    Stash
 }
 
 public sealed record RefBadge(string Name, RefKind Kind)
@@ -157,6 +162,7 @@ public sealed record RefBadge(string Name, RefKind Kind)
     public bool IsHead => Kind == RefKind.Head;
     public bool IsRemote => Kind == RefKind.Remote;
     public bool IsTag => Kind == RefKind.Tag;
+    public bool IsStash => Kind == RefKind.Stash;
     public string Text => Kind == RefKind.Head ? "✓ " + Name : Name;
 
     // git log's %D with --decorate=full, which tells local branches named like feature/x apart from remote ones:
@@ -173,6 +179,8 @@ public sealed record RefBadge(string Name, RefKind Kind)
                 badges.Add(new RefBadge("HEAD (detached)", RefKind.Head));
             else if (part.StartsWith("tag: ", StringComparison.Ordinal))
                 badges.Add(new RefBadge(Short(part["tag: ".Length..]), RefKind.Tag));
+            else if (part.StartsWith("stash@{", StringComparison.Ordinal))
+                badges.Add(new RefBadge(part, RefKind.Stash));
             else if (part.EndsWith("/HEAD", StringComparison.Ordinal) || part.StartsWith("refs/stash"))
                 continue;
             else if (part.StartsWith("refs/remotes/", StringComparison.Ordinal))

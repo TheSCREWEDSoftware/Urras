@@ -185,6 +185,14 @@ public partial class MainWindow
         if (stash == null || action == null)
             return;
 
+        await RunStashActionAsync(stash, action);
+    }
+
+    private async Task RunStashActionAsync(StashInfo stash, string action)
+    {
+        if (_repository == null)
+            return;
+
         switch (action)
         {
             case "Apply":

@@ -35,7 +35,7 @@ Desktop) for ideas is fine; copying their code is not.
     reading diffs)
 13. [x] Changed files per file (file list with a diff per file) or combined, as a setting, in History and Changes
 14. [x] Wrap or scroll long lines
-15. [x] Image diffs side by side (swipe and onion skin views still to do)
+15. [x] Image diffs side by side, as a swipe or as an onion skin
 16. [x] Syntax highlighting (built in: C#, C/C++, shaders, JSON, XML/XAML/project files, CMake, Markdown,
     JavaScript/TypeScript, Python, shell, PowerShell, batch, YAML, INI/TOML, Lua)
 17. [ ] Markdown preview for .md files, with a Diff / Preview switch (Markdown.Avalonia, MIT, approved)
@@ -46,7 +46,7 @@ Desktop) for ideas is fine; copying their code is not.
 19. [x] Check out a specific commit
 20. [x] Revert a commit
 21. [x] Cherry-pick a commit
-22. [x] Stashes: save, apply, pop, drop and show (listing them inside the history is still to do)
+22. [x] Stashes: save, apply, pop, drop and show, also listed in the history with their own badge
 23. [x] Merge a branch, with a conflict helper (take ours, take theirs, open in editor, mark resolved)
 24. [x] Rebase onto a branch
 25. [x] Repository settings: write .gitattributes and .editorconfig (LF, CRLF, or CRLF for Windows scripts and LF

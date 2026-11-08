@@ -54,6 +54,13 @@
     <Style Selector="Border.refBadge.tag TextBlock">
       <Setter Property="Foreground" Value="#8DDB8C" />
     </Style>
+    <Style Selector="Border.refBadge.stash">
+      <Setter Property="Background" Value="#33B083F0" />
+      <Setter Property="BorderBrush" Value="#B083F0" />
+    </Style>
+    <Style Selector="Border.refBadge.stash TextBlock">
+      <Setter Property="Foreground" Value="#D2B8F7" />
+    </Style>
     <Style Selector="ListBox.diff ListBoxItem">
       <Setter Property="Padding" Value="0" />
       <Setter Property="MinHeight" Value="0" />
@@ -380,7 +387,8 @@
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
                             <Border Classes="refBadge" Classes.head="{Binding IsHead}"
-                                    Classes.remote="{Binding IsRemote}" Classes.tag="{Binding IsTag}">
+                                    Classes.remote="{Binding IsRemote}" Classes.tag="{Binding IsTag}"
+                                    Classes.stash="{Binding IsStash}">
                               <TextBlock Text="{Binding Text}" />
                             </Border>
                           </DataTemplate>

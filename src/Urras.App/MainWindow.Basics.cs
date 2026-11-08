@@ -270,6 +270,13 @@ public partial class MainWindow
             if (HistoryList.SelectedItem is not CommitInfo commit)
                 return;
 
+            if (commit.Stash is { } stash)
+            {
+                foreach (string action in new[] { "Apply", "Apply and drop", "Drop" })
+                    AddMenuItem(menu, action, () => RunStashActionAsync(stash, action));
+                return;
+            }
+
             AddMenuItem(menu, "Copy SHA", () => CopyAsync(commit.Hash));
             AddMenuItem(menu, "Copy short SHA", () => CopyAsync(commit.ShortHash));
             AddMenuItem(menu, "Copy summary", () => CopyAsync(commit.Subject));

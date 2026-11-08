@@ -1,12 +1,14 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
 namespace Urras.App;
 
-// Old and new versions of an image side by side, with their size in pixels and bytes
+// Old and new versions of an image: side by side, as a swipe (drag to reveal the new one over the old) or as an
+// onion skin (the new one faded over the old), with their size in pixels and bytes
 public sealed class ImageDiffView : UserControl
 {
     private const double BYTES_PER_KILOBYTE = 1024.0;
@@ -15,33 +17,105 @@ public sealed class ImageDiffView : UserControl
     private static readonly IBrush NewBrush = new SolidColorBrush(Color.Parse("#7EE787"));
     private static readonly IBrush FrameBrush = new SolidColorBrush(Color.Parse("#14FFFFFF"));
 
+    private enum Mode
+    {
+        SideBySide,
+        Swipe,
+        OnionSkin
+    }
+
+    // Shared by both diff panes and kept while Urras runs
+    private static Mode _mode = Mode.SideBySide;
+
     private readonly Image _oldImage = CreateImage();
     private readonly Image _newImage = CreateImage();
+    private readonly Image _overlayOld = CreateImage();
+    private readonly Image _overlayNew = CreateImage();
+    private readonly Border _overlayNewHost;
+    private readonly Grid _sideBySide;
+    private readonly Panel _overlay;
     private readonly TextBlock _oldInfo = CreateInfo();
     private readonly TextBlock _newInfo = CreateInfo();
+    private readonly ComboBox _modeBox;
+    private readonly Slider _slider;
     private Bitmap? _oldBitmap;
     private Bitmap? _newBitmap;
 
     public ImageDiffView()
     {
-        Grid grid = new Grid
+        _modeBox = new ComboBox
+        {
+            ItemsSource = new[] { "Side by side", "Swipe", "Onion skin" },
+            SelectedIndex = (int)_mode,
+            Width = 140
+        };
+        _slider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = 0.5,
+            Width = 240,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+        ToolTip.SetTip(_slider, "Drag to compare the old and new images");
+        StackPanel tools = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 0, 0, 6) };
+        tools.Children.Add(_modeBox);
+        tools.Children.Add(_slider);
+
+        _sideBySide = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,*"),
-            RowDefinitions = new RowDefinitions("Auto,*,Auto"),
-            Margin = new Thickness(8)
+            RowDefinitions = new RowDefinitions("Auto,*")
         };
+        AddColumn(_sideBySide, 0, "Old", OldBrush, _oldImage);
+        AddColumn(_sideBySide, 1, "New", NewBrush, _newImage);
 
-        AddColumn(grid, 0, "Old", OldBrush, _oldImage, _oldInfo);
-        AddColumn(grid, 1, "New", NewBrush, _newImage, _newInfo);
-        Content = grid;
+        _overlayNewHost = new Border { Child = _overlayNew };
+        _overlay = new Panel { Margin = new Thickness(6) };
+        _overlay.Children.Add(new Border { Background = FrameBrush });
+        _overlay.Children.Add(_overlayOld);
+        _overlay.Children.Add(_overlayNewHost);
+
+        Grid info = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        Grid.SetColumn(_newInfo, 1);
+        info.Children.Add(_oldInfo);
+        info.Children.Add(_newInfo);
+
+        DockPanel root = new DockPanel { Margin = new Thickness(8) };
+        DockPanel.SetDock(tools, Dock.Top);
+        DockPanel.SetDock(info, Dock.Bottom);
+        root.Children.Add(tools);
+        root.Children.Add(info);
+        root.Children.Add(_sideBySide);
+        root.Children.Add(_overlay);
+        Content = root;
+
+        _modeBox.SelectionChanged += (_, _) =>
+        {
+            _mode = (Mode)Math.Max(0, _modeBox.SelectedIndex);
+            UpdateMode();
+        };
+        _slider.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == RangeBase.ValueProperty)
+                UpdateOverlay();
+        };
+        _overlay.SizeChanged += (_, _) => UpdateOverlay();
+        UpdateMode();
     }
 
     public void Show(byte[]? oldBytes, byte[]? newBytes)
     {
         _oldBitmap?.Dispose();
         _newBitmap?.Dispose();
-        _oldBitmap = Load(oldBytes, _oldImage, _oldInfo);
-        _newBitmap = Load(newBytes, _newImage, _newInfo);
+        _oldBitmap = Load(oldBytes, _oldInfo);
+        _newBitmap = Load(newBytes, _newInfo);
+        _oldImage.Source = _overlayOld.Source = _oldBitmap;
+        _newImage.Source = _overlayNew.Source = _newBitmap;
+
+        // The other pane may have changed the mode
+        _modeBox.SelectedIndex = (int)_mode;
+        UpdateMode();
     }
 
     public void Clear()
@@ -49,9 +123,32 @@ public sealed class ImageDiffView : UserControl
         Show(null, null);
     }
 
-    private static Bitmap? Load(byte[]? bytes, Image image, TextBlock info)
+    private void UpdateMode()
     {
-        image.Source = null;
+        _sideBySide.IsVisible = _mode == Mode.SideBySide;
+        _overlay.IsVisible = _mode != Mode.SideBySide;
+        _slider.IsVisible = _mode != Mode.SideBySide;
+        UpdateOverlay();
+    }
+
+    private void UpdateOverlay()
+    {
+        double value = _slider.Value;
+        if (_mode == Mode.OnionSkin)
+        {
+            _overlayNewHost.Opacity = value;
+            _overlayNewHost.Clip = null;
+            return;
+        }
+
+        // Swipe: the new image shows to the left of the slider's position, the old one to the right
+        _overlayNewHost.Opacity = 1;
+        Rect bounds = _overlay.Bounds;
+        _overlayNewHost.Clip = new RectangleGeometry(new Rect(0, 0, bounds.Width * value, bounds.Height));
+    }
+
+    private static Bitmap? Load(byte[]? bytes, TextBlock info)
+    {
         if (bytes == null)
         {
             info.Text = "No file";
@@ -62,7 +159,6 @@ public sealed class ImageDiffView : UserControl
         try
         {
             Bitmap bitmap = new Bitmap(new MemoryStream(bytes));
-            image.Source = bitmap;
             info.Text = $"{bitmap.PixelSize.Width} × {bitmap.PixelSize.Height} px · {size}";
             return bitmap;
         }
@@ -74,7 +170,7 @@ public sealed class ImageDiffView : UserControl
         }
     }
 
-    private static void AddColumn(Grid grid, int column, string title, IBrush brush, Image image, TextBlock info)
+    private static void AddColumn(Grid grid, int column, string title, IBrush brush, Image image)
     {
         TextBlock header = new TextBlock
         {
@@ -89,11 +185,8 @@ public sealed class ImageDiffView : UserControl
         Grid.SetColumn(header, column);
         Grid.SetColumn(frame, column);
         Grid.SetRow(frame, 1);
-        Grid.SetColumn(info, column);
-        Grid.SetRow(info, 2);
         grid.Children.Add(header);
         grid.Children.Add(frame);
-        grid.Children.Add(info);
     }
 
     private static Image CreateImage()
