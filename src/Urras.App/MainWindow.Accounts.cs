@@ -93,7 +93,7 @@ public partial class MainWindow
 
     private async Task<string?> AskForTokenAsync(Window owner, AccountKind kind, string name, string? server)
     {
-        await Report(SystemShell.OpenFile(TokenPage(kind, server?.TrimEnd('/') ?? string.Empty)));
+        await Report(SystemShell.OpenUrl(TokenPage(kind, server?.TrimEnd('/') ?? string.Empty)));
         string hint = kind == AccountKind.Bitbucket
             ? "Paste an access token, or username:app-password for an app password."
             : "Paste a personal access token from the page that opened.";

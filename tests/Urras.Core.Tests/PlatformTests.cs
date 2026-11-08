@@ -123,6 +123,28 @@ public static class PlatformTests
                      Account.ApiFor(AccountKind.BitbucketServer, "https://bitbucket.example.com/"), "server API");
     }
 
+    // A next-page link pointing elsewhere is refused instead of being sent the token
+    public static async Task TokenStaysOnThePlatform()
+    {
+        (BitbucketClient bitbucket, FakeApi fake) = Create(http => new BitbucketClient(http, "user:app-password"),
+                                                           new Dictionary<string, string>
+        {
+            ["/2.0/repositories"] = "{\"values\":[],\"next\":\"https://attacker.example/steal\"}"
+        });
+        bool refused = false;
+        try
+        {
+            await bitbucket.GetRepositoriesAsync();
+        }
+        catch (PlatformException)
+        {
+            refused = true;
+        }
+
+        Assert.True(refused, "foreign next page refused");
+        Assert.Equal(1, fake.Requests.Count, "nothing sent to the other host");
+    }
+
     public static async Task LearnsPicturesForCommitEmails()
     {
         using TempRepository temp = await TempRepository.CreateAsync();

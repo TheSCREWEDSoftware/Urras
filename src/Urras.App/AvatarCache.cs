@@ -25,6 +25,10 @@ public static class AvatarCache
     // One download per address, shared by every row asking for it; null when it can't be had
     public static Task<Bitmap?> GetAsync(string url)
     {
+        // Pictures only come over HTTPS, so a platform answer can't point Urras at local files or plain HTTP
+        if (!url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return Task.FromResult<Bitmap?>(null);
+
         lock (Loading)
         {
             if (!Loading.TryGetValue(url, out Task<Bitmap?>? task))

@@ -79,7 +79,7 @@ public partial class MainWindow
         try
         {
             SetStatus("Asking " + client.PlatformName + " for your repositories…", false);
-            repositories = await client.GetRepositoriesAsync();
+            repositories = await PlatformClient.SafelyAsync(() => client.GetRepositoriesAsync());
         }
         catch (PlatformException exception)
         {
@@ -109,7 +109,14 @@ public partial class MainWindow
         int done = 0;
         foreach (PlatformRepository repository in chosen)
         {
-            string target = Path.Combine(parent, repository.FullName.Split('/')[0], repository.Name);
+            string owner = repository.FullName.Split('/')[0];
+            if (!RepositoryImport.IsPlainFolderName(owner) || !RepositoryImport.IsPlainFolderName(repository.Name))
+            {
+                failed.Add(repository.FullName + " (unusable folder name)");
+                continue;
+            }
+
+            string target = Path.Combine(parent, owner, repository.Name);
             SetBusy(true, $"Cloning {repository.FullName} ({++done} of {chosen.Count})…");
             if (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any())
             {

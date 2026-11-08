@@ -55,6 +55,13 @@ public static partial class RepositoryImport
         }
     }
 
+    // An owner or repository name from a platform, safe to use as one folder level
+    public static bool IsPlainFolderName(string name)
+    {
+        return !string.IsNullOrWhiteSpace(name) && name != "." && name != ".." &&
+               name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && name.IndexOfAny(new[] { '/', '\\', ':' }) < 0;
+    }
+
     // A .git folder, or a .git file (worktrees and submodules)
     public static bool IsRepository(string folder)
     {

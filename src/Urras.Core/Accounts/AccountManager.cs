@@ -43,7 +43,8 @@ public sealed class AccountManager
         if (_tokens.Unavailable is { } reason)
             throw new PlatformException(reason);
 
-        Account account = await Client(kind, token.Trim(), api).GetAccountAsync();
+        PlatformClient client = Client(kind, token.Trim(), api);
+        Account account = await PlatformClient.SafelyAsync(client.GetAccountAsync);
         if (!await _tokens.SaveAsync(account.TokenKey, token.Trim()))
             throw new PlatformException("Couldn't save the token in the system's credential store.");
 
@@ -126,7 +127,9 @@ public sealed class AccountManager
     public async Task<CoAuthor?> FindCoAuthorAsync(string login)
     {
         PlatformClient? client = await SearchClientAsync();
-        PlatformUser? user = client == null ? null : await client.GetUserAsync(login.TrimStart('@'));
+        PlatformUser? user = client == null
+            ? null
+            : await PlatformClient.SafelyAsync(() => client.GetUserAsync(login.TrimStart('@')));
         return user == null ? null : client!.CoAuthorFor(user);
     }
 
@@ -136,8 +139,9 @@ public sealed class AccountManager
         if (client == null || query.TrimStart('@').Length < 2)
             return new List<CoAuthor>();
 
-        return (await client.SearchUsersAsync(query.TrimStart('@'))).Select(client.CoAuthorFor)
-                                                                     .OfType<CoAuthor>().ToList();
+        string login = query.TrimStart('@');
+        List<PlatformUser> users = await PlatformClient.SafelyAsync(() => client.SearchUsersAsync(login));
+        return users.Select(client.CoAuthorFor).OfType<CoAuthor>().ToList();
     }
 
     // Where to get the picture for someone who committed with this email, if it is known without asking
@@ -178,8 +182,9 @@ public sealed class AccountManager
         {
             try
             {
-                PlatformUser? user = await client.GetCommitAuthorAsync(remote.Owner, remote.Name, commit.Hash,
-                                                                      commit.Email);
+                PlatformUser? user = await PlatformClient.SafelyAsync(() => client.GetCommitAuthorAsync(
+                                                                          remote.Owner, remote.Name, commit.Hash,
+                                                                          commit.Email));
                 // An empty entry remembers that nobody was found, so the commit isn't asked about again
                 _pictures[commit.Email.ToLowerInvariant()] = user?.AvatarUrl ?? string.Empty;
                 if (user?.AvatarUrl != null)

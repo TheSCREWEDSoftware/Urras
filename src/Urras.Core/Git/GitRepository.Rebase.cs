@@ -38,7 +38,15 @@ public partial class GitRepository
         string temp = System.IO.Path.GetTempPath();
         RemoveOldRebaseFolders(temp);
         string folder = System.IO.Path.Combine(temp, "urras-rebase-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
+        if (folder.IndexOfAny(SHELL_SPECIAL) >= 0)
+            return new GitResult(-1, string.Empty, "The temporary folder can't be passed to git safely: " + folder);
+
+        if (OperatingSystem.IsWindows())
+            Directory.CreateDirectory(folder);
+        else
+            Directory.CreateDirectory(folder, UnixFileMode.UserRead | UnixFileMode.UserWrite |
+                                              UnixFileMode.UserExecute);
+
         Dictionary<RebaseStep, string> files = new Dictionary<RebaseStep, string>();
         string MessageFile(RebaseStep step)
         {
@@ -63,6 +71,9 @@ public partial class GitRepository
         };
         return await GitRunner.RunAsync(Path, new[] { "rebase", "-i", onto }, environment: environment);
     }
+
+    // Characters a shell acts on inside the double quotes of the editor and exec lines; backslashes become slashes
+    private static readonly char[] SHELL_SPECIAL = { '"', '$', '`' };
 
     private static void RemoveOldRebaseFolders(string temp)
     {

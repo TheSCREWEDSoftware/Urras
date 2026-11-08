@@ -44,7 +44,7 @@ public sealed class DeviceSignInWindow : Window
         {
             if (Clipboard != null)
                 await Clipboard.SetTextAsync(code.UserCode);
-            SystemShell.OpenFile(code.VerificationUrl);
+            SystemShell.OpenUrl(code.VerificationUrl);
         };
         token.Click += (_, _) => Close(TOKEN_INSTEAD);
         cancel.Click += (_, _) => Close(null);

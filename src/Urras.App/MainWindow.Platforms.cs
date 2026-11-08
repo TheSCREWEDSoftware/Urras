@@ -49,7 +49,7 @@ public partial class MainWindow
         List<PlatformPullRequest> pulls;
         try
         {
-            pulls = await client.GetPullRequestsAsync(remote.Owner, remote.Name);
+            pulls = await PlatformClient.SafelyAsync(() => client.GetPullRequestsAsync(remote.Owner, remote.Name));
         }
         catch (PlatformException exception)
         {
@@ -68,7 +68,7 @@ public partial class MainWindow
                 await CheckOutPullRequestAsync(client, pull);
                 break;
             case "Open in browser" when pull != null:
-                await Report(SystemShell.OpenFile(pull.Url));
+                await Report(SystemShell.OpenUrl(pull.Url));
                 break;
             case "Copy link" when pull != null:
                 await CopyAsync(pull.Url);
@@ -108,7 +108,7 @@ public partial class MainWindow
         }
 
         string target = await _repository.GetDefaultBranchAsync();
-        await Report(SystemShell.OpenFile(client.NewPullRequestUrl(remote.Owner, remote.Name, branch, target)));
+        await Report(SystemShell.OpenUrl(client.NewPullRequestUrl(remote.Owner, remote.Name, branch, target)));
     }
 
     private async Task ShowNotificationsAsync()
@@ -129,11 +129,15 @@ public partial class MainWindow
 
         PlatformClient client = all.First(entry => entry.Notification == chosen).Client;
         if (action == "Open in browser" && chosen.Url != null)
-            await Report(SystemShell.OpenFile(chosen.Url));
+            await Report(SystemShell.OpenUrl(chosen.Url));
 
         try
         {
-            await client.MarkNotificationReadAsync(chosen);
+            await PlatformClient.SafelyAsync(async () =>
+            {
+                await client.MarkNotificationReadAsync(chosen);
+                return true;
+            });
         }
         catch (PlatformException exception)
         {
@@ -151,7 +155,8 @@ public partial class MainWindow
             try
             {
                 if (await _accounts!.ClientAsync(account) is { } client)
-                    all.AddRange((await client.GetNotificationsAsync()).Select(item => (client, item)));
+                    all.AddRange((await PlatformClient.SafelyAsync(client.GetNotificationsAsync))
+                                 .Select(item => (client, item)));
             }
             catch (PlatformException)
             {

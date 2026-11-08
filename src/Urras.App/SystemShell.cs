@@ -26,6 +26,15 @@ public static class SystemShell
         return OpenFolder(Path.GetDirectoryName(file) ?? file);
     }
 
+    // Opens a web page; addresses from platforms are checked first, so a link can't start a local program
+    public static string? OpenUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttps &&
+                                                                     uri.Scheme != Uri.UriSchemeHttp))
+            return "Not a web address: " + url;
+        return OpenFile(uri.AbsoluteUri);
+    }
+
     // Opens a file with its default program
     public static string? OpenFile(string file)
     {

@@ -182,7 +182,11 @@ public sealed class SecretToolStore : ITokenStore
             if (input != null)
                 await process.StandardInput.WriteAsync(input);
             process.StandardInput.Close();
+
+            // Both streams are drained together so a chatty error stream can't fill up and stall the program
+            Task<string> errors = process.StandardError.ReadToEndAsync();
             string output = await process.StandardOutput.ReadToEndAsync();
+            await errors;
             await process.WaitForExitAsync();
             return (process.ExitCode, output);
         }

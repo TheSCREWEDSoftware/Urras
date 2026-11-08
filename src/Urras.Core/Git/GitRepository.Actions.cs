@@ -36,6 +36,10 @@ public sealed partial class GitRepository
     // An annotated tag when a message is given, otherwise a lightweight one
     public Task<GitResult> CreateTagAsync(string name, string target, string? message)
     {
+        GitResult? refused = RefNames.Refuse(name);
+        if (refused != null)
+            return Task.FromResult(refused);
+
         return string.IsNullOrWhiteSpace(message) ? Run("tag", name, target)
                                                   : Run("tag", "-a", name, target, "-m", message);
     }

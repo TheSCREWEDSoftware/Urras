@@ -84,7 +84,8 @@ public sealed partial class GitRepository
     // A branch at any revision, used to bring back commits found in the reflog
     public Task<GitResult> CreateBranchAtAsync(string name, string revision)
     {
-        return Run("branch", name, revision);
+        GitResult? refused = RefNames.Refuse(name);
+        return refused != null ? Task.FromResult(refused) : Run("branch", name, revision);
     }
 
     private const int KNOWN_PEOPLE_COMMITS = 3000;

@@ -110,7 +110,15 @@ public abstract class PlatformClient
     // The answer as text, for the few calls that don't answer in JSON
     protected async Task<string> SendTextAsync(HttpMethod method, string path, object? body)
     {
-        using HttpRequestMessage request = new HttpRequestMessage(method, path.StartsWith("http") ? path : Api + path);
+        string url = path.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? path : Api + path;
+
+        // Links taken from answers (such as the next page) never carry the token to another host
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? target) ||
+            (!string.Equals(target.Host, Host, StringComparison.OrdinalIgnoreCase) &&
+             !string.Equals(target.Host, new Uri(WebUrl).Host, StringComparison.OrdinalIgnoreCase)))
+            throw new PlatformException("Refused to send the token to " + url);
+
+        using HttpRequestMessage request = new HttpRequestMessage(method, url);
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Urras", "0.1"));
         Authorize(request);
         if (body != null)
@@ -139,6 +147,20 @@ public abstract class PlatformClient
                 HttpStatusCode.NotFound => "Not found.",
                 _ => PlatformName + " answered " + (int)response.StatusCode + "."
             });
+        }
+    }
+
+    // Answers that don't have the expected shape become a readable error instead of a crash
+    public static async Task<T> SafelyAsync<T>(Func<Task<T>> call)
+    {
+        try
+        {
+            return await call();
+        }
+        catch (Exception exception) when (exception is KeyNotFoundException or InvalidOperationException or
+                                              JsonException or FormatException or IndexOutOfRangeException)
+        {
+            throw new PlatformException("The platform's answer wasn't what Urras expected: " + exception.Message);
         }
     }
 

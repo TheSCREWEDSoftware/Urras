@@ -38,8 +38,12 @@ public sealed partial class GitRepository
         if (parent == null)
             return new GitResult(-1, string.Empty, "Invalid target folder: " + targetFolder);
 
+        // A URL starting with - would be read as an option (such as --upload-pack, which runs a program)
+        if (url.TrimStart().StartsWith('-'))
+            return new GitResult(-1, string.Empty, "That doesn't look like a repository address: " + url);
+
         Directory.CreateDirectory(parent);
-        return await GitRunner.RunAsync(parent, "clone", "--progress", url, targetFolder);
+        return await GitRunner.RunAsync(parent, "clone", "--progress", "--", url.Trim(), targetFolder);
     }
 
     public async Task<RepositoryStatus> GetStatusAsync()
@@ -290,6 +294,10 @@ public sealed partial class GitRepository
 
     public Task<GitResult> CreateBranchAsync(string name, bool switchTo)
     {
+        GitResult? refused = RefNames.Refuse(name);
+        if (refused != null)
+            return Task.FromResult(refused);
+
         return switchTo ? Run("switch", "-c", name) : Run("branch", name);
     }
 

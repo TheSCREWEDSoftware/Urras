@@ -10,6 +10,9 @@ public static class Dialogs
 {
     private const double DIALOG_WIDTH = 460;
 
+    // Explanatory text under a field is dimmed so the field itself stands out
+    private const double HINT_OPACITY = 0.7;
+
     public static async Task<bool> ConfirmAsync(Window owner, string title, string message, string confirmText)
     {
         Window dialog = CreateWindow(title);
@@ -357,6 +360,12 @@ public static class Dialogs
             Text = existing?.Arguments,
             Watermark = "Arguments, such as build \"${repo}/Urras.slnx\""
         };
+        TextBlock noShell = new TextBlock
+        {
+            Text = "Arguments go straight to the program, not through a shell, so pipes and && don't apply.",
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = HINT_OPACITY
+        };
         ComboBox scope = new ComboBox
         {
             ItemsSource = new[] { "Commands menu (repository)", "File menu", "Commit menu" },
@@ -388,7 +397,7 @@ public static class Dialogs
         cancel.Click += (_, _) => dialog.Close(null);
 
         StackPanel input = new StackPanel { Spacing = 8 };
-        foreach (Control control in new Control[] { name, program, arguments, scope, confirm, problem })
+        foreach (Control control in new Control[] { name, program, arguments, noShell, scope, confirm, problem })
             input.Children.Add(control);
         TextBlock label = Paragraph("Placeholders: ${repo} (repository folder), ${branch}, ${file} (path in the " +
                                     "repository), ${filePath} (full path) and ${sha} (commit). Quote arguments " +
