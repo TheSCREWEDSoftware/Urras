@@ -320,6 +320,19 @@
                   </DockPanel>
                   <TextBox x:Name="DescriptionBox" Watermark="Description" AcceptsReturn="True" TextWrapping="Wrap"
                            Height="90" />
+                  <!-- Co-authors: credited with Co-authored-by lines, shown on GitHub and GitLab -->
+                  <ToggleButton x:Name="CoAuthorsToggle" Content="Co-authors" Padding="8,2"
+                                ToolTip.Tip="Credit other people on this commit" />
+                  <Border x:Name="CoAuthorsPanel" IsVisible="False" BorderBrush="#33FFFFFF" BorderThickness="1"
+                          CornerRadius="4" Padding="6,4">
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Left" Text="Co-authors" Opacity="0.7" VerticalAlignment="Center"
+                                 Margin="0,0,8,0" />
+                      <WrapPanel x:Name="CoAuthorChips" DockPanel.Dock="Left" VerticalAlignment="Center" />
+                      <AutoCompleteBox x:Name="CoAuthorBox" FilterMode="Contains" MinimumPrefixLength="1"
+                                       Watermark="Name &lt;email&gt; or pick someone, then Enter" />
+                    </DockPanel>
+                  </Border>
                   <DockPanel>
                     <Button x:Name="CommitButton" DockPanel.Dock="Right" Content="Commit" Classes="accent"
                             ToolTip.Tip="Commit (Ctrl+Enter)" />

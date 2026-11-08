@@ -94,6 +94,7 @@ public partial class MainWindow : Window
         InitializeHistoryTools();
         InitializeLineStaging();
         InitializeBisect();
+        InitializeCoAuthors();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -322,9 +323,11 @@ public partial class MainWindow : Window
         if (message == null)
             return;
 
-        string[] parts = message.Split('\n', 2);
+        (string text, List<CoAuthor> coAuthors) = CoAuthor.Extract(message);
+        string[] parts = text.Split('\n', 2);
         SummaryBox.Text = parts[0].Trim();
         DescriptionBox.Text = parts.Length > 1 ? parts[1].Trim('\n', '\r') : string.Empty;
+        SetCoAuthors(coAuthors);
     }
 
     private async Task CommitAsync()
@@ -352,7 +355,8 @@ public partial class MainWindow : Window
         if (!await ConfirmLineEndingsAsync() || !await ConfirmWhitespaceAsync())
             return;
 
-        string message = description.Length == 0 ? summary : summary + "\n\n" + description;
+        string message = CoAuthor.Append(description.Length == 0 ? summary : summary + "\n\n" + description,
+                                         _coAuthors);
         bool success = await RunGitAsync("Committing…", repository => repository.CommitAsync(message, amend),
                                          amend ? "Amended the last commit." : "Committed.");
         if (success)
@@ -360,6 +364,7 @@ public partial class MainWindow : Window
             SummaryBox.Text = string.Empty;
             DescriptionBox.Text = string.Empty;
             AmendBox.IsChecked = false;
+            SetCoAuthors(Array.Empty<CoAuthor>());
 
             // The template prefills the next message again
             _templateRepository = null;

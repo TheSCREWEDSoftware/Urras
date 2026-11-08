@@ -86,4 +86,21 @@ public sealed partial class GitRepository
     {
         return Run("branch", name, revision);
     }
+
+    // People who have committed here, most frequent first, as co-author suggestions
+    public async Task<List<CoAuthor>> GetKnownPeopleAsync(int commits = 3000)
+    {
+        GitResult result = await Run("log", "--all", "-n", commits.ToString(), "--format=%an%x1f%ae%n%cn%x1f%ce");
+        if (!result.Success)
+            return new List<CoAuthor>();
+
+        return result.Output.Split('\n')
+                     .Select(line => line.TrimEnd('\r').Split('\u001f'))
+                     .Where(fields => fields.Length == 2 && fields[1].Contains('@')
+                                      && !fields[1].StartsWith("noreply@github.com", StringComparison.Ordinal))
+                     .GroupBy(fields => fields[1].ToLowerInvariant())
+                     .OrderByDescending(group => group.Count())
+                     .Select(group => new CoAuthor(group.First()[0], group.First()[1]))
+                     .ToList();
+    }
 }
