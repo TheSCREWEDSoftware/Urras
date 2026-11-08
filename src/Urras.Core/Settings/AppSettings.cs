@@ -3,6 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace Urras.Core.Settings;
 
+// Per file: a list of changed files with one diff at a time. Combined: every file in one diff
+public enum FileListMode
+{
+    PerFile,
+    Combined
+}
+
 public enum DiffViewMode
 {
     Unified,
@@ -30,6 +37,15 @@ public sealed class AppSettings
 
     // Kept while grouping by folder too, so switching back restores it
     public LayoutGroup? ManualLayout { get; set; }
+
+    // Diffs show spaces, tabs and line endings
+    public bool ShowWhitespace { get; set; }
+
+    // Long diff lines wrap instead of scrolling sideways
+    public bool WrapDiffLines { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter<FileListMode>))]
+    public FileListMode FileListMode { get; set; } = FileListMode.PerFile;
 
     // Untracked files are left out of the change list and of Stage all
     public bool HideUntracked { get; set; }

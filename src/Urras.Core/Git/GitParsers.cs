@@ -103,6 +103,32 @@ public static class GitParsers
             status.Unstaged.Add(new FileChange(path, ToKind(xy[1]), xy[0] == '.' ? originalPath : null));
     }
 
+    // Parses `--name-status -z`: "M\0path\0", or "R100\0old\0new\0" for renames and copies
+    public static List<FileChange> ParseNameStatus(string output)
+    {
+        List<FileChange> changes = new List<FileChange>();
+        string[] tokens = output.Split('\0');
+        int i = 0;
+        while (i < tokens.Length && tokens[i].Length > 0)
+        {
+            char code = tokens[i][0];
+            if ((code == 'R' || code == 'C') && i + 2 < tokens.Length)
+            {
+                changes.Add(new FileChange(tokens[i + 2], ToKind(code), tokens[i + 1]));
+                i += 3;
+            }
+            else if (i + 1 < tokens.Length)
+            {
+                changes.Add(new FileChange(tokens[i + 1], ToKind(code)));
+                i += 2;
+            }
+            else
+                break;
+        }
+
+        return changes;
+    }
+
     private static ChangeKind ToKind(char code)
     {
         return code switch

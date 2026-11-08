@@ -30,6 +30,12 @@ public sealed class DiffLine
     public int? OldNumber { get; }
     public int? NewNumber { get; }
 
+    // The line ended in CRLF in the file
+    public bool HasCarriageReturn { get; init; }
+
+    // The last line of the file, without a line ending ("\ No newline at end of file")
+    public bool MissingNewline { get; internal set; }
+
     public bool IsCode => Kind is DiffLineKind.Context or DiffLineKind.Added or DiffLineKind.Removed;
 }
 
@@ -57,7 +63,9 @@ public static partial class DiffParser
     public static List<DiffLine> Parse(string text)
     {
         List<DiffLine> lines = new List<DiffLine>();
-        string[] rawLines = text.Replace("\r\n", "\n").Split('\n');
+
+        // Split on LF only, so the CR of CRLF files is kept and can be shown
+        string[] rawLines = text.Split('\n');
 
         // git ends its output with a newline, which would otherwise become an empty context line
         int count = rawLines.Length;
@@ -73,6 +81,9 @@ public static partial class DiffParser
         for (int i = 0; i < count; ++i)
         {
             string line = rawLines[i];
+            bool carriageReturn = line.EndsWith('\r');
+            if (carriageReturn)
+                line = line.Substring(0, line.Length - 1);
 
             if (line.StartsWith("diff --git ", StringComparison.Ordinal) ||
                 line.StartsWith("diff --cc ", StringComparison.Ordinal) ||
@@ -123,14 +134,25 @@ public static partial class DiffParser
             }
 
             if (line.StartsWith('+'))
-                lines.Add(new DiffLine(DiffLineKind.Added, line.Substring(1), null, newNumber++));
+                lines.Add(new DiffLine(DiffLineKind.Added, line.Substring(1), null, newNumber++)
+                {
+                    HasCarriageReturn = carriageReturn
+                });
             else if (line.StartsWith('-'))
-                lines.Add(new DiffLine(DiffLineKind.Removed, line.Substring(1), oldNumber++, null));
+                lines.Add(new DiffLine(DiffLineKind.Removed, line.Substring(1), oldNumber++, null)
+                {
+                    HasCarriageReturn = carriageReturn
+                });
             else if (line.StartsWith('\\'))
+            {
+                // Marks the line before it as the end of the file without a line ending
+                if (lines.Count > 0 && lines[^1].IsCode)
+                    lines[^1].MissingNewline = true;
                 lines.Add(new DiffLine(DiffLineKind.Meta, line));
+            }
             else if (line.StartsWith(' ') || line.Length == 0)
                 lines.Add(new DiffLine(DiffLineKind.Context, line.Length == 0 ? line : line.Substring(1), oldNumber++,
-                                       newNumber++));
+                                       newNumber++) { HasCarriageReturn = carriageReturn });
             else
             {
                 // Anything else ends the hunk, such as the next commit in a multi-commit show

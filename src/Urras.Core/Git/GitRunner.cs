@@ -75,6 +75,38 @@ public static class GitRunner
         return result;
     }
 
+    // For file contents such as images, which must not be decoded as text; null when the command fails
+    public static async Task<byte[]?> RunBytesAsync(string workingDirectory, IEnumerable<string> arguments)
+    {
+        ProcessStartInfo startInfo = new ProcessStartInfo(GitExecutable)
+        {
+            WorkingDirectory = workingDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        foreach (string argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+        startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
+
+        try
+        {
+            using Process process = new Process { StartInfo = startInfo };
+            process.Start();
+            using MemoryStream output = new MemoryStream();
+            Task copy = process.StandardOutput.BaseStream.CopyToAsync(output);
+            Task<string> error = process.StandardError.ReadToEndAsync();
+            await Task.WhenAll(copy, error);
+            await process.WaitForExitAsync();
+            return process.ExitCode == 0 ? output.ToArray() : null;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
+    }
+
     public static Task<GitResult> RunAsync(string workingDirectory, params string[] arguments)
     {
         return RunAsync(workingDirectory, arguments, null, CancellationToken.None);

@@ -135,6 +135,62 @@ public sealed class GitRepository
         return result.Success ? result.Output : result.Message;
     }
 
+    // The commit's first parent, or the empty tree for the first commit, so every commit can be diffed the same way
+    public async Task<string> GetCommitBaseAsync(string hash)
+    {
+        GitResult parents = await Run("rev-list", "--parents", "-n", "1", hash);
+        string[] ids = parents.Output.Split(' ',
+                                            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (ids.Length > 1)
+            return ids[1];
+
+        GitResult emptyTree = await GitRunner.RunAsync(Path, new[] { "hash-object", "-t", "tree", "--stdin" },
+                                                       string.Empty);
+        return emptyTree.Output.Trim();
+    }
+
+    // The files a commit changed, compared with its first parent
+    public async Task<List<FileChange>> GetCommitFilesAsync(string hash)
+    {
+        string commitBase = await GetCommitBaseAsync(hash);
+        GitResult result = await Run("diff", "--name-status", "-M", "-z", commitBase, hash);
+        return result.Success ? GitParsers.ParseNameStatus(result.Output) : new List<FileChange>();
+    }
+
+    public async Task<string> GetCommitFileDiffAsync(string hash, FileChange change)
+    {
+        string commitBase = await GetCommitBaseAsync(hash);
+        List<string> arguments = Arguments("diff", "--no-color", "-M", commitBase, hash, "--");
+        if (change.OriginalPath != null)
+            arguments.Add(change.OriginalPath);
+        arguments.Add(change.Path);
+
+        GitResult result = await Run(arguments);
+        return result.Success ? result.Output : result.Message;
+    }
+
+    // Every change in one diff, for the combined view of a change list
+    public async Task<string> GetCombinedDiffAsync(IEnumerable<FileChange> changes, bool staged)
+    {
+        System.Text.StringBuilder diff = new System.Text.StringBuilder();
+        foreach (FileChange change in changes)
+            diff.Append(await GetDiffAsync(change, staged));
+        return diff.ToString();
+    }
+
+    // A file's contents at a revision ("HEAD:path", ":path" for the staged copy); null when it doesn't exist there
+    public Task<byte[]?> GetBlobAsync(string revision, string path)
+    {
+        return GitRunner.RunBytesAsync(Path, new[] { "show", revision + ":" + path.Replace('\\', '/') });
+    }
+
+    // The working copy of a file; null when it was deleted
+    public async Task<byte[]?> GetWorkingFileAsync(string path)
+    {
+        string fullPath = System.IO.Path.Combine(Path, path);
+        return File.Exists(fullPath) ? await File.ReadAllBytesAsync(fullPath) : null;
+    }
+
     public Task<GitResult> CommitAsync(string message, bool amend)
     {
         List<string> arguments = Arguments("commit", "--file=-", "--cleanup=strip");
