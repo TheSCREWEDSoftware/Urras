@@ -24,6 +24,15 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<DiffViewMode>))]
     public DiffViewMode DiffView { get; set; } = DiffViewMode.Unified;
 
+    // On: the repository list mirrors the folders on disk. Off: ManualLayout is used
+    public bool GroupByFolder { get; set; } = true;
+
+    // Kept while grouping by folder too, so switching back restores it
+    public LayoutGroup? ManualLayout { get; set; }
+
+    // Folder groups the user collapsed in the automatic layout
+    public List<string> CollapsedFolders { get; set; } = new List<string>();
+
     // %APPDATA%\Urras on Windows, ~/.config/Urras on Linux
     public static string DefaultPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APP_FOLDER_NAME,
@@ -73,6 +82,8 @@ public sealed class AppSettings
     public void RemoveRepository(string path)
     {
         Repositories.RemoveAll(existing => PathsEqual(existing, path));
+        if (ManualLayout != null)
+            RepositoryLayout.RemoveRepository(ManualLayout, path);
         if (LastRepository != null && PathsEqual(LastRepository, path))
             LastRepository = null;
     }

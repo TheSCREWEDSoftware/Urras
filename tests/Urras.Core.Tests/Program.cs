@@ -4,7 +4,7 @@ using Urras.Core.Tests;
 // Minimal test runner with no package dependencies: every public static async method of a test class is a test
 Type[] testClasses =
 {
-    typeof(ParserTests), typeof(DiffParserTests), typeof(RepositoryTests), typeof(SettingsTests)
+    typeof(ParserTests), typeof(DiffParserTests), typeof(LayoutTests), typeof(RepositoryTests), typeof(SettingsTests)
 };
 int passed = 0;
 int failed = 0;
