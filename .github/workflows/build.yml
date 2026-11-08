@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Configure Git for the tests
+        run: |
+          git config --global user.name "Urras CI"
+          git config --global user.email "ci@example.com"
+          git config --global init.defaultBranch main
+
+      - name: Build
+        run: dotnet build Urras.sln -c Release
+
+      - name: Core tests
+        run: dotnet run --project tests/Urras.Core.Tests -c Release
+
+      - name: Coding standards (files)
+        run: dotnet run --project tools/Urras.Standards -c Release -- --all
+
+      - name: Coding standards (commit messages)
+        if: github.event_name == 'pull_request'
+        run: dotnet run --project tools/Urras.Standards -c Release -- --commits origin/${{ github.base_ref }}..HEAD
