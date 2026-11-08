@@ -118,11 +118,11 @@ public partial class MainWindow
 
     private async Task CheckoutCommitAsync(CommitInfo commit)
     {
-        bool confirm = await Dialogs.ConfirmAsync(this, "Check out commit",
-                                                  "Check out " + commit.ShortHash + " \"" + commit.Subject + "\"? " +
-                                                      "You will not be on a branch (detached HEAD); create a branch " +
-                                                      "to keep new commits.",
-                                                  "Check out");
+        bool confirm = await ConfirmIfAsync(_settings.Prompts.CheckingOutCommits, "Check out commit",
+                                            "Check out " + commit.ShortHash + " \"" + commit.Subject + "\"? " +
+                                                "You will not be on a branch (detached HEAD); create a branch " +
+                                                "to keep new commits.",
+                                            "Check out");
         if (confirm)
             await RunGitAsync("Checking out " + commit.ShortHash + "…",
                               repository => repository.CheckoutCommitAsync(commit.Hash),
@@ -260,8 +260,8 @@ public partial class MainWindow
                 break;
             }
             case "Drop":
-                if (await Dialogs.ConfirmAsync(this, "Drop stash",
-                                               "Drop " + stash.Reference + "? Its changes are lost.", "Drop"))
+                if (await ConfirmIfAsync(_settings.Prompts.DroppingStashes, "Drop stash",
+                                         "Drop " + stash.Reference + "? Its changes are lost.", "Drop"))
                     await RunGitAsync("Dropping " + stash.Reference + "…",
                                       repository => repository.StashDropAsync(stash.Reference),
                                       "Dropped " + stash.Reference + ".");

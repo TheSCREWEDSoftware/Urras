@@ -252,7 +252,8 @@ public partial class MainWindow
             {
                 AddMenuItem(menu, "Open file", () => Report(SystemShell.OpenFile(fullPath)));
                 AddMenuItem(menu, "Show in file explorer", () => Report(SystemShell.ShowFile(fullPath)));
-                AddMenuItem(menu, "Open in VS Code", () => Report(SystemShell.OpenInVisualStudioCode(fullPath)));
+                AddMenuItem(menu, "Open in " + EditorName,
+                            () => Report(SystemShell.OpenInEditor(_settings.Editor, fullPath)));
                 menu.Items.Add(new Separator());
             }
 
@@ -300,8 +301,9 @@ public partial class MainWindow
         AddMenuItem(menu, "Open in file explorer", () => Report(SystemShell.OpenFolder(folder)));
         if (node.Path != null)
         {
-            AddMenuItem(menu, "Open in terminal", () => Report(SystemShell.OpenTerminal(folder)));
-            AddMenuItem(menu, "Open in VS Code", () => Report(SystemShell.OpenInVisualStudioCode(folder)));
+            AddMenuItem(menu, "Open in terminal", () => Report(SystemShell.OpenShell(_settings.Shell, folder)));
+            AddMenuItem(menu, "Open in " + EditorName,
+                        () => Report(SystemShell.OpenInEditor(_settings.Editor, folder)));
         }
 
         AddMenuItem(menu, "Copy path", () => CopyAsync(folder));
@@ -331,22 +333,6 @@ public partial class MainWindow
         string? version = typeof(MainWindow).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         return version ?? typeof(MainWindow).Assembly.GetName().Version?.ToString() ?? "unknown";
-    }
-
-    private async Task OpenSettingsAsync()
-    {
-        (int Minutes, bool CheckWhitespace)? result =
-            await Dialogs.SettingsAsync(this, _settings.AutoFetchMinutes, _settings.CheckWhitespaceBeforeCommit);
-        if (result == null)
-            return;
-
-        int minutes = result.Value.Minutes;
-        _settings.AutoFetchMinutes = minutes;
-        _settings.CheckWhitespaceBeforeCommit = result.Value.CheckWhitespace;
-        _settings.Save();
-        RestartAutoFetch();
-        SetStatus(minutes == 0 ? "Settings saved. Background fetching is off."
-                               : $"Settings saved. Fetching every {minutes} minutes.", false);
     }
 
     private void RestartAutoFetch()

@@ -135,9 +135,9 @@ public partial class MainWindow
             return;
         }
 
-        if (!await Dialogs.ConfirmAsync(this, "Remove worktree",
-                                        "Remove " + worktree.Path + "? Its folder is deleted; the branch is kept. " +
-                                            "Uncommitted changes there are lost.", "Remove"))
+        if (!await ConfirmIfAsync(_settings.Prompts.RemovingWorktrees, "Remove worktree",
+                                  "Remove " + worktree.Path + "? Its folder is deleted; the branch is kept. " +
+                                      "Uncommitted changes there are lost.", "Remove"))
             return;
 
         await RunGitAsync("Removing worktree…", repository => repository.RemoveWorktreeAsync(worktree.Path, true),

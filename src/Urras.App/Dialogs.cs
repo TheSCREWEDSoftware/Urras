@@ -202,39 +202,6 @@ public static class Dialogs
         await dialog.ShowDialog<object?>(owner);
     }
 
-    // Returns the chosen background fetch interval in minutes (0 for off) and the whitespace check, or null
-    public static async Task<(int Minutes, bool CheckWhitespace)?> SettingsAsync(Window owner, int autoFetchMinutes,
-                                                                                 bool checkWhitespace)
-    {
-        int[] intervals = { 0, 5, 10, 15, 30, 60 };
-        Window dialog = CreateWindow("Settings");
-        ComboBox fetch = new ComboBox
-        {
-            ItemsSource = intervals.Select(minutes => minutes == 0 ? "Off" : "Every " + minutes + " minutes")
-                .ToList(),
-            SelectedIndex = Math.Max(0, Array.IndexOf(intervals, autoFetchMinutes)),
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        };
-        CheckBox whitespace = new CheckBox
-        {
-            Content = "Check for whitespace problems, such as trailing spaces, before committing",
-            IsChecked = checkWhitespace
-        };
-        Button save = new Button { Content = "Save", IsDefault = true };
-        Button cancel = new Button { Content = "Cancel", IsCancel = true };
-        save.Click += (_, _) => dialog.Close(((int, bool)?)(intervals[Math.Max(0, fetch.SelectedIndex)],
-                                                           whitespace.IsChecked == true));
-        cancel.Click += (_, _) => dialog.Close(null);
-
-        StackPanel input = new StackPanel { Spacing = 12 };
-        input.Children.Add(fetch);
-        input.Children.Add(whitespace);
-        TextBlock label = Paragraph("Fetch every repository in the background. Fetching never changes your files; " +
-                                    "it only updates the commits to pull shown next to each repository.");
-        dialog.Content = Layout(label, input, save, cancel);
-        return await dialog.ShowDialog<(int, bool)?>(owner);
-    }
-
     // A list with a button per action; returns the selected item and the action clicked, or nulls when closed
     public static async Task<(T? Item, string? Action)> ListActionsAsync<T>(Window owner, string title, string label,
                                                                            IReadOnlyList<T> items,

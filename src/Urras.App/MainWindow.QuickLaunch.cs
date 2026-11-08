@@ -68,8 +68,9 @@ public partial class MainWindow
             AddCommand(items, "Repository settings…", () => RepositorySettingsAsync(_repository.Path));
             string folder = _repository.Path;
             AddCommand(items, "Open in file explorer", () => Report(SystemShell.OpenFolder(folder)));
-            AddCommand(items, "Open in terminal", () => Report(SystemShell.OpenTerminal(folder)));
-            AddCommand(items, "Open in VS Code", () => Report(SystemShell.OpenInVisualStudioCode(folder)));
+            AddCommand(items, "Open in terminal", () => Report(SystemShell.OpenShell(_settings.Shell, folder)));
+            AddCommand(items, "Open in " + EditorName,
+                       () => Report(SystemShell.OpenInEditor(_settings.Editor, folder)));
             AddCommand(items, "Refresh", RefreshAsync);
             AddCommand(items, "Commands…", ManageCommandsAsync);
             AddCommand(items, "Statistics…", ShowStatisticsAsync);
@@ -81,6 +82,10 @@ public partial class MainWindow
 
         AddCommand(items, "Add repository…", AddRepositoryAsync);
         AddCommand(items, "Clone…", CloneRepositoryAsync);
+        AddCommand(items, "Import all repositories in a folder…", ImportFromFolderAsync);
+        AddCommand(items, "Import repositories from GitHub Desktop", ImportFromGitHubDesktopAsync);
+        AddCommand(items, "Clone from your GitHub account…", CloneFromGitHubAsync);
+        AddCommand(items, "Accounts…", ManageAccountsAsync);
         AddCommand(items, "Settings…", OpenSettingsAsync);
         return items;
     }

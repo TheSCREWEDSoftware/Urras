@@ -75,8 +75,8 @@ public partial class MainWindow
 
     private async Task DiscardLinesAsync(string diff, HashSet<int> lines, string what)
     {
-        if (!await Dialogs.ConfirmAsync(this, "Discard changes",
-                                        "Discard the selected " + what + "? This cannot be undone.", "Discard"))
+        if (!await ConfirmIfAsync(_settings.Prompts.DiscardingChanges, "Discard changes",
+                                  "Discard the selected " + what + "? This cannot be undone.", "Discard"))
             return;
 
         await RunGitAsync("Discarding lines…", repository => repository.DiscardLinesAsync(diff, lines),

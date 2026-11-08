@@ -311,10 +311,10 @@ public partial class MainWindow
 
     private async Task RemoveRepositoryAsync(RepositoryNode node)
     {
-        bool remove = await Dialogs.ConfirmAsync(this, "Remove repository",
-                                                 "Remove " + node.Name +
-                                                     " from the list? Files on disk are not touched.",
-                                                 "Remove");
+        bool remove = await ConfirmIfAsync(_settings.Prompts.RemovingRepositories, "Remove repository",
+                                           "Remove " + node.Name +
+                                               " from the list? Files on disk are not touched.",
+                                           "Remove");
         if (!remove || node.Path == null)
             return;
 

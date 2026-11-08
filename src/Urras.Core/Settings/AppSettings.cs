@@ -35,6 +35,7 @@ public sealed class AppSettings
     public const string APP_FOLDER_NAME = "Urras";
     public const string SETTINGS_FILE_NAME = "settings.json";
     public const int DEFAULT_AUTO_FETCH_MINUTES = 10;
+    public const int DEFAULT_TAB_SIZE = 4;
 
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
@@ -75,6 +76,18 @@ public sealed class AppSettings
 
     // Signed-in accounts; their tokens are in the system's credential store, not here
     public List<Urras.Core.Accounts.Account> Accounts { get; set; } = new();
+
+    [JsonConverter(typeof(JsonStringEnumConverter<ThemeChoice>))]
+    public ThemeChoice Theme { get; set; } = ThemeChoice.Dark;
+    public string DateFormat { get; set; } = DisplayFormats.DEFAULT_DATE;
+    public string TimeFormat { get; set; } = DisplayFormats.DEFAULT_TIME;
+
+    // Spaces shown for a tab in diffs and the file viewer
+    public int TabSize { get; set; } = DEFAULT_TAB_SIZE;
+
+    public ProgramChoice Editor { get; set; } = new ProgramChoice { Name = "Visual Studio Code" };
+    public ProgramChoice Shell { get; set; } = new ProgramChoice { Name = "Default" };
+    public PromptSettings Prompts { get; set; } = new PromptSettings();
 
     // Commands added to the menus by the user
     public List<Urras.Core.Commands.CustomCommand> CustomCommands { get; set; } = new();

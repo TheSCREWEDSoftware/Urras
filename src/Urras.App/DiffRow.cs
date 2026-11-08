@@ -9,7 +9,8 @@ namespace Urras.App;
 public sealed class DiffRow
 {
     private const int MAX_ROWS = 20000;
-    private const int TAB_WIDTH = 4;
+    // Spaces shown for a tab; set from Options
+    public static int TabWidth { get; set; } = 4;
 
     private static readonly IBrush NormalBrush = Brush("#E6EDF3");
     private static readonly IBrush MutedBrush = Brush("#8B949E");
@@ -92,7 +93,7 @@ public sealed class DiffRow
                 break;
             }
 
-            string expanded = line.Replace("\t", new string(' ', TAB_WIDTH));
+            string expanded = line.Replace("\t", new string(' ', TabWidth));
             rows.Add(new DiffRow { Text = expanded, Foreground = RawBrush(line), RawLines = new[] { rows.Count } });
         }
 
@@ -297,8 +298,8 @@ public sealed class DiffRow
             current.Append(character switch
             {
                 ' ' when showWhitespace => "·",
-                '\t' when showWhitespace => "→" + new string(' ', TAB_WIDTH - 1),
-                '\t' => new string(' ', TAB_WIDTH),
+                '\t' when showWhitespace => "→" + new string(' ', TabWidth - 1),
+                '\t' => new string(' ', TabWidth),
                 _ => character.ToString()
             });
         }
@@ -341,7 +342,7 @@ public sealed class DiffRow
                 Foreground = HunkTextBrush
             },
             DiffLineKind.Meta => new DiffRow { FullText = line.Text, Foreground = MutedBrush },
-            _ => new DiffRow { FullText = line.Text.Replace("\t", new string(' ', TAB_WIDTH)) }
+            _ => new DiffRow { FullText = line.Text.Replace("\t", new string(' ', TabWidth)) }
         };
     }
 

@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Urras.Core.Accounts;
 
 namespace Urras.App;
@@ -22,45 +23,27 @@ public partial class MainWindow
         AccountsButton.Click += async (_, _) => await ManageAccountsAsync();
     }
 
-    private async Task ManageAccountsAsync()
+    private Task ManageAccountsAsync()
     {
-        if (_accounts == null)
-            return;
-
-        List<Account> accounts = _accounts.Accounts.ToList();
-        string label = accounts.Count == 0
-            ? "No accounts yet. Add your GitHub account to find co-authors by @username and show profile pictures."
-            : "Signed in:";
-        (Account? account, string? action) = await Dialogs.ListActionsAsync(
-            this, "Accounts", label, accounts, "Add GitHub account…", "Add GitHub Enterprise account…", "Remove");
-
-        switch (action)
-        {
-            case "Add GitHub account…":
-                await AddGitHubAccountAsync(GitHubClient.GITHUB_API);
-                break;
-            case "Add GitHub Enterprise account…":
-            {
-                string? host = await Dialogs.PromptAsync(this, "GitHub Enterprise", "Server address:",
-                                                         "https://github.example.com");
-                if (host != null)
-                    await AddGitHubAccountAsync(host.TrimEnd('/') + "/api/v3");
-                break;
-            }
-            case "Remove" when account != null:
-                if (await Dialogs.ConfirmAsync(this, "Remove account",
-                                               "Sign out of " + account + "? Its token is deleted from this computer.",
-                                               "Remove"))
-                    await _accounts.RemoveAsync(account);
-                break;
-            default:
-                return;
-        }
-
-        await ManageAccountsAsync();
+        return OpenOptionsAsync(OptionsWindow.ACCOUNTS);
     }
 
-    private async Task AddGitHubAccountAsync(string api)
+    // An empty api asks for a GitHub Enterprise server's address first
+    private async Task AddGitHubAccountAsync(Window owner, string api)
+    {
+        if (api.Length == 0)
+        {
+            string? host = await Dialogs.PromptAsync(owner, "GitHub Enterprise", "Server address:",
+                                                     "https://github.example.com");
+            if (host == null)
+                return;
+            api = host.TrimEnd('/') + "/api/v3";
+        }
+
+        await SignInWithTokenAsync(owner, api);
+    }
+
+    private async Task SignInWithTokenAsync(Window owner, string api)
     {
         if (_accounts == null)
             return;
@@ -69,7 +52,7 @@ public partial class MainWindow
         if (api == GitHubClient.GITHUB_API)
             await Report(SystemShell.OpenFile(TOKEN_PAGE));
 
-        string? token = await Dialogs.PromptAsync(this, "Add GitHub account",
+        string? token = await Dialogs.PromptAsync(owner, "Add GitHub account",
                                                   "Paste a personal access token (the page that opened creates one " +
                                                       "with the repo and read:user permissions). It is kept in " +
                                                       "your system's credential store.");
@@ -84,6 +67,7 @@ public partial class MainWindow
         catch (PlatformException exception)
         {
             SetStatus("Couldn't add the account: " + exception.Message, true);
+            await Dialogs.ShowTextAsync(owner, "Couldn't add the account", exception.Message);
         }
     }
 }

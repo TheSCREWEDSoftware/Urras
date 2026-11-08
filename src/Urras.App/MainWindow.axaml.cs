@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         InitializeLineStaging();
         InitializeBisect();
         InitializeAccounts();
+        ApplyPreferences();
         InitializeCoAuthors();
         InitializeRepositoryTree();
         UpdateButtons();
@@ -306,10 +307,10 @@ public partial class MainWindow : Window
         }
 
         string what = changes.Count == 1 ? changes[0].Path : changes.Count + " files";
-        bool discard = await Dialogs.ConfirmAsync(this, "Discard changes",
-                                                  "Discard the changes to " + what +
-                                                  "? Untracked files are deleted. This cannot be undone.",
-                                                  "Discard");
+        bool discard = await ConfirmIfAsync(_settings.Prompts.DiscardingChanges, "Discard changes",
+                                            "Discard the changes to " + what +
+                                            "? Untracked files are deleted. This cannot be undone.",
+                                            "Discard");
         if (!discard)
             return;
 
@@ -382,6 +383,12 @@ public partial class MainWindow : Window
             branch.IsCurrent)
             return;
 
+        if (!await HandleChangesBeforeSwitchAsync(branch.Name))
+        {
+            await RefreshAsync();
+            return;
+        }
+
         if (!branch.IsRemote)
         {
             await RunGitAsync("Switching to " + branch.Name + "…", repository => repository.SwitchAsync(branch.Name),
@@ -396,6 +403,35 @@ public partial class MainWindow : Window
                           repository => localExists ? repository.SwitchAsync(localName)
                                                     : repository.SwitchToRemoteAsync(branch.Name),
                           "Switched to " + localName + ".");
+    }
+
+    // Uncommitted changes either come along to the new branch (git's own behaviour) or are stashed on the current
+    // one, as Options says; false when the user cancels
+    private async Task<bool> HandleChangesBeforeSwitchAsync(string target)
+    {
+        if (_repository == null || _status == null ||
+            (_status.Staged.Count == 0 && _status.Unstaged.All(change => change.Kind == ChangeKind.Untracked)))
+            return true;
+
+        BranchSwitchChanges mode = _settings.Prompts.SwitchingWithChanges;
+        string current = _status.Branch ?? "the current branch";
+        if (mode == BranchSwitchChanges.Ask)
+        {
+            string bring = "Bring my changes to " + target;
+            string leave = "Stash them and leave them on " + current;
+            string? choice = await Dialogs.ChooseAsync(this, "Uncommitted changes",
+                                                       "You have uncommitted changes. Where should they go?",
+                                                       new[] { bring, leave });
+            if (choice == null)
+                return false;
+            mode = choice == bring ? BranchSwitchChanges.Bring : BranchSwitchChanges.Stash;
+        }
+
+        if (mode == BranchSwitchChanges.Bring)
+            return true;
+
+        GitResult stash = await _repository.StashAsync("Left on " + current + " when switching to " + target, false);
+        return ReportResult(stash, "Stashed your changes on " + current + ".");
     }
 
     private async Task CreateBranchAsync()

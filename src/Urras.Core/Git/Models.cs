@@ -103,7 +103,7 @@ public sealed class CommitInfo
     public DateTimeOffset Date { get; }
     public string Subject { get; }
 
-    public string DateText => Date.LocalDateTime.ToString("yyyy-MM-dd HH:mm");
+    public string DateText => Urras.Core.Settings.DisplayFormats.DateAndTime(Date);
 
     // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
     public string Refs { get; init; } = string.Empty;

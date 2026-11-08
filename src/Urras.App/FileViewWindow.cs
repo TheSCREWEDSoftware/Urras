@@ -79,7 +79,7 @@ public sealed class FileViewWindow : Window
                 continue;
 
             IBrush? brush = kinds == null ? null : DiffRow.SyntaxBrush(kinds[start]);
-            segments.Add(new TextSegment(text[start..i].Replace("\t", "    "), brush));
+            segments.Add(new TextSegment(text[start..i].Replace("\t", new string(' ', DiffRow.TabWidth)), brush));
             start = i;
         }
 

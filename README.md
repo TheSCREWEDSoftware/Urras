@@ -50,6 +50,9 @@ you already have installed.
 - Custom commands: run builds, scripts or other tools from the menus, with the repository, branch, file or
   commit filled in
 - Statistics: contributors, when commits happen and which files change most
+- Options: accounts, external editor and shell (or your own), Git name, email and default branch, theme, date
+  and time formats, tab size, which questions to ask, what happens to changes when switching branch, background
+  fetch
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

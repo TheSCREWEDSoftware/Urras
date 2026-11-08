@@ -75,6 +75,92 @@ public static class SystemShell
         return Start("code", path);
     }
 
+    public const string DEFAULT = "Default";
+
+    // Editors Urras knows how to start: name shown, program, and whether it is a .cmd script on Windows
+    private static readonly (string Name, string Windows, string Unix, bool Script)[] KnownEditors =
+    {
+        ("Visual Studio Code", "code", "code", true),
+        ("Visual Studio", "devenv", "", false),
+        ("JetBrains Rider", "rider64", "rider", false),
+        ("Notepad++", "notepad++", "", false),
+        ("Sublime Text", "subl", "subl", false),
+        ("Zed", "zed", "zed", false)
+    };
+
+    public static IReadOnlyList<string> EditorNames => KnownEditors
+        .Where(editor => (OperatingSystem.IsWindows() ? editor.Windows : editor.Unix).Length > 0)
+        .Select(editor => editor.Name).Append(Urras.Core.Settings.ProgramChoice.CUSTOM).ToList();
+
+    public static IReadOnlyList<string> ShellNames => OperatingSystem.IsWindows()
+        ? new[] { DEFAULT, "Command Prompt", "PowerShell", "Git Bash", "Windows Terminal",
+                  Urras.Core.Settings.ProgramChoice.CUSTOM }
+        : new[] { DEFAULT, Urras.Core.Settings.ProgramChoice.CUSTOM };
+
+    // Opens a folder or file in the chosen editor
+    public static string? OpenInEditor(Urras.Core.Settings.ProgramChoice editor, string path)
+    {
+        if (editor.IsCustom)
+            return StartCustom(editor, path);
+
+        (string Name, string Windows, string Unix, bool Script) known =
+            KnownEditors.FirstOrDefault(item => item.Name == editor.Name);
+        if (known.Name == null)
+            return OpenInVisualStudioCode(path);
+
+        string program = OperatingSystem.IsWindows() ? known.Windows : known.Unix;
+        if (OperatingSystem.IsWindows() && known.Script)
+            return Start(new ProcessStartInfo("cmd.exe")
+            {
+                ArgumentList = { "/c", program, path },
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
+        return Start(program, path);
+    }
+
+    // Opens a terminal in the folder with the chosen shell
+    public static string? OpenShell(Urras.Core.Settings.ProgramChoice shell, string folder)
+    {
+        if (shell.IsCustom)
+            return StartCustom(shell, folder);
+        if (!OperatingSystem.IsWindows())
+            return OpenTerminal(folder);
+
+        return shell.Name switch
+        {
+            "Command Prompt" => Start(new ProcessStartInfo("cmd.exe") { WorkingDirectory = folder,
+                                                                         UseShellExecute = true }),
+            "PowerShell" => Start(new ProcessStartInfo("powershell.exe") { WorkingDirectory = folder,
+                                                                            UseShellExecute = true }),
+            "Git Bash" => Start(GitBash(), "--cd=" + folder),
+            "Windows Terminal" => Start("wt.exe", "-d", folder),
+            _ => OpenTerminal(folder)
+        };
+    }
+
+    private static string GitBash()
+    {
+        string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        string bash = Path.Combine(programFiles, "Git", "git-bash.exe");
+        return File.Exists(bash) ? bash : "git-bash.exe";
+    }
+
+    private static string? StartCustom(Urras.Core.Settings.ProgramChoice program, string target)
+    {
+        if (string.IsNullOrWhiteSpace(program.Path))
+            return "Choose the program's path in Options first.";
+
+        ProcessStartInfo start = new ProcessStartInfo(program.Path)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = Directory.Exists(target) ? target : Path.GetDirectoryName(target) ?? string.Empty
+        };
+        foreach (string argument in program.ArgumentsFor(target))
+            start.ArgumentList.Add(argument);
+        return Start(start);
+    }
+
     private static string? Start(string program, params string[] arguments)
     {
         ProcessStartInfo startInfo = new ProcessStartInfo(program) { UseShellExecute = false };
