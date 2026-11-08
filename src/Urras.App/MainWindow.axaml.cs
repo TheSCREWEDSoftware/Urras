@@ -508,7 +508,7 @@ public partial class MainWindow : Window
     {
         _changesDiffText = text;
         DiffTitle.Text = title;
-        ShowText(ImageView, DiffList);
+        ShowText(ImageView, MarkdownView, DiffList);
         RenderDiff(DiffList, text);
     }
 
@@ -516,7 +516,7 @@ public partial class MainWindow : Window
     {
         _commitDiffText = text;
         CommitDiffTitle.Text = title;
-        ShowText(CommitImageView, CommitDiffList);
+        ShowText(CommitImageView, CommitMarkdownView, CommitDiffList);
         RenderDiff(CommitDiffList, text);
     }
 

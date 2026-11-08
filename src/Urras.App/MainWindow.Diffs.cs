@@ -24,6 +24,10 @@ public partial class MainWindow
         CommitWhitespaceBox.Click += (_, _) => OnWhitespaceChanged(CommitWhitespaceBox);
         WrapBox.Click += (_, _) => OnWrapChanged(WrapBox);
         CommitWrapBox.Click += (_, _) => OnWrapChanged(CommitWrapBox);
+        PreviewBox.IsChecked = _settings.MarkdownPreview;
+        CommitPreviewBox.IsChecked = _settings.MarkdownPreview;
+        PreviewBox.Click += async (_, _) => await OnPreviewToggledAsync(PreviewBox.IsChecked == true);
+        CommitPreviewBox.Click += async (_, _) => await OnPreviewToggledAsync(CommitPreviewBox.IsChecked == true);
         FileModeBox.SelectionChanged += async (_, _) => await OnFileModeChangedAsync(FileModeBox);
         CommitFileModeBox.SelectionChanged += async (_, _) => await OnFileModeChangedAsync(CommitFileModeBox);
         CommitFilesList.SelectionChanged += async (_, _) => await OnCommitFileSelectedAsync();
@@ -125,12 +129,17 @@ public partial class MainWindow
         }
 
         string title = change.DisplayPath + (staged ? "  (staged)" : string.Empty);
-        if (ImageFiles.IsImage(change.Path))
+        bool markdown = MarkdownFiles.IsMarkdown(change.Path);
+        PreviewBox.IsVisible = markdown;
+        if (ImageFiles.IsImage(change.Path) || (markdown && _settings.MarkdownPreview))
         {
-            (byte[]? oldImage, byte[]? newImage) = await LoadChangeImagesAsync(change, staged);
+            (byte[]? before, byte[]? after) = await LoadChangeContentsAsync(change, staged);
             _changesDiffText = null;
             DiffTitle.Text = title;
-            ShowImage(ImageView, DiffList, oldImage, newImage);
+            if (markdown)
+                ShowMarkdown(MarkdownView, ImageView, DiffList, before, after);
+            else
+                ShowImage(ImageView, MarkdownView, DiffList, before, after);
             return;
         }
 
@@ -142,7 +151,7 @@ public partial class MainWindow
     }
 
     // Staged: last commit against the staged copy. Unstaged: staged copy against the file on disk
-    private async Task<(byte[]?, byte[]?)> LoadChangeImagesAsync(FileChange change, bool staged)
+    private async Task<(byte[]?, byte[]?)> LoadChangeContentsAsync(FileChange change, bool staged)
     {
         GitRepository repository = _repository!;
         if (staged)
@@ -212,7 +221,9 @@ public partial class MainWindow
             return;
 
         string title = source.Title + "  ·  " + file.DisplayPath;
-        if (ImageFiles.IsImage(file.Path))
+        bool markdown = MarkdownFiles.IsMarkdown(file.Path);
+        CommitPreviewBox.IsVisible = markdown;
+        if (ImageFiles.IsImage(file.Path) || (markdown && _settings.MarkdownPreview))
         {
             string from = source.From ?? await _repository.GetCommitBaseAsync(source.Target);
             string oldPath = file.OriginalPath ?? file.Path;
@@ -221,7 +232,10 @@ public partial class MainWindow
                                                             : await _repository.GetBlobAsync(source.Target, file.Path);
             _commitDiffText = null;
             CommitDiffTitle.Text = title;
-            ShowImage(CommitImageView, CommitDiffList, before, after);
+            if (markdown)
+                ShowMarkdown(CommitMarkdownView, CommitImageView, CommitDiffList, before, after);
+            else
+                ShowImage(CommitImageView, CommitMarkdownView, CommitDiffList, before, after);
             return;
         }
 
@@ -236,9 +250,11 @@ public partial class MainWindow
         CommitFilesList.ItemsSource = null;
     }
 
-    // Images replace the text diff until a text file is shown again
-    private void ShowImage(ImageDiffView view, ListBox list, byte[]? before, byte[]? after)
+    // Images and rendered Markdown replace the text diff until a text file is shown again
+    private void ShowImage(ImageDiffView view, MarkdownDiffView markdown, ListBox list, byte[]? before,
+                           byte[]? after)
     {
+        HideMarkdown(markdown);
         list.ItemsSource = null;
         list.IsVisible = false;
         view.IsVisible = true;
@@ -246,13 +262,49 @@ public partial class MainWindow
         UpdateHints();
     }
 
-    private static void ShowText(ImageDiffView view, ListBox list)
+    private void ShowMarkdown(MarkdownDiffView view, ImageDiffView image, ListBox list, byte[]? before,
+                              byte[]? after)
+    {
+        HideImage(image);
+        list.ItemsSource = null;
+        list.IsVisible = false;
+        view.IsVisible = true;
+        view.Show(before, after);
+        UpdateHints();
+    }
+
+    private static void ShowText(ImageDiffView image, MarkdownDiffView markdown, ListBox list)
+    {
+        HideImage(image);
+        HideMarkdown(markdown);
+        list.IsVisible = true;
+    }
+
+    private static void HideImage(ImageDiffView view)
     {
         if (!view.IsVisible)
             return;
-
         view.Clear();
         view.IsVisible = false;
-        list.IsVisible = true;
+    }
+
+    private static void HideMarkdown(MarkdownDiffView view)
+    {
+        if (!view.IsVisible)
+            return;
+        view.Clear();
+        view.IsVisible = false;
+    }
+
+    // The Preview switch shows Markdown files rendered or as a text diff, in both tabs
+    private async Task OnPreviewToggledAsync(bool preview)
+    {
+        _settings.MarkdownPreview = preview;
+        _settings.Save();
+        PreviewBox.IsChecked = preview;
+        CommitPreviewBox.IsChecked = preview;
+        await ReloadChangesDiffAsync();
+        if (_shownSource != null && CommitFilesList.SelectedItem is FileChange file)
+            await ShowSourceFileAsync(_shownSource, file);
     }
 }

@@ -65,6 +65,9 @@ public sealed class AppSettings
     // Diffs show spaces, tabs and line endings
     public bool ShowWhitespace { get; set; }
 
+    // Markdown files show rendered, old and new side by side, instead of as a text diff
+    public bool MarkdownPreview { get; set; } = true;
+
     // Long diff lines wrap instead of scrolling sideways
     public bool WrapDiffLines { get; set; }
 

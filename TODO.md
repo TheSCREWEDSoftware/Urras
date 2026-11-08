@@ -38,7 +38,7 @@ Desktop) for ideas is fine; copying their code is not.
 15. [x] Image diffs side by side, as a swipe or as an onion skin
 16. [x] Syntax highlighting (built in: C#, C/C++, shaders, JSON, XML/XAML/project files, CMake, Markdown,
     JavaScript/TypeScript, Python, shell, PowerShell, batch, YAML, INI/TOML, Lua)
-17. [ ] Markdown preview for .md files, with a Diff / Preview switch (Markdown.Avalonia, MIT, approved)
+17. [x] Markdown preview for .md files, with a Preview switch (Urras's own reader, so no new dependency)
 
 ## Phase 3: Everyday Git actions
 
@@ -69,7 +69,7 @@ Desktop) for ideas is fine; copying their code is not.
     reorder still to do), backup tag
 35. [x] Side-by-side conflict view: theirs, ours and result, with a choice per block (right-click a conflicted
     file, Resolve conflicts…)
-36. [ ] Rendered Markdown diff: old and new rendered side by side with changed blocks highlighted
+36. [x] Rendered Markdown diff: old and new rendered side by side with changed blocks highlighted
 
 ## Phase 6: Project needs
 

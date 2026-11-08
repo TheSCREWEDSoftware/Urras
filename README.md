@@ -20,6 +20,7 @@ you already have installed.
 - Stage, unstage or discard single lines or whole hunks: select lines in the diff and right-click
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved
+- Markdown files rendered, old and new side by side with changed blocks marked (Preview switch)
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
 - Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or
