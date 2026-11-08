@@ -15,11 +15,14 @@ public static class SettingsTests
             Assert.True(settings.AddRepository(repo), "first add");
             Assert.True(!settings.AddRepository(repo + Path.DirectorySeparatorChar), "duplicate with trailing slash");
             settings.LastRepository = repo;
+            settings.DiffView = DiffViewMode.Split;
             settings.Save(path);
+            Assert.True(File.ReadAllText(path).Contains("\"Split\""), "diff view saved by name");
 
             AppSettings loaded = AppSettings.Load(path);
             Assert.Equal(1, loaded.Repositories.Count, "one repository");
             Assert.Equal(repo, loaded.LastRepository, "last repository");
+            Assert.Equal(DiffViewMode.Split, loaded.DiffView, "diff view");
 
             loaded.RemoveRepository(repo);
             Assert.Equal(0, loaded.Repositories.Count, "removed");

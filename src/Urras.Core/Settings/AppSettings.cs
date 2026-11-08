@@ -1,6 +1,14 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Urras.Core.Settings;
+
+public enum DiffViewMode
+{
+    Unified,
+    Split,
+    Raw
+}
 
 public sealed class AppSettings
 {
@@ -11,6 +19,10 @@ public sealed class AppSettings
 
     public List<string> Repositories { get; set; } = new List<string>();
     public string? LastRepository { get; set; }
+
+    // Saved by name, so the settings file stays readable
+    [JsonConverter(typeof(JsonStringEnumConverter<DiffViewMode>))]
+    public DiffViewMode DiffView { get; set; } = DiffViewMode.Unified;
 
     // %APPDATA%\Urras on Windows, ~/.config/Urras on Linux
     public static string DefaultPath =>
