@@ -75,7 +75,7 @@ Desktop) for ideas is fine; copying their code is not.
 
 37. [x] Git LFS: files, tracked patterns, download, set up, lock, unlock and force unlock; Branch menu
 38. [x] Submodules (list, open, update, add) and worktrees (list, open, create, remove, prune); Branch menu
-39. [ ] Quick Launch (Ctrl+P)
+39. [x] Quick Launch (Ctrl+P): repositories, branches and commands, matched by a few letters
 40. [x] Bisect: start from History (one commit, or two selected), mark Good, Bad or Skip from the banner
 
 ## Phase 7: Requires much

@@ -40,6 +40,7 @@ you already have installed.
 - Looking into the past: history of a file or folder, blame, browsing the files at any commit, searching commits
   by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
   finding lost commits
+- Quick Launch (Ctrl+P): open a repository, switch branch or run a command by typing a few letters
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

@@ -608,6 +608,11 @@ public partial class MainWindow : Window
             e.Handled = true;
             _ = RefreshAsync();
         }
+        else if (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+            _ = ShowQuickLaunchAsync();
+        }
         else if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Control) &&
                  (SummaryBox.IsFocused || DescriptionBox.IsFocused))
         {
