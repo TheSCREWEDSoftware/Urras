@@ -61,4 +61,35 @@ public static class GroupingTests
         Assert.Equal(new RemoteIdentity("Owner", "Thing", "github.com"), RemoteIdentity.Read(temp.Path), "read");
         Assert.True(RemoteIdentity.Read(Path.Combine(temp.Path, "missing")) == null, "not a repository");
     }
+
+    public static void KeepsPinnedFoldersAsTheyAre()
+    {
+        string engine = Path.GetFullPath("/f/Echo Flint Engine");
+        List<string> repositories = new()
+        {
+            Path.Combine(engine, "0_Engine", "Echo Flint Engine"),
+            Path.Combine(engine, "A_Phantom Sonar", "Game_Phantom Sonar"),
+            Path.Combine(engine, "Z_Urras"),
+            Path.GetFullPath("/f/Echo Flint Engine Notes/notes"),
+            Path.GetFullPath("/r/other")
+        };
+        List<string> rest = new();
+        List<RepositoryTreeNode> tree = RepositoryLayout.BuildWithPins(
+            repositories, new[] { engine, Path.Combine(engine, "0_Engine"), Path.GetFullPath("/empty") },
+            others =>
+            {
+                rest.AddRange(others);
+                return others.Select(path => new RepositoryTreeNode(Path.GetFileName(path), path, null, null))
+                             .ToList();
+            });
+
+        Assert.Equal("Echo Flint Engine", tree[0].Name, "pinned folder first, named after itself");
+        Assert.True(tree[0].IsPinned && !tree[0].Children[0].IsPinned, "only the pinned group is marked");
+        Assert.Equal(engine, tree[0].Folder, "the pinned folder itself, not skipped down");
+        Assert.Equal("0_Engine|A_Phantom Sonar|Z_Urras", string.Join("|", tree[0].Children.Select(c => c.Name)),
+                     "its layout on disk; the inner pin is covered by the outer one");
+        Assert.Equal("notes|other", string.Join("|", rest.Select(Path.GetFileName)),
+                     "a folder with a similar name is not inside; the rest is grouped normally");
+        Assert.Equal(3, tree.Count, "the empty pin adds nothing");
+    }
 }

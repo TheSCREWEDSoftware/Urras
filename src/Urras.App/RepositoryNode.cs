@@ -146,7 +146,8 @@ public sealed class RepositoryNode : INotifyPropertyChanged
             summaries.TryGetValue(RepositoryLayout.Normalize(path), out RepositorySummary? summary) &&
             NeedsAttention(summary));
 
-        Detail = repositories.Count + (repositories.Count == 1 ? " repository" : " repositories") +
+        Detail = (Source.IsPinned ? "🔒 kept as on disk · " : string.Empty) +
+                 repositories.Count + (repositories.Count == 1 ? " repository" : " repositories") +
                  (attention > 0 ? " · " + attention + " need attention" : string.Empty);
         DetailBrush = attention > 0 ? AttentionBrush : MutedBrush;
     }

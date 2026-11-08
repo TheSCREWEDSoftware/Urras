@@ -355,6 +355,7 @@ public partial class MainWindow
             AddMenuItem(menu, "Rename…", () => RenameGroupAsync(node));
         }
 
+        AddPinItems(menu, node);
         AddMenuItem(menu, "Move up", () => MoveAsync(node, -1));
         AddMenuItem(menu, "Move down", () => MoveAsync(node, 1));
         AddMenuItem(menu, "Move to group…", () => MoveToGroupAsync(node));
@@ -521,14 +522,63 @@ public partial class MainWindow
     private bool _suppressGrouping;
 
     // The automatic list, grouped the way the settings say
+    // Pinned folders come first, laid out as on disk; everything else follows the chosen grouping
     private List<RepositoryTreeNode> BuildAutomaticTree()
     {
-        return _settings.Grouping switch
+        return RepositoryLayout.BuildWithPins(_settings.Repositories, _settings.PinnedFolders, rest =>
+            _settings.Grouping switch
+            {
+                RepositoryGrouping.Folder => RepositoryLayout.BuildByFolder(rest),
+                RepositoryGrouping.Owner => RepositoryLayout.BuildByOwner(rest, RemoteIdentity.Read),
+                _ => RepositoryLayout.BuildByName(rest, RemoteIdentity.Read)
+            });
+    }
+
+    // A group standing for a real folder can be kept as it is; a repository offers the folders above it
+    private void AddPinItems(ContextMenu menu, RepositoryNode node)
+    {
+        if (!_settings.GroupByFolder)
+            return;
+
+        string? folder = node.Source.Folder;
+        if (node.IsGroup && folder != null && Directory.Exists(folder))
         {
-            RepositoryGrouping.Folder => RepositoryLayout.BuildByFolder(_settings.Repositories),
-            RepositoryGrouping.Owner => RepositoryLayout.BuildByOwner(_settings.Repositories, RemoteIdentity.Read),
-            _ => RepositoryLayout.BuildByName(_settings.Repositories, RemoteIdentity.Read)
-        };
+            bool pinned = _settings.PinnedFolders.Contains(folder, RepositoryLayout.PathComparer);
+            AddMenuItem(menu, pinned ? "Stop keeping this folder as it is" : "Keep this folder as it is",
+                        () => SetPinnedAsync(folder, !pinned));
+        }
+        else if (node.Path != null)
+            AddMenuItem(menu, "Keep its folder as it is…", () => PinFolderOfAsync(node.Path));
+    }
+
+    private async Task PinFolderOfAsync(string repository)
+    {
+        // The folders above the repository, nearest first, up to (not including) the drive
+        List<string> folders = new List<string>();
+        for (string? folder = Path.GetDirectoryName(repository);
+             folder != null && Path.GetDirectoryName(folder) != null;
+             folder = Path.GetDirectoryName(folder))
+            folders.Add(folder);
+
+        if (folders.Count == 0)
+            return;
+
+        string? chosen = await Dialogs.ChooseAsync(this, "Keep a folder as it is",
+                                                   "Which folder should stay laid out as on disk, whatever the " +
+                                                       "grouping?", folders);
+        if (chosen != null)
+            await SetPinnedAsync(chosen, true);
+    }
+
+    private Task SetPinnedAsync(string folder, bool pinned)
+    {
+        _settings.PinnedFolders.RemoveAll(existing => RepositoryLayout.PathComparer.Equals(existing, folder));
+        if (pinned)
+            _settings.PinnedFolders.Add(folder);
+
+        SaveLayout(pinned ? Path.GetFileName(folder) + " is kept as it is on disk."
+                          : Path.GetFileName(folder) + " follows the grouping again.");
+        return Task.CompletedTask;
     }
 
     private int GroupingIndex()

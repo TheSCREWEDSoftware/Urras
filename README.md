@@ -9,8 +9,9 @@ you already have installed.
 
 - Repository list: add existing folders, create new repositories, clone
 - Repository groups: by name (each repository with its forks and clones inside), by folder, by owner, or a
-  manual layout you can rename and reorder; fetch or pull a whole group; each repository shows its branch,
-  remote, commits to push and pull, and uncommitted changes
+  manual layout you can rename and reorder; folders can be kept as they are on disk whatever the grouping;
+  fetch or pull a whole group; each repository shows its branch, remote, commits to push and pull, and
+  uncommitted changes
 - Changes: unstaged and staged files, stage and unstage (selected or all), discard with confirmation
 - Co-authors on commits (Co-authored-by lines), picked from people in the history, typed as Name <email>, or
   found as @username with a GitHub account

@@ -53,6 +53,9 @@ public sealed class RepositoryTreeNode
 
     public List<RepositoryTreeNode> Children { get; } = new List<RepositoryTreeNode>();
     public bool IsGroup => RepositoryPath == null;
+
+    // A folder kept as it is on disk whatever the grouping (see AppSettings.PinnedFolders)
+    public bool IsPinned { get; init; }
 }
 
 public static class RepositoryLayout
@@ -206,6 +209,71 @@ public static class RepositoryLayout
                                      : System.IO.Path.GetFileName(copy.Path);
             yield return (copy.Path, text + " (" + where + ")");
         }
+    }
+
+    // Repositories inside a pinned folder keep that folder's layout; the others are grouped by groupRest.
+    // A pin inside another pin is covered by the outer one.
+    public static List<RepositoryTreeNode> BuildWithPins(IEnumerable<string> repositories,
+                                                         IEnumerable<string> pinnedFolders,
+                                                         Func<IEnumerable<string>, List<RepositoryTreeNode>> groupRest)
+    {
+        List<string> all = repositories.Select(Normalize).Distinct(PathComparer).ToList();
+        List<string> pins = pinnedFolders.Select(Normalize).Distinct(PathComparer).ToList();
+        pins = pins.Where(pin => !pins.Any(other => !PathComparer.Equals(other, pin) && IsInside(pin, other)))
+                   .ToList();
+
+        List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
+        HashSet<string> placed = new HashSet<string>(PathComparer);
+        foreach (string pin in pins)
+        {
+            List<string> inside = all.Where(repository => IsInside(repository, pin)).ToList();
+            if (inside.Count == 0)
+                continue;
+
+            FolderTrie root = new FolderTrie(FolderName(pin), pin);
+            foreach (string repository in inside)
+            {
+                FolderTrie node = root;
+                string folder = pin;
+                foreach (string segment in RelativeSegments(pin, Path.GetDirectoryName(repository) ?? pin))
+                {
+                    folder = Path.Combine(folder, segment);
+                    node = node.Child(segment, folder);
+                }
+
+                node.Repositories.Add(repository);
+                placed.Add(repository);
+            }
+
+            RepositoryTreeNode pinned = ToNode(root, pinned: true);
+            Sort(pinned.Children);
+            roots.Add(pinned);
+        }
+
+        roots.AddRange(groupRest(all.Where(repository => !placed.Contains(repository)).ToList()));
+        return roots;
+    }
+
+    // Strictly inside: a folder is not inside itself
+    private static bool IsInside(string path, string folder)
+    {
+        string prefix = folder.Replace('\\', '/').TrimEnd('/') + "/";
+        return path.Replace('\\', '/').StartsWith(prefix, OperatingSystem.IsWindows()
+                                                              ? StringComparison.OrdinalIgnoreCase
+                                                              : StringComparison.Ordinal);
+    }
+
+    private static RepositoryTreeNode ToNode(FolderTrie folder, bool pinned)
+    {
+        RepositoryTreeNode node = new RepositoryTreeNode(FolderName(folder.Folder), null, folder.Folder, null)
+        {
+            IsPinned = pinned
+        };
+        foreach (FolderTrie child in folder.Children)
+            node.Children.Add(ToNode(child));
+        foreach (string repository in folder.Repositories)
+            node.Children.Add(new RepositoryTreeNode(Path.GetFileName(repository), repository, null, null));
+        return node;
     }
 
     private static RepositoryTreeNode ToNode(FolderTrie folder)
