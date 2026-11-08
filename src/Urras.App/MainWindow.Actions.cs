@@ -52,6 +52,38 @@ public partial class MainWindow
         AddMenuItem(menu, "Check out this commit…", () => CheckoutCommitAsync(commit));
         AddMenuItem(menu, "Revert this commit…", () => RevertCommitAsync(commit));
         AddMenuItem(menu, "Cherry-pick into the current branch…", () => CherryPickAsync(commit));
+        AddMenuItem(menu, "Interactive rebase of the commits after this one…", () => InteractiveRebaseAsync(commit));
+    }
+
+    // Rewrites the current branch's commits after onto: reorder, reword, squash, fix up, edit or drop them
+    private async Task InteractiveRebaseAsync(CommitInfo onto)
+    {
+        if (_repository == null || _status == null)
+            return;
+
+        if (_status.Staged.Count > 0 || _status.Unstaged.Any(change => change.Kind != ChangeKind.Untracked))
+        {
+            SetStatus("Commit or stash your changes before an interactive rebase.", true);
+            return;
+        }
+
+        List<CommitInfo> commits = await _repository.GetRebaseCommitsAsync(onto.Hash);
+        if (commits.Count == 0)
+        {
+            SetStatus("The current branch has no commits after " + onto.ShortHash + ".", false);
+            return;
+        }
+
+        bool hasMerges = await _repository.HasMergesSinceAsync(onto.Hash);
+        InteractiveRebaseWindow window = new InteractiveRebaseWindow(_status.Branch ?? "HEAD", onto, commits,
+                                                                     hasMerges);
+        if (!await window.ShowDialog<bool>(this))
+            return;
+
+        string? tag = window.CreateBackup ? GitRepository.BackupTagName(_status.Branch, DateTime.Now) : null;
+        string done = "Rebase finished." + (tag == null ? string.Empty : " The old commits are kept in " + tag + ".");
+        await RunGitAsync("Rebasing…", repository => repository.InteractiveRebaseAsync(onto.Hash, window.Plan, tag),
+                          done);
     }
 
     // Commit actions

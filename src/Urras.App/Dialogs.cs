@@ -38,6 +38,34 @@ public static class Dialogs
         return string.IsNullOrWhiteSpace(result) ? null : result;
     }
 
+    // A commit message: summary on the first line, then a blank line and the description
+    public static async Task<string?> MessageAsync(Window owner, string title, string initialText)
+    {
+        Window dialog = CreateWindow(title);
+        TextBox input = new TextBox
+        {
+            Text = initialText,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            Height = MESSAGE_HEIGHT
+        };
+        Button ok = new Button { Content = "OK" };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        ok.Click += (_, _) => dialog.Close(input.Text?.Trim());
+        cancel.Click += (_, _) => dialog.Close(null);
+        dialog.Opened += (_, _) => input.Focus();
+
+        TextBlock label = new TextBlock
+        {
+            Text = "Summary on the first line, then a blank line and the description.",
+            TextWrapping = TextWrapping.Wrap
+        };
+        dialog.Content = Layout(label, input, ok, cancel);
+        string? result = await dialog.ShowDialog<string?>(owner);
+        return string.IsNullOrWhiteSpace(result) ? null : result;
+    }
+
+    private const double MESSAGE_HEIGHT = 160;
     private const int FILTER_THRESHOLD = 8;
     private const double LIST_HEIGHT = 260;
 
