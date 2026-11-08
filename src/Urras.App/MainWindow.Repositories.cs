@@ -84,6 +84,7 @@ public partial class MainWindow
         _suppressSelection = false;
 
         SelectCurrentRepositoryNode();
+        UpdateHints();
         _ = RefreshSummariesAsync();
     }
 
@@ -339,6 +340,8 @@ public partial class MainWindow
             AddMenuItem(menu, "New group…", () => NewGroupAsync(null));
             return;
         }
+
+        AddOpenItems(menu, node);
 
         string scope = node.IsGroup ? " all" : string.Empty;
         AddMenuItem(menu, "Fetch" + scope, () => RunOnRepositoriesAsync(node, "Fetched", "Fetching",

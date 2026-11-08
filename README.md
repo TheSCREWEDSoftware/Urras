@@ -17,6 +17,11 @@ you already have installed.
 - History with the full diff of each commit
 - Branches: switch, create, delete, check out remote branches
 - Fetch, pull and push, with ahead and behind counts; first push publishes the branch
+- Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`
+  and `.editorconfig`) before they are committed
+- Commit message helpers: summary length counter, recent messages, and the repository's commit template
+- Open repositories and files in the file explorer, a terminal or VS Code; copy paths and commit SHAs
+- Background fetching of every repository (Settings)
 - Git log panel showing every command Urras runs and its output
 
 ## Requirements

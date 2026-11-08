@@ -17,15 +17,15 @@ Desktop) for ideas is fine; copying their code is not.
 ## Phase 1: Finish the basics
 
 1. [x] Repository groups and folders, with fetch and pull for a whole group
-2. [ ] Smaller tab titles, and hints in empty lists
-3. [ ] About dialog with the version and the AGPL notice
-4. [ ] Recent commit messages and a subject length reminder
-5. [ ] Use the repository's commit message template
-6. [ ] Open in Explorer, terminal or editor; copy path and SHA
-7. [ ] Filter boxes for changed files and branches
-8. [ ] Hide untracked files
-9. [ ] Automatic background fetch
-10. [ ] Line-ending warnings: flag files whose line endings don't match the repository's rules, in Changes and
+2. [x] Smaller tab titles, and hints in empty lists
+3. [x] About dialog with the version and the AGPL notice
+4. [x] Recent commit messages and a subject length reminder
+5. [x] Use the repository's commit message template
+6. [x] Open in Explorer, terminal or editor; copy path and SHA
+7. [x] Filter boxes for changed files and branches
+8. [x] Hide untracked files
+9. [x] Automatic background fetch
+10. [x] Line-ending warnings: flag files whose line endings don't match the repository's rules, in Changes and
     before committing
 
 ## Phase 2: Better diffs

@@ -64,7 +64,7 @@ public partial class MainWindow : Window
         UnstagedList.DoubleTapped += async (_, _) => await StageSelectedAsync();
         StagedList.DoubleTapped += async (_, _) => await UnstageSelectedAsync();
 
-        StageAllButton.Click += async (_, _) => await RunGitAsync("Staging…", repository => repository.StageAllAsync());
+        StageAllButton.Click += async (_, _) => await RunGitAsync("Staging…", StageAllOrTrackedAsync);
         UnstageAllButton.Click += async (_, _) => await RunGitAsync("Unstaging…",
                                                                     repository => repository.UnstageAllAsync());
         StageSelectedButton.Click += async (_, _) => await StageSelectedAsync();
@@ -90,6 +90,7 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) => GitRunner.CommandFinished -= OnGitCommandFinished;
 
+        InitializeBasics();
         InitializeRepositoryTree();
         UpdateButtons();
     }
@@ -136,24 +137,21 @@ public partial class MainWindow : Window
 
         try
         {
-            string? selectedUnstaged = (UnstagedList.SelectedItem as FileChange)?.Path;
-            string? selectedStaged = (StagedList.SelectedItem as FileChange)?.Path;
             string? selectedCommit = (HistoryList.SelectedItem as CommitInfo)?.Hash;
 
             RepositoryStatus status = await _repository.GetStatusAsync();
             List<BranchInfo> branches = await _repository.GetBranchesAsync();
             List<CommitInfo> history = await _repository.GetHistoryAsync();
+            await ApplyLineEndingWarningsAsync(status);
             _status = status;
+            _history = history;
 
             _suppressSelection = true;
             try
             {
                 RepositoryTitle.Text = status.IsDetached ? _repository.Name + " (detached HEAD)" : _repository.Name;
                 ToolTip.SetTip(RepositoryTitle, _repository.Path);
-                UnstagedList.ItemsSource = status.Unstaged;
-                StagedList.ItemsSource = status.Staged;
-                UnstagedHeader.Text = $"Changes ({status.Unstaged.Count})";
-                StagedHeader.Text = $"Staged ({status.Staged.Count})";
+                ShowFileLists();
 
                 List<BranchInfo> ordered = branches.Where(branch => !branch.IsRemote)
                     .Concat(branches.Where(branch => branch.IsRemote)).ToList();
@@ -166,8 +164,6 @@ public partial class MainWindow : Window
                                      status.Upstream == null && !status.IsDetached ? "Publish" : "Push";
 
                 HistoryList.ItemsSource = history;
-                UnstagedList.SelectedItem = status.Unstaged.FirstOrDefault(change => change.Path == selectedUnstaged);
-                StagedList.SelectedItem = status.Staged.FirstOrDefault(change => change.Path == selectedStaged);
                 HistoryList.SelectedItem = history.FirstOrDefault(commit => commit.Hash == selectedCommit);
             }
             finally
@@ -183,6 +179,8 @@ public partial class MainWindow : Window
                 ShowChangesDiff(null, string.Empty);
 
             await UpdateSummaryAsync(_repository.Path, true);
+            await LoadTemplateAsync();
+            UpdateHints();
 
             if (!_busy && StatusText.Text == "Ready")
                 SetStatus(DescribeStatus(status), false);
@@ -198,6 +196,8 @@ public partial class MainWindow : Window
     private void ShowEmptyState()
     {
         _suppressSelection = true;
+        _status = null;
+        _history = new List<CommitInfo>();
         RepositoryTitle.Text = "No repository";
         ToolTip.SetTip(RepositoryTitle, null);
         UnstagedList.ItemsSource = null;
@@ -212,6 +212,7 @@ public partial class MainWindow : Window
         PullButton.Content = "Pull";
         PushButton.Content = "Push";
         _suppressSelection = false;
+        UpdateHints();
         UpdateButtons();
     }
 
@@ -339,6 +340,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!await ConfirmLineEndingsAsync())
+            return;
+
         string message = description.Length == 0 ? summary : summary + "\n\n" + description;
         bool success = await RunGitAsync("Committing…", repository => repository.CommitAsync(message, amend),
                                          amend ? "Amended the last commit." : "Committed.");
@@ -347,6 +351,10 @@ public partial class MainWindow : Window
             SummaryBox.Text = string.Empty;
             DescriptionBox.Text = string.Empty;
             AmendBox.IsChecked = false;
+
+            // The template prefills the next message again
+            _templateRepository = null;
+            await LoadTemplateAsync();
         }
     }
 
@@ -461,6 +469,7 @@ public partial class MainWindow : Window
         if (text == null)
         {
             list.ItemsSource = null;
+            UpdateHints();
             return;
         }
 
@@ -480,6 +489,7 @@ public partial class MainWindow : Window
             DiffViewMode.Raw => DiffRow.Raw(text),
             _ => DiffRow.Unified(text)
         };
+        UpdateHints();
     }
 
     private void OnDiffModeChanged(ComboBox source)
@@ -589,11 +599,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnGitCommandFinished(string commandLine, GitResult result)
+    private void OnGitCommandFinished(string commandLine, GitResult result, bool quiet)
     {
         string[] words = commandLine.Split(' ', 3);
         string verb = words.Length > 1 ? words[1] : string.Empty;
-        if (result.Success && QuietCommands.Contains(verb))
+        if (result.Success && (quiet || QuietCommands.Contains(verb)))
             return;
 
         Dispatcher.UIThread.Post(() => AppendLog(commandLine, result));

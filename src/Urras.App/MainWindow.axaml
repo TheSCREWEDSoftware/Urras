@@ -32,6 +32,20 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Opacity" Value="0.7" />
     </Style>
+    <Style Selector="TabControl#MainTabs > TabItem">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="10,2" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.5" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="12" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
     <Style Selector="GridSplitter">
       <Setter Property="Background" Value="#22FFFFFF" />
     </Style>
@@ -98,6 +112,10 @@
     <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#33FFFFFF">
       <DockPanel>
         <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Padding="8,2" />
+        <Button x:Name="AboutButton" DockPanel.Dock="Right" Content="About" Padding="8,2" Margin="0,0,6,0" />
+        <Button x:Name="SettingsButton" DockPanel.Dock="Right" Content="Settings…" Padding="8,2" Margin="0,0,6,0" />
+        <TextBlock x:Name="AutoFetchText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.6"
+                   Margin="0,0,12,0" />
         <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="Ready" />
       </DockPanel>
     </Border>
@@ -123,22 +141,27 @@
           <Button x:Name="RemoveRepositoryButton" Content="Remove" Margin="0,0,6,6"
                   ToolTip.Tip="Remove the selected repository from the list, or the selected group" />
         </WrapPanel>
-        <TreeView x:Name="RepositoryTree">
-          <TreeView.Styles>
-            <Style Selector="TreeViewItem">
-              <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-            </Style>
-          </TreeView.Styles>
-          <TreeView.ItemTemplate>
-            <TreeDataTemplate ItemsSource="{Binding Children}">
-              <StackPanel Margin="0,2" Opacity="{Binding ItemOpacity}">
-                <TextBlock Text="{Binding Name}" FontWeight="{Binding NameWeight}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
-                           TextTrimming="CharacterEllipsis" />
-              </StackPanel>
-            </TreeDataTemplate>
-          </TreeView.ItemTemplate>
-        </TreeView>
+        <Panel>
+          <TreeView x:Name="RepositoryTree">
+            <TreeView.Styles>
+              <Style Selector="TreeViewItem">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+              </Style>
+            </TreeView.Styles>
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate ItemsSource="{Binding Children}">
+                <StackPanel Margin="0,2" Opacity="{Binding ItemOpacity}">
+                  <TextBlock Text="{Binding Name}" FontWeight="{Binding NameWeight}"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
+                             TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
+          <TextBlock x:Name="RepositoryHint" Classes="hint"
+                     Text="Add a repository with Add… or Clone… to get started" />
+        </Panel>
       </DockPanel>
 
       <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
@@ -148,44 +171,69 @@
         <TabItem Header="Changes">
           <Grid ColumnDefinitions="400,4,*">
 
-            <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,*,Auto" Margin="0,0,6,0">
-              <DockPanel Grid.Row="0">
+            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*,Auto,*,Auto" Margin="0,0,6,0">
+              <DockPanel Grid.Row="0" Margin="0,6,0,0">
+                <CheckBox x:Name="HideUntrackedBox" DockPanel.Dock="Right" Content="Hide untracked" Margin="8,0,0,0"
+                          ToolTip.Tip="Hide untracked files; Stage all then stages tracked files only" />
+                <TextBox x:Name="FileFilterBox" Watermark="Filter files" />
+              </DockPanel>
+              <DockPanel Grid.Row="1">
                 <Button x:Name="StageAllButton" DockPanel.Dock="Right" Content="Stage all" Padding="8,2" />
                 <TextBlock x:Name="UnstagedHeader" Classes="header" Text="Changes" />
               </DockPanel>
-              <ListBox x:Name="UnstagedList" Grid.Row="1" Classes="files" SelectionMode="Multiple">
-                <ListBox.ItemTemplate>
-                  <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
-                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
+              <Panel Grid.Row="2">
+                <ListBox x:Name="UnstagedList" Classes="files" SelectionMode="Multiple">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                        <TextBlock Text="⚠" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
+                                   ToolTip.Tip="{Binding Warning}" />
+                        <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock x:Name="UnstagedHint" Classes="hint" Text="No changes" />
+              </Panel>
 
-              <DockPanel Grid.Row="2" Margin="0,6,0,0">
+              <DockPanel Grid.Row="3" Margin="0,6,0,0">
                 <Button x:Name="UnstageAllButton" DockPanel.Dock="Right" Content="Unstage all" Padding="8,2" />
                 <TextBlock x:Name="StagedHeader" Classes="header" Text="Staged" />
               </DockPanel>
-              <ListBox x:Name="StagedList" Grid.Row="3" Classes="files" SelectionMode="Multiple">
-                <ListBox.ItemTemplate>
-                  <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
-                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
+              <Panel Grid.Row="4">
+                <ListBox x:Name="StagedList" Classes="files" SelectionMode="Multiple">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding KindLetter}" Width="14" Classes="mono" Opacity="0.7" />
+                        <TextBlock Text="⚠" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
+                                   ToolTip.Tip="{Binding Warning}" />
+                        <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock x:Name="StagedHint" Classes="hint"
+                           Text="Nothing staged. Double-click a change to stage it." />
+              </Panel>
 
-              <StackPanel Grid.Row="4" Spacing="6" Margin="0,8,0,4">
+              <StackPanel Grid.Row="5" Spacing="6" Margin="0,8,0,4">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <Button x:Name="StageSelectedButton" Content="Stage" ToolTip.Tip="Stage selected (or double-click)" />
                   <Button x:Name="UnstageSelectedButton" Content="Unstage" ToolTip.Tip="Unstage selected" />
                   <Button x:Name="DiscardButton" Content="Discard…" ToolTip.Tip="Discard selected changes" />
                 </StackPanel>
-                <TextBox x:Name="SummaryBox" Watermark="Summary (required)" />
+                <DockPanel>
+                  <TextBlock x:Name="SubjectCounter" DockPanel.Dock="Right" VerticalAlignment="Center" Width="40"
+                             TextAlignment="Right" Opacity="0.7"
+                             ToolTip.Tip="Keep the summary under 50 characters, 72 at most" />
+                  <Button x:Name="RecentButton" DockPanel.Dock="Right" Content="Recent" Margin="6,0,0,0"
+                          ToolTip.Tip="Reuse a recent commit message" />
+                  <Button x:Name="TemplateButton" DockPanel.Dock="Right" Content="Template" Margin="6,0,0,0"
+                          IsVisible="False" ToolTip.Tip="Show this repository's commit message template" />
+                  <TextBox x:Name="SummaryBox" Watermark="Summary (required)" />
+                </DockPanel>
                 <TextBox x:Name="DescriptionBox" Watermark="Description" AcceptsReturn="True" TextWrapping="Wrap"
                          Height="90" />
                 <DockPanel>
@@ -207,7 +255,10 @@
                 </ComboBox>
                 <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
               </DockPanel>
-              <ListBox x:Name="DiffList" Classes="diff" />
+              <Panel>
+                <ListBox x:Name="DiffList" Classes="diff" />
+                <TextBlock x:Name="DiffHint" Classes="hint" Text="Select a file to see its changes" />
+              </Panel>
             </DockPanel>
           </Grid>
         </TabItem>
@@ -223,6 +274,7 @@
                 <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
               </Grid>
             </Border>
+            <TextBlock x:Name="HistoryHint" Grid.Row="1" Classes="hint" Text="No commits yet" ZIndex="1" />
             <ListBox x:Name="HistoryList" Grid.Row="1" Classes="files" Margin="0,0,0,6">
               <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -246,7 +298,10 @@
                 </ComboBox>
                 <TextBlock x:Name="CommitDiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
               </DockPanel>
-              <ListBox x:Name="CommitDiffList" Classes="diff" />
+              <Panel>
+                <ListBox x:Name="CommitDiffList" Classes="diff" />
+                <TextBlock x:Name="CommitDiffHint" Classes="hint" Text="Select a commit to see its changes" />
+              </Panel>
             </DockPanel>
           </Grid>
         </TabItem>
