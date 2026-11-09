@@ -6,14 +6,14 @@ using Avalonia.VisualTree;
 
 namespace Urras.App;
 
-// Wraps a repository row and writes the tree's guides beside it in plain text: | for a line going on, |-- for a branch
+// Writes the tree guides beside a repository row in plain text: | for a line going on, | - - - for a branch
 public sealed class TreeGuides : Decorator
 {
     private const double DEFAULT_FONT_SIZE = 14;
     private const double GAP = 3;
     private const int MIN_DASHES = 1;
     private const string PIPE = "|";
-    private const string DASH = "-";
+    private const string DASH = " -";
 
     private static readonly IBrush GuideBrush = new SolidColorBrush(Color.Parse("#A5ADB8"));
     // The app's own font, so the ASCII guides show on every system; widths are measured, not assumed
@@ -109,13 +109,13 @@ public sealed class TreeGuides : Decorator
         return new Rect(corner, visual.Bounds.Size);
     }
 
-    // |-- from under the parent's arrow, with dashes up to where the row begins
+    // | - - - from under the parent's arrow, with spaced dashes up to where the row begins
     private void Branch(DrawingContext context, double x, double end, double y)
     {
         FormattedText pipe = Text(PIPE);
         double dashWidth = Text(DASH).Width;
         int dashes = Math.Max(MIN_DASHES, (int)Math.Floor((end - x - pipe.Width / 2) / dashWidth));
-        Write(context, PIPE + new string(DASH[0], dashes), x - pipe.Width / 2, y);
+        Write(context, PIPE + string.Concat(Enumerable.Repeat(DASH, dashes)), x - pipe.Width / 2, y);
     }
 
     private void Pipes(DrawingContext context, double x, IEnumerable<double> lines)
