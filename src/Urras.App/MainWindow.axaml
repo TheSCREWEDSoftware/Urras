@@ -163,11 +163,15 @@
             <Button x:Name="SyncButton" MinWidth="220" MaxWidth="300" HorizontalContentAlignment="Stretch"
                     CornerRadius="4,0,0,4">
               <DockPanel>
+                <!-- Runs while Git works, so a long push or pull doesn't look stuck -->
+                <ProgressBar x:Name="SyncProgress" DockPanel.Dock="Bottom" IsIndeterminate="True" IsVisible="False"
+                             Height="2" MinHeight="2" Margin="0,3,0,0" />
                 <Border x:Name="SyncBadge" DockPanel.Dock="Right" IsVisible="False" Background="#33FFFFFF"
                         CornerRadius="9" Padding="7,1" Margin="10,0,0,0" VerticalAlignment="Center">
                   <TextBlock x:Name="SyncBadgeText" FontSize="11" FontWeight="SemiBold" />
                 </Border>
                 <Path x:Name="SyncIcon" DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,10,0"
+                      RenderTransformOrigin="50%,50%"
                       VerticalAlignment="Center" Stroke="{Binding $parent[Button].Foreground}"
                       StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" />
                 <StackPanel>

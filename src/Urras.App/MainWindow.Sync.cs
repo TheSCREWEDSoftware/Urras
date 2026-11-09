@@ -9,6 +9,9 @@ namespace Urras.App;
 public partial class MainWindow
 {
     private const int SYNC_DETAIL_MINUTES = 1;
+    private const int SPIN_FRAME_MS = 16;
+    private const double SPIN_DEGREES_PER_FRAME = 6;
+    private const double FULL_TURN = 360;
 
     // 16 by 16 outlines: an arrow up, an arrow down, and two arrows going round for fetch
     private static readonly Geometry UpArrow = Geometry.Parse("M8,13.5 L8,2.5 M3.5,7 L8,2.5 L12.5,7");
@@ -23,6 +26,14 @@ public partial class MainWindow
         Interval = TimeSpan.FromMinutes(SYNC_DETAIL_MINUTES)
     };
 
+    // Turns the icon while Git works
+    private readonly DispatcherTimer _spinTimer = new DispatcherTimer
+    {
+        Interval = TimeSpan.FromMilliseconds(SPIN_FRAME_MS)
+    };
+
+    private readonly RotateTransform _spin = new RotateTransform();
+    private bool _syncing;
     private SyncState? _sync;
     private DateTimeOffset? _lastFetched;
 
@@ -32,10 +43,56 @@ public partial class MainWindow
         SyncMenuButton.Click += (_, _) => ShowSyncMenu();
         _syncDetailTimer.Tick += (_, _) => ShowSync(_status, _lastFetched);
         _syncDetailTimer.Start();
+        SyncIcon.RenderTransform = _spin;
+        _spinTimer.Tick += (_, _) => _spin.Angle = (_spin.Angle + SPIN_DEGREES_PER_FRAME) % FULL_TURN;
         ShowSync(null, null);
     }
 
     private async Task RunSyncAsync(SyncKind kind)
+    {
+        if (_repository == null || _busy)
+            return;
+
+        StartSyncAnimation(kind);
+        try
+        {
+            await RunSyncStepAsync(kind);
+        }
+        finally
+        {
+            StopSyncAnimation();
+        }
+    }
+
+    // "Pushing to origin…" with the icon turning and the bar running, until Git is done
+    private void StartSyncAnimation(SyncKind kind)
+    {
+        string remote = SyncState.Remote(_status?.Upstream) ?? "origin";
+        _syncing = true;
+        SyncTitle.Text = kind switch
+        {
+            SyncKind.Pull => "Pulling " + remote + "…",
+            SyncKind.Push => "Pushing to " + remote + "…",
+            SyncKind.Publish => "Publishing to " + remote + "…",
+            _ => "Fetching " + remote + "…"
+        };
+        SyncDetail.Text = "Working, this can take a moment";
+        // Like GitHub Desktop, every action shows the arrows going round while it runs
+        SyncIcon.Data = FetchArrows;
+        SyncProgress.IsVisible = true;
+        _spinTimer.Start();
+    }
+
+    private void StopSyncAnimation()
+    {
+        _syncing = false;
+        _spinTimer.Stop();
+        _spin.Angle = 0;
+        SyncProgress.IsVisible = false;
+        ShowSync(_status, _lastFetched);
+    }
+
+    private async Task RunSyncStepAsync(SyncKind kind)
     {
         switch (kind)
         {
@@ -80,6 +137,8 @@ public partial class MainWindow
     private void ShowSync(RepositoryStatus? status, DateTimeOffset? lastFetched)
     {
         _lastFetched = lastFetched;
+        if (_syncing)
+            return;
         if (status == null)
         {
             _sync = null;
