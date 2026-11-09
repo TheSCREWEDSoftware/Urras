@@ -80,13 +80,16 @@ public sealed class ImageDiffView : UserControl
         info.Children.Add(_oldInfo);
         info.Children.Add(_newInfo);
 
+        // Both views fill the space left, so side by side always splits the full width (docked, an empty side shrank)
+        Panel views = new Panel();
+        views.Children.Add(_sideBySide);
+        views.Children.Add(_overlay);
         DockPanel root = new DockPanel { Margin = new Thickness(8) };
         DockPanel.SetDock(tools, Dock.Top);
         DockPanel.SetDock(info, Dock.Bottom);
         root.Children.Add(tools);
         root.Children.Add(info);
-        root.Children.Add(_sideBySide);
-        root.Children.Add(_overlay);
+        root.Children.Add(views);
         Content = root;
 
         _modeBox.SelectionChanged += (_, _) =>
