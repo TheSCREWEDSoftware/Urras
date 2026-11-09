@@ -51,4 +51,30 @@ public static class SyncTests
         DateTimeOffset? fetched = await local.Repository.GetLastFetchedAsync();
         Assert.True(fetched != null && fetched > before, "just fetched: " + fetched);
     }
+
+    public static void ReadsGitHubsPushRefusal()
+    {
+        PushRefusal? refusal = PushRefusal.Parse(
+            "remote: Permission to cnc-exoduscommunity/cnc-exoduscommunity.github.io.git denied to " +
+            "TheSCREWEDSoftware.\nfatal: unable to access 'https://github.com/...': The requested URL returned " +
+            "error: 403");
+        Assert.True(refusal != null, "recognised");
+        Assert.Equal("cnc-exoduscommunity/cnc-exoduscommunity.github.io", refusal!.Repository, "without .git");
+        Assert.Equal("TheSCREWEDSoftware", refusal.User, "without the full stop");
+        Assert.Equal("cnc-exoduscommunity", refusal.Owner, "the organisation");
+        Assert.Equal(null, PushRefusal.Parse("fatal: could not read Username"), "other errors are left alone");
+    }
+
+    public static void KeepsReadingCommandsOutOfTheLog()
+    {
+        Assert.True(GitCommandKind.IsReading("git --no-optional-locks status --porcelain=v2 --branch -z"),
+                    "options before the command are skipped");
+        Assert.True(GitCommandKind.IsReading("git lfs ls-files --long"), "listing LFS files reads");
+        Assert.True(GitCommandKind.IsReading("git lfs track"), "listing LFS patterns reads");
+        Assert.True(GitCommandKind.IsReading("git -C folder worktree list --porcelain"), "values of options skipped");
+        Assert.True(!GitCommandKind.IsReading("git lfs track -- *.psd"), "tracking a pattern changes things");
+        Assert.True(!GitCommandKind.IsReading("git push origin main"), "pushing is shown");
+        Assert.True(!GitCommandKind.IsReading("git stash pop --index stash@{0}"), "popping a stash is shown");
+        Assert.True(!GitCommandKind.IsReading("git"), "nothing to go on");
+    }
 }

@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Urras.Core.Accounts;
 using Urras.Core.Git;
 using Urras.Core.Settings;
 
@@ -13,13 +14,9 @@ namespace Urras.App;
 public partial class MainWindow : Window
 {
     private const int MAX_LOG_CHARACTERS = 200000;
+    private const string GITHUB_APP_PAGE = "https://github.com/settings/connections/applications/";
 
     // Read-only commands run on every refresh; only log them when they fail
-    private static readonly HashSet<string> QuietCommands = new HashSet<string>
-    {
-        "status", "for-each-ref", "log", "diff", "show", "rev-parse", "config", "remote"
-    };
-
     private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#FF7B72"));
     private static readonly IBrush NormalBrush = new SolidColorBrush(Color.Parse("#E6EDF3"));
 
@@ -69,7 +66,12 @@ public partial class MainWindow : Window
         CommitButton.Click += async (_, _) => await CommitAsync();
 
         HistoryList.SelectionChanged += async (_, _) => await OnCommitSelectedAsync();
-        LogToggle.Click += (_, _) => LogBox.IsVisible = LogToggle.IsChecked == true;
+        LogToggle.Click += (_, _) =>
+        {
+            LogBox.IsVisible = LogToggle.IsChecked == true;
+            if (LogBox.IsVisible)
+                ScrollLogToEnd();
+        };
 
         DiffModeBox.SelectedIndex = (int)_settings.DiffView;
         CommitDiffModeBox.SelectedIndex = (int)_settings.DiffView;
@@ -657,7 +659,27 @@ public partial class MainWindow : Window
         }
 
         SetStatus(FirstLine(result.Message) + "  (see Git log)", true);
+        if (PushRefusal.Parse(result.Message) is { } refusal)
+            _ = ExplainPushRefusalAsync(refusal);
         return false;
+    }
+
+    // GitHub said no: usually an organisation that hasn't approved Urras yet, or no write access
+    private async Task ExplainPushRefusalAsync(PushRefusal refusal)
+    {
+        string message =
+            "GitHub refused to let " + refusal.User + " push to " + refusal.Repository + ".\n\n" +
+            "This is usually one of two things:\n\n" +
+            "- " + refusal.Owner + " only lets apps it has approved reach its repositories, and Urras isn't " +
+            "approved yet. On GitHub's page for Urras, choose Grant next to " + refusal.Owner + " if you own it, " +
+            "or Request if you don't, and an owner will be asked.\n\n" +
+            "- " + refusal.User + " can't write to this repository. Ask an owner for access, or push to a fork.";
+        if (await Dialogs.ConfirmAsync(this, "Push refused", message, "Open GitHub's page for Urras"))
+        {
+            string? problem = SystemShell.OpenUrl(GITHUB_APP_PAGE + DeviceSignIn.GITHUB_CLIENT_ID);
+            if (problem != null)
+                SetStatus(problem, true);
+        }
     }
 
     private void SetBusy(bool busy, string? text)
@@ -731,9 +753,8 @@ public partial class MainWindow : Window
 
     private void OnGitCommandFinished(string commandLine, GitResult result, bool quiet)
     {
-        string[] words = commandLine.Split(' ', 3);
-        string verb = words.Length > 1 ? words[1] : string.Empty;
-        if (result.Success && (quiet || QuietCommands.Contains(verb)))
+        // Reads that worked are left out; a read that failed is worth seeing
+        if (result.Success && (quiet || GitCommandKind.IsReading(commandLine)))
             return;
 
         Dispatcher.UIThread.Post(() => AppendLog(commandLine, result));
@@ -741,6 +762,8 @@ public partial class MainWindow : Window
 
     private void AppendLog(string commandLine, GitResult result)
     {
+        // Progress lines end in a lone carriage return, which would hide them in the box
+        result = new GitResult(result.ExitCode, NormaliseLineBreaks(result.Output), NormaliseLineBreaks(result.Error));
         _log.Append("> ").Append(commandLine).Append(result.Success ? string.Empty : $"   [exit {result.ExitCode}]")
             .AppendLine();
         string details = (result.Output + result.Error).Trim();
@@ -751,7 +774,19 @@ public partial class MainWindow : Window
             _log.Remove(0, _log.Length - MAX_LOG_CHARACTERS);
 
         LogBox.Text = _log.ToString();
-        LogBox.CaretIndex = LogBox.Text.Length;
+        if (LogBox.IsVisible)
+            ScrollLogToEnd();
+    }
+
+    // Scrolled after the box has its size, or a box that was hidden shows an empty stretch
+    private void ScrollLogToEnd()
+    {
+        Dispatcher.UIThread.Post(() => LogBox.CaretIndex = LogBox.Text?.Length ?? 0, DispatcherPriority.Background);
+    }
+
+    private static string NormaliseLineBreaks(string text)
+    {
+        return text.Replace("\r\n", "\n").Replace('\r', '\n');
     }
 
     private static string FirstLine(string text)
