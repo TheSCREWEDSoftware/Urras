@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -28,12 +27,7 @@ public sealed class TreeGuides : Decorator
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        if (_node != null)
-            _node.PropertyChanged -= OnNodeChanged;
-
         _node = DataContext as RepositoryNode;
-        if (_node != null)
-            _node.PropertyChanged += OnNodeChanged;
         InvalidateVisual();
     }
 
@@ -79,16 +73,6 @@ public sealed class TreeGuides : Decorator
                 Pipes(context, x, lines);
             ancestor = ancestor.Parent;
         }
-
-        // An open group starts its children's | under its own arrow
-        if (node.IsGroup && node.IsExpanded && node.Children.Count > 0 && ChevronMiddle(item) is double ownX)
-            Pipes(context, ownX, below);
-    }
-
-    private void OnNodeChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(RepositoryNode.IsExpanded))
-            InvalidateVisual();
     }
 
     // Halfway down each line of text in the row: the name, then the details
