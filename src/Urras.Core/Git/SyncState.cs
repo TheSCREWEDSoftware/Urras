@@ -31,6 +31,32 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
         return new SyncState(SyncKind.Fetch, "Fetch " + remote, fetched, 0, 0);
     }
 
+    // Beside the branch name: "↑13 ↓2", "up to date", "not published", or nothing for a detached HEAD
+    public static string BranchCounts(RepositoryStatus status)
+    {
+        if (status.IsDetached)
+            return string.Empty;
+        if (status.Upstream == null)
+            return "not published";
+        if (status.Ahead == 0 && status.Behind == 0)
+            return "up to date";
+
+        List<string> parts = new List<string>();
+        if (status.Ahead > 0)
+            parts.Add("↑" + status.Ahead);
+        if (status.Behind > 0)
+            parts.Add("↓" + status.Behind);
+        return string.Join(" ", parts);
+    }
+
+    // Above the branch name: "Current branch · fetched 5 minutes ago"
+    public static string BranchCaption(DateTimeOffset? lastFetched, DateTimeOffset now)
+    {
+        return "Current branch · " + (lastFetched is { } when
+            ? "fetched " + RelativeTime.Describe(when, now)
+            : "never fetched");
+    }
+
     // The remote part of an upstream: origin for origin/main
     public static string? Remote(string? upstream)
     {

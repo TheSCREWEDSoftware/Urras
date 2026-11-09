@@ -88,10 +88,14 @@ public partial class MainWindow
             SyncIcon.Data = FetchArrows;
             SyncBadge.IsVisible = false;
             ToolTip.SetTip(SyncButton, null);
+            BranchCaption.Text = "Current branch";
+            BranchCounts.Text = string.Empty;
             return;
         }
 
         _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now);
+        BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
+        BranchCounts.Text = SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;
         SyncDetail.Text = _sync.Detail;
         SyncIcon.Data = _sync.Kind switch

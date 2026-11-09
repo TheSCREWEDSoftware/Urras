@@ -109,4 +109,16 @@ public static class SyncTests
             GitRunner.ExtraSettings = before;
         }
     }
+
+    public static void SummarisesTheCurrentBranch()
+    {
+        Assert.Equal("↑13 ↓2", SyncState.BranchCounts(Status("origin/main", 13, 2)), "both ways");
+        Assert.Equal("↓164", SyncState.BranchCounts(Status("origin/master", 0, 164)), "only to pull");
+        Assert.Equal("up to date", SyncState.BranchCounts(Status("origin/main", 0, 0)), "nothing to move");
+        Assert.Equal("not published", SyncState.BranchCounts(Status(null, 0, 0)), "no upstream");
+        Assert.Equal(string.Empty, SyncState.BranchCounts(Status(null, 0, 0, null)), "detached");
+        Assert.Equal("Current branch · fetched 1 minute ago", SyncState.BranchCaption(Now.AddMinutes(-1), Now),
+                     "when it last fetched");
+        Assert.Equal("Current branch · never fetched", SyncState.BranchCaption(null, Now), "never");
+    }
 }
