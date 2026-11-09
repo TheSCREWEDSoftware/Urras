@@ -4,5 +4,9 @@
              RequestedThemeVariant="Dark">
   <Application.Styles>
     <FluentTheme />
+    <!-- Every window and dialog carries the Urras icon -->
+    <Style Selector=":is(Window)">
+      <Setter Property="Icon" Value="/Assets/urras.ico" />
+    </Style>
   </Application.Styles>
 </Application>

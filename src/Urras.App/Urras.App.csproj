@@ -10,7 +10,14 @@
     <Version>0.1.0</Version>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <!-- The icon of Urras.exe in Explorer and the taskbar; Assets/urras.svg is its source -->
+    <ApplicationIcon>Assets\urras.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <!-- The window icon, loaded as a resource -->
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.3" />

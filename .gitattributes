@@ -9,3 +9,7 @@
 
 *.cs whitespace=trailing-space,space-before-tab,tab-in-indent,cr-at-eol
 *.axaml whitespace=trailing-space,space-before-tab,tab-in-indent,cr-at-eol
+
+# Images are binary
+*.ico binary
+*.png binary

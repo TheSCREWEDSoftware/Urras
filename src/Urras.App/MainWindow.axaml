@@ -3,6 +3,7 @@
         xmlns:local="using:Urras.App"
         x:Class="Urras.App.MainWindow"
         Title="Urras"
+        Icon="/Assets/urras.ico"
         Width="1280" Height="800"
         MinWidth="900" MinHeight="560">
 

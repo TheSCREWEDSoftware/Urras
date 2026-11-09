@@ -1,5 +1,7 @@
 # Urras
 
+<img src="src/Urras.App/Assets/urras.png" alt="Urras icon: shards of ice in a blizzard" width="96">
+
 A fast, native Git client for Windows and Linux. No Electron: C# on .NET with an Avalonia interface, running the `git`
 you already have installed.
 
