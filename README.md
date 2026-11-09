@@ -177,11 +177,25 @@ A tag with a hyphen, such as `v0.2.0-beta.1`, becomes a pre-release.
 
 ### Tests
 
-The Git layer (`Urras.Core`) has tests that run against real temporary repositories:
+The Git layer (`Urras.Core`) has tests that run against real temporary repositories. Each line shows its place in
+the run, PASS in green or FAIL in red, and a failure stays on one line with line endings written out (`\r\n`):
 
 ```
 dotnet run --project tests/Urras.Core.Tests
 ```
+
+<img src="docs/screenshots/tests-core.png" alt="Screenshot: the core tests running"><br>
+<img src="docs/screenshots/tests-core-summary.png" alt="Screenshot: the core tests' summary">
+
+The interface tests open every window and dialog without showing them (Avalonia headless) and fail on any error:
+
+```
+dotnet test tests/Urras.App.Tests
+```
+
+<img src="docs/screenshots/tests-interface.png" alt="Screenshot: the interface tests passing">
+
+Both use their own settings and Git configuration in a temporary folder, so they never touch yours.
 
 ## Structure
 
