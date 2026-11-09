@@ -37,6 +37,7 @@ public sealed class OptionsWindow : Window
     private readonly AccountManager _accounts;
     private readonly Func<Window, AccountKind, Task> _addAccount;
     private readonly ContentControl _page = new ContentControl();
+    // Space around each page, inside its scroll area (the scroll area's own padding cut off the end of long lines)
     private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
 
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
@@ -160,7 +161,7 @@ public sealed class OptionsWindow : Window
         _pages[ASSISTANT] = AssistantPage();
         _pages[ADVANCED] = AdvancedPage();
         foreach (string page in _pages.Keys.ToList())
-            _pages[page] = new ScrollViewer { Content = _pages[page], Padding = PagePadding };
+            _pages[page] = new ScrollViewer { Content = new Border { Padding = PagePadding, Child = _pages[page] } };
 
         ListBox sidebar = new ListBox { ItemsSource = Sections, Width = SIDEBAR_WIDTH };
         sidebar.SelectionChanged += (_, _) =>
