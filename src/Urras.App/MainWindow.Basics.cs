@@ -314,6 +314,14 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
     }
 
+    // Something went wrong that no action handled; the details are in the crash log
+    public void ShowUnexpectedError(Exception exception, string? log)
+    {
+        SetBusy(false, null);
+        SetStatus("Something went wrong: " + FirstLine(exception.Message) +
+                  (log == null ? string.Empty : " Details are in " + log + "."), true);
+    }
+
     private Task Report(string? error)
     {
         if (error != null)
