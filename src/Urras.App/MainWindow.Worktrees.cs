@@ -14,7 +14,9 @@ public partial class MainWindow
 
     private void UpdateWorktreeButton()
     {
-        WorktreeButton.IsVisible = _repository != null && Directory.Exists(_repository.Path);
+        // Most repositories have one worktree; the button only takes toolbar space when there are others
+        WorktreeButton.IsVisible = _repository != null && Directory.Exists(_repository.Path) &&
+                                   GitRepository.HasLinkedWorktrees(_repository.Path);
         WorktreeButtonText.Text = _repository == null ? string.Empty
                                                       : Path.GetFileName(_repository.Path.TrimEnd('/', '\\'));
     }

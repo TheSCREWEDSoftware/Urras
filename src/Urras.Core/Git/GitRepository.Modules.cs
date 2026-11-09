@@ -38,6 +38,27 @@ public sealed record WorktreeInfo(string Path, string? Head, string? Branch, boo
 // Submodules (repositories inside this one) and worktrees (more checkouts of this repository)
 public partial class GitRepository
 {
+    // Other worktrees exist: listed in .git/worktrees, or this folder is one (its .git file points there)
+    public static bool HasLinkedWorktrees(string folder)
+    {
+        string git = System.IO.Path.Combine(folder, ".git");
+        try
+        {
+            if (Directory.Exists(git))
+            {
+                string worktrees = System.IO.Path.Combine(git, "worktrees");
+                return Directory.Exists(worktrees) && Directory.EnumerateDirectories(worktrees).Any();
+            }
+
+            string line = File.Exists(git) ? File.ReadLines(git).FirstOrDefault() ?? string.Empty : string.Empty;
+            return line.Replace('\\', '/').Contains("/worktrees/", StringComparison.Ordinal);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     public async Task<List<SubmoduleInfo>> GetSubmodulesAsync()
     {
         GitResult result = await Run("submodule", "status", "--recursive");

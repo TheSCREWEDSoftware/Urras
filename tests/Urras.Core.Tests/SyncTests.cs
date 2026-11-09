@@ -148,4 +148,24 @@ public static class SyncTests
         Assert.True(lines.Any(line => GitProgress.Parse(line) != null), "progress heard: " + string.Join(" | ", lines));
         Assert.True(!result.Error.Contains('%'), "percentages left out of the kept output: " + result.Error);
     }
+
+    public static async Task KnowsWhenThereAreOtherWorktrees()
+    {
+        using TempRepository repository = await TempRepository.CreateAsync();
+        repository.Write("a.txt", "a\n");
+        await repository.CommitAllAsync("First");
+        Assert.True(!GitRepository.HasLinkedWorktrees(repository.Path), "only the main checkout");
+
+        string other = repository.Path + "-other";
+        try
+        {
+            Assert.Success(await repository.Repository.AddWorktreeAsync(other, "other", true), "worktree");
+            Assert.True(GitRepository.HasLinkedWorktrees(repository.Path), "the main checkout sees it");
+            Assert.True(GitRepository.HasLinkedWorktrees(other), "the worktree knows it is one");
+        }
+        finally
+        {
+            TestFolders.Delete(other);
+        }
+    }
 }
