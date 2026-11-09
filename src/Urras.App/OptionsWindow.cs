@@ -219,8 +219,8 @@ public sealed class OptionsWindow : Window
                          "credential store."),
                     Heading("Signing in through the browser"),
                     Note("GitHub and GitLab sign in through the browser once Urras is registered with them as an " +
-                         "app; docs/oauth.md explains the two-minute setup. Until then, or for other platforms, " +
-                         "you paste a token."),
+                         "app, which takes two minutes. Until then, or for other platforms, you paste a token."),
+                    Links.ToPage("How to register Urras (docs/oauth.md)", Links.Document("docs/oauth.md")),
                     Label("GitHub client id"), _githubAppId, Label("GitLab application id"), _gitlabAppId);
     }
 
@@ -394,7 +394,12 @@ public sealed class OptionsWindow : Window
         return Page(Heading("Background fetch"), _autoFetch,
                     Note("Fetches every repository in the list now and then, so ahead and behind counts stay " +
                          "current."),
-                    Heading("Changes"), _checkWhitespace, _hideUntracked);
+                    Heading("Changes"), _checkWhitespace, _hideUntracked,
+                    Heading("Files"),
+                    Note("Urras keeps its settings, a backup of them for each of the last seven days, and crash.log " +
+                         "(unexpected errors) in one folder."),
+                    Links.ToFolder(Path.GetDirectoryName(AppSettings.DefaultPath) ?? AppSettings.DefaultPath,
+                                   Path.GetDirectoryName(AppSettings.DefaultPath) ?? AppSettings.DefaultPath));
     }
 
     // Saving

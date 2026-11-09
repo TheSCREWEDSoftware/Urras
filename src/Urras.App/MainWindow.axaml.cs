@@ -688,6 +688,9 @@ public partial class MainWindow : Window
     {
         StatusText.Text = text;
         StatusText.Foreground = isError ? ErrorBrush : NormalBrush;
+        _statusFolder = null;
+        StatusText.Cursor = null;
+        ToolTip.SetTip(StatusText, null);
     }
 
     private void UpdateButtons()

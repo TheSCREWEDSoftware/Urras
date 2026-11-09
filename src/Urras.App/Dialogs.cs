@@ -239,8 +239,10 @@ public static class Dialogs
         text.Children.Add(Paragraph(
             "Urras is free software: you can redistribute it and/or modify it under the terms of the GNU Affero " +
             "General Public License as published by the Free Software Foundation, either version 3 of the License, " +
-            "or (at your option) any later version. It comes with ABSOLUTELY NO WARRANTY; see the LICENSE file for " +
-            "details. The source code is available from the Urras repository."));
+            "or (at your option) any later version. It comes with ABSOLUTELY NO WARRANTY; see the licence for " +
+            "details."));
+        text.Children.Add(Links.ToPage("Source code: " + Links.REPOSITORY, Links.REPOSITORY));
+        text.Children.Add(Links.ToPage("Licence (GNU AGPL 3.0)", Links.Document("LICENSE")));
         text.Children.Add(Paragraph("Built with Avalonia (MIT) and Tmds.DBus.Protocol (MIT) on .NET."));
 
         Button close = new Button { Content = "Close", IsDefault = true, IsCancel = true };

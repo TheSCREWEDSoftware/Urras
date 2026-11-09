@@ -24,8 +24,17 @@ public partial class MainWindow
     private string? _templateRepository;
     private bool _autoFetching;
 
+    // The folder an error message points to; clicking the status line opens it
+    private string? _statusFolder;
+
     private void InitializeBasics()
     {
+        StatusText.PointerPressed += (_, _) =>
+        {
+            if (_statusFolder != null)
+                _ = Report(SystemShell.OpenFolder(_statusFolder));
+        };
+
         HideUntrackedBox.IsChecked = _settings.HideUntracked;
         HideUntrackedBox.Click += (_, _) =>
         {
@@ -352,7 +361,13 @@ public partial class MainWindow
     {
         SetBusy(false, null);
         SetStatus("Something went wrong: " + FirstLine(exception.Message) +
-                  (log == null ? string.Empty : " Details are in " + log + "."), true);
+                  (log == null ? string.Empty : " Click here to open crash.log's folder."), true);
+        if (log != null)
+        {
+            _statusFolder = Path.GetDirectoryName(log);
+            StatusText.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
+            ToolTip.SetTip(StatusText, log);
+        }
     }
 
     private Task Report(string? error)
