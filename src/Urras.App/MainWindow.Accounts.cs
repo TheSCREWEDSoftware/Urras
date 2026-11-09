@@ -61,12 +61,22 @@ public partial class MainWindow
                 return;
         }
 
+        await SignInAsync(owner, kind, server);
+    }
+
+    // Signs in through the browser (or a pasted token) and saves the account; null if cancelled or refused
+    private async Task<Account?> SignInAsync(Window owner, AccountKind kind, string? server)
+    {
+        if (_accounts == null)
+            return null;
+
+        string name = Account.PlatformName(kind);
         (string? token, OAuthGrant? grant) = await SignInThroughBrowserAsync(owner, kind, name,
                                                                              server ?? string.Empty);
         if (token == DeviceSignInWindow.TOKEN_INSTEAD)
             token = await AskForTokenAsync(owner, kind, name, server);
         if (token == null)
-            return;
+            return null;
 
         try
         {
@@ -76,12 +86,24 @@ public partial class MainWindow
                                                        fromBrowser ? grant!.RefreshToken : null,
                                                        fromBrowser ? grant!.ExpiresAt : null);
             SetStatus("Signed in to " + name + " as @" + account.Username + ".", false);
+            return account;
         }
         catch (PlatformException exception)
         {
             SetStatus("Couldn't add the account: " + exception.Message, true);
             await Dialogs.ShowTextAsync(owner, "Couldn't add the account", exception.Message);
+            return null;
         }
+    }
+
+    // A refused token: the same account signs in again, on the same server; returns the new client
+    private async Task<PlatformClient?> SignInAgainAsync(Window owner, Account account)
+    {
+        string? server = account.Kind is AccountKind.GitHub or AccountKind.Bitbucket
+            ? null
+            : "https://" + account.WebHost;
+        Account? fresh = await SignInAsync(owner, account.Kind, server);
+        return fresh == null || _accounts == null ? null : await _accounts.ClientAsync(fresh);
     }
 
     // The browser flow when the platform supports it and an app id is set; TOKEN_INSTEAD otherwise

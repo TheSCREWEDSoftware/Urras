@@ -79,7 +79,8 @@ public sealed class NewWindowTests
         };
         GitHubClient client = new GitHubClient(new HttpClient(new FakeGitHub()), "t");
         PublishRepositoryWindow window = new PublishRepositoryWindow(
-            new List<(Account Account, PlatformClient Client)> { (account, client) }, "B_Forlorn Hope - Complete");
+            new List<(Account Account, PlatformClient Client)> { (account, client) }, "B_Forlorn Hope - Complete",
+            (_, _) => Task.FromResult<PlatformClient?>(null));
         Task<PlatformRepository?> task = window.ShowDialog<PlatformRepository?>(owner);
         Ui.Pump(() => Ui.Find<ComboBox>(window, combo => combo.IsVisible).ItemCount > 1);
         Assert.Equal(2, Ui.Find<ComboBox>(window, combo => combo.IsVisible).ItemCount);

@@ -36,6 +36,35 @@ public static class PublishTests
         }
     }
 
+    // Every request is turned down as if the token had been revoked
+    private sealed class RefusingApi : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+                                                               CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent("{\"message\":\"Bad credentials\"}", Encoding.UTF8, "application/json")
+            });
+        }
+    }
+
+    public static async Task TellsARefusedTokenFromOtherErrors()
+    {
+        GitHubClient client = new GitHubClient(new HttpClient(new RefusingApi()), "revoked");
+        try
+        {
+            await client.CreateRepositoryAsync(new NewRemoteRepository("game", "", true, null));
+            Assert.True(false, "a refused token throws");
+        }
+        catch (PlatformException exception)
+        {
+            Assert.True(exception.TokenRefused, "marked as a refused token, so the window offers to sign in again");
+        }
+
+        Assert.True(!new PlatformException("Not found.").TokenRefused, "other errors aren't");
+    }
+
     public static void OffersToPublishARepositoryWithoutARemote()
     {
         RepositoryStatus status = new RepositoryStatus { Branch = "master" };

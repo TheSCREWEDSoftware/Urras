@@ -7,9 +7,13 @@ namespace Urras.Core.Accounts;
 
 public sealed class PlatformException : Exception
 {
-    public PlatformException(string message) : base(message)
+    public PlatformException(string message, bool tokenRefused = false) : base(message)
     {
+        TokenRefused = tokenRefused;
     }
+
+    // The platform turned the saved token down (revoked or expired); signing in again fixes it
+    public bool TokenRefused { get; }
 }
 
 public sealed record PlatformPullRequest(int Number, string Title, string Author, string SourceBranch,
@@ -167,9 +171,11 @@ public abstract class PlatformClient
             if (response.IsSuccessStatusCode)
                 return text;
 
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new PlatformException("The token was refused; it may have expired or been revoked.", true);
+
             throw new PlatformException(response.StatusCode switch
             {
-                HttpStatusCode.Unauthorized => "The token was refused; it may have expired or been revoked.",
                 HttpStatusCode.Forbidden => PlatformName + " refused the request (rate limit or missing permission).",
                 HttpStatusCode.NotFound => "Not found.",
                 _ => PlatformName + " answered " + (int)response.StatusCode + ErrorDetail(text) + "."

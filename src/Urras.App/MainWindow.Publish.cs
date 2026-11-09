@@ -32,7 +32,7 @@ public partial class MainWindow
             return;
         }
 
-        PublishRepositoryWindow window = new PublishRepositoryWindow(choices, _repository.Name);
+        PublishRepositoryWindow window = new PublishRepositoryWindow(choices, _repository.Name, SignInAgainAsync);
         if (await window.ShowDialog<PlatformRepository?>(this) is not { } online)
             return;
 

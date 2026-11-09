@@ -16,6 +16,7 @@ public sealed class PublishRepositoryWindow : Window
     private static IBrush MutedBrush => ThemeBrushes.MutedText;
 
     private readonly List<(Account Account, PlatformClient Client)> _choices;
+    private readonly Func<Window, Account, Task<PlatformClient?>> _signInAgain;
     private readonly ComboBox _account = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly TextBox _name = new TextBox();
     private readonly TextBlock _renamed = new TextBlock { Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap };
@@ -31,11 +32,15 @@ public sealed class PublishRepositoryWindow : Window
                                                           TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly Button _publish = new Button { Content = "Publish repository", IsDefault = true,
                                                     Classes = { "accent" } };
+    private readonly Button _signIn = new Button { Content = "Sign in again", IsVisible = false };
     private int _organizationsLoad;
 
-    public PublishRepositoryWindow(List<(Account Account, PlatformClient Client)> choices, string folderName)
+    // signInAgain replaces an account whose token the site refused; null when the sign-in was cancelled
+    public PublishRepositoryWindow(List<(Account Account, PlatformClient Client)> choices, string folderName,
+                                   Func<Window, Account, Task<PlatformClient?>> signInAgain)
     {
         _choices = choices;
+        _signInAgain = signInAgain;
         Title = "Publish repository";
         Width = WINDOW_WIDTH;
         SizeToContent = SizeToContent.Height;
@@ -50,6 +55,7 @@ public sealed class PublishRepositoryWindow : Window
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
         cancel.Click += (_, _) => Close(null);
         _publish.Click += async (_, _) => await PublishAsync();
+        _signIn.Click += async (_, _) => await SignInAgainAsync();
         StackPanel buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -57,6 +63,7 @@ public sealed class PublishRepositoryWindow : Window
             Spacing = 8,
             Margin = new Thickness(0, 8, 0, 0)
         };
+        buttons.Children.Add(_signIn);
         buttons.Children.Add(_publish);
         buttons.Children.Add(cancel);
 
@@ -83,6 +90,7 @@ public sealed class PublishRepositoryWindow : Window
     }
 
     private PlatformClient Client => _choices[Math.Max(0, _account.SelectedIndex)].Client;
+    private Account SelectedAccount => _choices[Math.Max(0, _account.SelectedIndex)].Account;
     private string FinalName => RepositoryPublisher.SuggestName(_name.Text ?? string.Empty);
 
     // "Will be published as B_Forlorn-Hope---Complete" when the site won't take the name as typed
@@ -108,6 +116,11 @@ public sealed class PublishRepositoryWindow : Window
             _organization.ItemsSource = new object[] { NONE }.Concat(organizations).ToList();
             _organization.SelectedIndex = 0;
         }
+        catch (PlatformException exception) when (exception.TokenRefused)
+        {
+            if (load == _organizationsLoad)
+                ShowRefused();
+        }
         catch (PlatformException exception)
         {
             ShowProblem("Couldn't list your organizations (" + exception.Message + "). You can still publish to " +
@@ -126,11 +139,37 @@ public sealed class PublishRepositoryWindow : Window
                                                                  _organization.SelectedItem as PlatformOrganization);
             Close(await Client.CreateRepositoryAsync(wanted));
         }
+        catch (PlatformException exception) when (exception.TokenRefused)
+        {
+            ShowRefused();
+            _publish.IsEnabled = true;
+        }
         catch (PlatformException exception)
         {
             ShowProblem("Couldn't publish: " + exception.Message);
             _publish.IsEnabled = true;
         }
+    }
+
+    // Git still pushes with its own sign-in, but Urras's saved one was turned down
+    private void ShowRefused()
+    {
+        Account account = SelectedAccount;
+        ShowProblem(Account.PlatformName(account.Kind) + " refused Urras's sign-in for @" + account.Username +
+                    "; it may have been revoked. Sign in again to publish.");
+        _signIn.IsVisible = true;
+    }
+
+    private async Task SignInAgainAsync()
+    {
+        int index = Math.Max(0, _account.SelectedIndex);
+        if (await _signInAgain(this, _choices[index].Account) is not { } client)
+            return;
+
+        _choices[index] = (_choices[index].Account, client);
+        _signIn.IsVisible = false;
+        _problem.IsVisible = false;
+        await LoadOrganizationsAsync();
     }
 
     private void ShowProblem(string text)
