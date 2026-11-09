@@ -57,10 +57,10 @@ public sealed class TreeGuides : Decorator
              above = above.FindAncestorOfType<TreeViewItem>())
             items.Add(above);
 
-        // This row's own branch under the parent's arrow: |-- by the name, | below it while siblings follow
+        // This row's own branch under the parent's arrow, over a group's own arrow, to just before the name
         if (ChevronMiddle(items.ElementAtOrDefault(1)) is double parentX)
         {
-            Branch(context, parentX, OwnChevronLeft(item) - GAP, nameY);
+            Branch(context, parentX, -GAP, nameY);
             if (!node.IsLastChild)
                 Pipes(context, parentX, below);
         }
@@ -95,12 +95,6 @@ public sealed class TreeGuides : Decorator
     private double? ChevronMiddle(TreeViewItem? item)
     {
         return Chevron(item) is { } chevron ? Box(chevron).Center.X : null;
-    }
-
-    // Where the line across stops: at this row's arrow when it shows one, otherwise at the name
-    private double OwnChevronLeft(TreeViewItem item)
-    {
-        return Chevron(item) is { IsEffectivelyVisible: true } chevron ? Box(chevron).Left : GAP;
     }
 
     private Rect Box(Visual visual)
