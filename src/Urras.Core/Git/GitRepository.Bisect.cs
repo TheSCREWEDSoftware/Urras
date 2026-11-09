@@ -53,28 +53,48 @@ public partial class GitRepository
             return BisectState.Inactive;
 
         GitResult log = await Run("bisect", "log");
-        string? firstBad = null;
-        foreach (string line in log.Output.Split('\n'))
-        {
-            // "# first bad commit: [hash] subject"
-            const string PREFIX = "# first bad commit: [";
-            if (line.StartsWith(PREFIX, StringComparison.Ordinal))
-                firstBad = line[PREFIX.Length..].Split(']')[0];
-        }
-
+        string? firstBad = FirstBadFromLog(log.Output);
         int remaining = 0;
         if (firstBad == null)
         {
             // bisect-vars prints bisect_all=N among others: the commits still in question
             GitResult vars = await Run("rev-list", "--bisect-vars", "--bisect", "refs/bisect/bad", "--not",
                                        "--glob=refs/bisect/good-*");
+            bool counted = false;
             foreach (string line in vars.Output.Split('\n'))
             {
                 if (line.StartsWith("bisect_all=", StringComparison.Ordinal))
-                    int.TryParse(line["bisect_all=".Length..].Trim(), out remaining);
+                    counted = int.TryParse(line["bisect_all=".Length..].Trim(), out remaining);
+            }
+
+            // Only the bad commit left in question means it is the first bad one; not every Git logs that
+            if (vars.Success && counted && remaining <= 1)
+            {
+                GitResult bad = await Run("rev-parse", "refs/bisect/bad");
+                if (bad.Success && bad.Output.Trim().Length > 0)
+                    firstBad = bad.Output.Trim();
             }
         }
 
         return new BisectState(true, firstBad, Math.Max(0, remaining - 1));
+    }
+
+    // "# first bad commit: [hash] subject" in the bisect log, with or without the brackets
+    public static string? FirstBadFromLog(string log)
+    {
+        const string MARKER = "first bad commit:";
+        foreach (string line in log.Split('\n'))
+        {
+            int at = line.IndexOf(MARKER, StringComparison.Ordinal);
+            if (!line.TrimStart().StartsWith('#') || at < 0)
+                continue;
+
+            string hash = new string(line[(at + MARKER.Length)..].Trim().TrimStart('[')
+                                         .TakeWhile(Uri.IsHexDigit).ToArray());
+            if (hash.Length >= Hashes.SHORT_LENGTH)
+                return hash;
+        }
+
+        return null;
     }
 }

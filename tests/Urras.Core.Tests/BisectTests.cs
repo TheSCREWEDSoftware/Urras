@@ -30,9 +30,24 @@ public static class BisectTests
         }
 
         Assert.Equal(hashes[5], state.FirstBad, "commit 6 is the first bad one");
+
+        // Some Git versions don't write the result into the log; the commits left in question still tell
+        string log = Path.Combine(temp.Path, ".git", "BISECT_LOG");
+        File.WriteAllLines(log, File.ReadAllLines(log).Where(line => !line.Contains("first bad commit")));
+        Assert.Equal(hashes[5], (await temp.Repository.GetBisectStateAsync()).FirstBad, "found without the log");
         Assert.Success(await temp.Repository.BisectResetAsync(), "reset");
         Assert.True(!(await temp.Repository.GetBisectStateAsync()).IsActive, "finished");
         RepositoryStatus status = await temp.Repository.GetStatusAsync();
         Assert.Equal("main", status.Branch, "back on the branch");
+    }
+
+    public static void ReadsTheResultFromTheLog()
+    {
+        string hash = "8eacc2d5166762b2b316e16d40ef7b071f467da2";
+        Assert.Equal(hash, GitRepository.FirstBadFromLog("git bisect bad\n# first bad commit: [" + hash + "] Six\n"),
+                     "with brackets");
+        Assert.Equal(hash, GitRepository.FirstBadFromLog("# first bad commit: " + hash + " Six"), "without");
+        Assert.True(GitRepository.FirstBadFromLog("# bad: [" + hash + "] Six\ngit bisect bad " + hash) == null,
+                    "only the result line counts");
     }
 }
