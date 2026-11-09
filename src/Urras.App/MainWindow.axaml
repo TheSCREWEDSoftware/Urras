@@ -247,12 +247,14 @@ Esc clears it" />
             </TreeView.Styles>
             <TreeView.ItemTemplate>
               <TreeDataTemplate ItemsSource="{Binding Children}">
-                <StackPanel Margin="0,2" Opacity="{Binding ItemOpacity}">
-                  <TextBlock Text="{Binding Name}" FontWeight="{Binding NameWeight}"
-                             TextTrimming="CharacterEllipsis" />
-                  <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
-                             TextTrimming="CharacterEllipsis" />
-                </StackPanel>
+                <local:TreeGuides>
+                  <StackPanel Margin="0,2" Opacity="{Binding ItemOpacity}">
+                    <TextBlock Text="{Binding Name}" FontWeight="{Binding NameWeight}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
+                               TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </local:TreeGuides>
               </TreeDataTemplate>
             </TreeView.ItemTemplate>
           </TreeView>

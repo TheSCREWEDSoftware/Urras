@@ -44,6 +44,9 @@ public sealed class RepositoryNode : INotifyPropertyChanged
     public bool IsGroup => Source.IsGroup;
     public FontWeight NameWeight => IsGroup ? FontWeight.SemiBold : FontWeight.Normal;
 
+    // The last of its parent's children, whose guide line ends at its name (see TreeGuides)
+    public bool IsLastChild => Parent == null || Parent.Children.Count == 0 || Parent.Children[^1] == this;
+
     public bool IsExpanded
     {
         get => _isExpanded;
