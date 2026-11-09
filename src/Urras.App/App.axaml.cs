@@ -41,6 +41,15 @@ public partial class App : Application
         desktop.Exit += (_, _) => _askPass.Dispose();
     }
 
+    // A crash .NET couldn't log is looked up in Windows' own records and added to crash.log first
+    private static async Task ReportCrashedRunAsync(MainWindow window, DateTime started)
+    {
+        bool logged = RunMarker.CrashLogWrittenSince(started);
+        if (!logged && await WindowsCrashReport.CollectAsync(started) is { } report)
+            logged = CrashLog.WriteText(report, "Urras closed without logging an error; Windows recorded this") != null;
+        window.ShowLastRunEnded(logged);
+    }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -58,9 +67,7 @@ public partial class App : Application
             MainWindow window = new MainWindow();
             desktop.MainWindow = window;
             if (crashedRun is { } started)
-                window.Opened += (_, _) => Dispatcher.UIThread.Post(
-                    () => window.ShowLastRunEnded(RunMarker.CrashLogWrittenSince(started)),
-                    DispatcherPriority.Background);
+                window.Opened += async (_, _) => await ReportCrashedRunAsync(window, started);
             StartAskPass(desktop);
             _ = CredentialSetup.UseManagerIfNeededAsync(Environment.CurrentDirectory);
             // Theme files from older builds get the colours this one added

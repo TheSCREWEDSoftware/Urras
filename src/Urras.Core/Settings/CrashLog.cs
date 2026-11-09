@@ -14,6 +14,12 @@ public static class CrashLog
     // Appends the error with the time and where it came from; returns the file, or null if it couldn't be written
     public static string? Write(Exception exception, string source, string? path = null)
     {
+        return WriteText(exception.ToString(), source, path);
+    }
+
+    // The same for a report that isn't an exception, such as Windows' own record of a crash
+    public static string? WriteText(string text, string source, string? path = null)
+    {
         path ??= DefaultPath;
         try
         {
@@ -23,7 +29,7 @@ public static class CrashLog
                 File.Delete(path);
 
             string entry = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture) +
-                           "  " + source + Environment.NewLine + exception + Environment.NewLine +
+                           "  " + source + Environment.NewLine + text + Environment.NewLine +
                            Environment.NewLine;
             File.AppendAllText(path, entry);
             return path;
