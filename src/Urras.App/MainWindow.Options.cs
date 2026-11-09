@@ -31,10 +31,13 @@ public partial class MainWindow
     }
 
     // Keeps every scroll bar at full width, so it can be clicked without hovering over it first
-    private static readonly Style FullScrollBars = new Style(selector => selector.OfType<ScrollViewer>())
+    private sealed class FullScrollBarsStyle : Style
     {
-        Setters = { new Setter(ScrollViewer.AllowAutoHideProperty, false) }
-    };
+        public FullScrollBarsStyle() : base(selector => selector.OfType<ScrollViewer>())
+        {
+            Setters.Add(new Setter(ScrollViewer.AllowAutoHideProperty, false));
+        }
+    }
 
     // Formats, tab size, theme and the summary counter, at startup and after Options is saved
     private void ApplyPreferences()
@@ -53,11 +56,16 @@ public partial class MainWindow
                 _ => ThemeVariant.Dark
             };
 
+            // A style belongs to one application, so each gets its own (the interface tests start several)
             Styles styles = Application.Current.Styles;
-            if (_settings.AlwaysShowScrollBars && !styles.Contains(FullScrollBars))
-                styles.Add(FullScrollBars);
+            bool present = styles.OfType<FullScrollBarsStyle>().Any();
+            if (_settings.AlwaysShowScrollBars && !present)
+                styles.Add(new FullScrollBarsStyle());
             else if (!_settings.AlwaysShowScrollBars)
-                styles.Remove(FullScrollBars);
+            {
+                foreach (FullScrollBarsStyle style in styles.OfType<FullScrollBarsStyle>().ToList())
+                    styles.Remove(style);
+            }
         }
 
         SubjectCounter.IsVisible = _settings.Prompts.ShowCommitLengthWarning;
