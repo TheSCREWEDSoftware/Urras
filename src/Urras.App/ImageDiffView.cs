@@ -12,8 +12,8 @@ public sealed class ImageDiffView : UserControl
 {
     private const double BYTES_PER_KILOBYTE = 1024.0;
 
-    private static readonly IBrush OldBrush = new SolidColorBrush(Color.Parse("#FF7B72"));
-    private static readonly IBrush NewBrush = new SolidColorBrush(Color.Parse("#7EE787"));
+    private static IBrush OldBrush => ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.DIFF_REMOVED_TEXT);
+    private static IBrush NewBrush => ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.DIFF_ADDED_TEXT);
     private static readonly IBrush FrameBrush = new SolidColorBrush(Color.Parse("#14FFFFFF"));
 
     private enum Mode

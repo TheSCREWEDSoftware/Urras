@@ -31,7 +31,7 @@ public sealed class OptionsWindow : Window
     };
     private static readonly int[] TabSizes = { 1, 2, 3, 4, 5, 6, 8, 10, 12 };
     private static readonly int[] FetchIntervals = { 0, 5, 10, 15, 30, 60 };
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
 
     private readonly AppSettings _settings;
     private readonly AccountManager _accounts;
@@ -75,6 +75,9 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _dateFormat;
     private readonly ComboBox _timeFormat;
     private readonly ComboBox _tabSize;
+    private readonly ComboBox _colours = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly ThemeStore _themeStore = ThemeStore.Default;
+    private const string BUILT_IN_COLOURS = "Built-in colours";
 
     // Prompts
     private readonly CheckBox _confirmRemoveRepository;
@@ -266,6 +269,7 @@ public sealed class OptionsWindow : Window
         _tracker.Track(INTEGRATIONS, "Shell path", () => Text(_shellPath));
         _tracker.Track(INTEGRATIONS, "Shell arguments", () => Text(_shellArguments));
         _tracker.Track(APPEARANCE, "Theme", () => Chosen(_themes));
+        _tracker.Track(APPEARANCE, "Colours", () => Selected(_colours));
         _tracker.Track(APPEARANCE, "Date format", () => Selected(_dateFormat));
         _tracker.Track(APPEARANCE, "Time format", () => Selected(_timeFormat));
         _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
@@ -484,8 +488,28 @@ public sealed class OptionsWindow : Window
         foreach (RadioButton theme in _themes)
             themes.Children.Add(theme);
 
-        return Page(Heading("Theme"), themes,
-                    Note("Urras's colours are tuned for the dark theme; the light one is still rough."),
+        ListColours(_settings.CustomTheme);
+        Button create = new Button { Content = "New theme…" };
+        Button edit = new Button { Content = "Edit…" };
+        Button folder = new Button { Content = "Open themes folder" };
+        create.Click += async (_, _) => await NewThemeAsync();
+        edit.Click += async (_, _) => await EditThemeAsync();
+        folder.Click += (_, _) =>
+        {
+            Directory.CreateDirectory(_themeStore.Folder);
+            SystemShell.OpenFolder(_themeStore.Folder);
+        };
+        _colours.SelectionChanged += (_, _) => edit.IsEnabled = _colours.SelectedIndex > 0;
+        edit.IsEnabled = _colours.SelectedIndex > 0;
+        StackPanel themeButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        themeButtons.Children.Add(create);
+        themeButtons.Children.Add(edit);
+        themeButtons.Children.Add(folder);
+
+        return Page(Heading("Theme"), themes, Label("Colours"), _colours, themeButtons,
+                    Note("A custom theme sets every colour of Urras on top of a dark or light base, and its base " +
+                         "wins over the choice above. Themes are files in the themes folder, to share or edit; " +
+                         "colours added by newer versions of Urras are written into them automatically."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars,
                     Heading("Taskbar"), _windowsInTaskbar);
@@ -554,6 +578,56 @@ public sealed class OptionsWindow : Window
                                    Path.GetDirectoryName(AppSettings.DefaultPath) ?? AppSettings.DefaultPath));
     }
 
+    // Themes
+
+    // Built-in colours first, then each theme file, with the given one chosen
+    private void ListColours(string? chosen)
+    {
+        List<string> names = _themeStore.LoadAll().Select(theme => theme.Name).ToList();
+        _colours.ItemsSource = names.Prepend(BUILT_IN_COLOURS).ToList();
+        int index = chosen == null ? -1 : names.FindIndex(name => string.Equals(name, chosen,
+                                                                                StringComparison.OrdinalIgnoreCase));
+        _colours.SelectedIndex = index + 1;
+    }
+
+    // A new theme starts as a copy of the built-in dark or light colours, whichever look is chosen above
+    private async Task NewThemeAsync()
+    {
+        string? name = await Dialogs.PromptAsync(this, "New theme", "Name of the theme:");
+        if (name == null)
+            return;
+        if (name is Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT ||
+            _themeStore.Find(name) != null)
+        {
+            await Dialogs.ShowTextAsync(this, "New theme", "There's already a theme called " + name + ".");
+            return;
+        }
+
+        bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
+        Urras.Core.Settings.Theme theme = Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light
+                                                                                   : ThemeBase.Dark).Copy(name);
+        try
+        {
+            _themeStore.Save(theme);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            await Dialogs.ShowTextAsync(this, "New theme", "Couldn't save the theme: " + exception.Message);
+            return;
+        }
+
+        ListColours(name);
+        await EditThemeAsync();
+    }
+
+    private async Task EditThemeAsync()
+    {
+        if (_colours.SelectedIndex <= 0 || _colours.SelectedItem is not string name ||
+            _themeStore.Find(name) is not { } theme)
+            return;
+        await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+    }
+
     // Saving
 
     private async Task LoadGitSettingsAsync()
@@ -580,6 +654,7 @@ public sealed class OptionsWindow : Window
         _settings.DateFormat = DisplayFormats.Dates[Math.Max(0, _dateFormat.SelectedIndex)];
         _settings.TimeFormat = DisplayFormats.Times[Math.Max(0, _timeFormat.SelectedIndex)];
         _settings.TabSize = TabSizes[Math.Max(0, _tabSize.SelectedIndex)];
+        _settings.CustomTheme = _colours.SelectedIndex > 0 ? _colours.SelectedItem as string : null;
 
         PromptSettings prompts = _settings.Prompts;
         prompts.RemovingRepositories = _confirmRemoveRepository.IsChecked == true;

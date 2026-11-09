@@ -14,7 +14,7 @@ public sealed class BlameWindow : Window
     private const double WINDOW_HEIGHT = 720;
 
     private static readonly IBrush ShadedBrush = new SolidColorBrush(Color.Parse("#0FFFFFFF"));
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
     private static readonly FontFamily MonoFont =
         new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace");
 

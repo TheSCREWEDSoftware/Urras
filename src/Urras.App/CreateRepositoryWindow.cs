@@ -14,7 +14,7 @@ public sealed class CreateRepositoryWindow : Window
     private const double WINDOW_WIDTH = 520;
     private const string NONE = "None";
 
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
 
     private readonly GitHubClient _templates;
     private readonly TextBox _name = new TextBox { Watermark = "repository-name" };

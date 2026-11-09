@@ -85,7 +85,7 @@
       <Setter Property="TextTrimming" Value="None" />
     </Style>
     <Style Selector="TextBlock.lineNumber">
-      <Setter Property="Foreground" Value="#8B949E" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.MutedText}" />
       <Setter Property="TextAlignment" Value="Right" />
       <Setter Property="Margin" Value="0,0,8,0" />
     </Style>
@@ -138,7 +138,7 @@
       <Grid ColumnDefinitions="52,*,52,*" Background="{Binding Background}">
         <Border Grid.Column="0" Grid.ColumnSpan="2" Background="{Binding LeftBackground}" />
         <Border Grid.Column="2" Grid.ColumnSpan="2" Background="{Binding RightBackground}"
-                BorderBrush="#33FFFFFF" BorderThickness="1,0,0,0" />
+                BorderBrush="{DynamicResource Urras.Divider}" BorderThickness="1,0,0,0" />
         <TextBlock Grid.Column="0" Text="{Binding OldNumber}" Classes="mono lineNumber" />
         <local:SegmentedTextBlock Grid.Column="1" Segments="{Binding LeftSegments}" Foreground="{Binding Foreground}"
                                   Classes="mono code" Margin="0,0,6,0" />
@@ -167,7 +167,7 @@
     </Menu>
 
     <!-- Toolbar -->
-    <Border DockPanel.Dock="Top" Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="#33FFFFFF">
+    <Border DockPanel.Dock="Top" Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Urras.Divider}">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
           <Button x:Name="ViewOnlineButton" Content="View online" IsVisible="False" />
@@ -179,8 +179,9 @@
                 <!-- Runs while Git works, so a long push or pull doesn't look stuck -->
                 <ProgressBar x:Name="SyncProgress" DockPanel.Dock="Bottom" IsIndeterminate="True" IsVisible="False"
                              Height="2" MinHeight="2" Margin="0,3,0,0" />
-                <Border x:Name="SyncBadge" DockPanel.Dock="Right" IsVisible="False" Background="#33FFFFFF"
-                        CornerRadius="9" Padding="7,1" Margin="10,0,0,0" VerticalAlignment="Center">
+                <Border x:Name="SyncBadge" DockPanel.Dock="Right" IsVisible="False"
+                        Background="{DynamicResource Urras.Badge}" CornerRadius="9" Padding="7,1"
+                        Margin="10,0,0,0" VerticalAlignment="Center">
                   <TextBlock x:Name="SyncBadgeText" FontSize="11" FontWeight="SemiBold" />
                 </Border>
                 <Path x:Name="SyncIcon" DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,10,0"
@@ -243,7 +244,8 @@
     </Border>
 
     <!-- Status bar -->
-    <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#33FFFFFF">
+    <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource Urras.Divider}">
       <DockPanel>
         <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Padding="8,2" />
         <Button x:Name="AboutButton" DockPanel.Dock="Right" Content="About" Padding="8,2" Margin="0,0,6,0" />
@@ -319,8 +321,9 @@ Esc clears it" />
 
       <DockPanel Grid.Column="2">
       <!-- Shown while a bisect is running, in every tab -->
-      <Border x:Name="BisectBanner" DockPanel.Dock="Top" IsVisible="False" Background="#33B083F0"
-              BorderBrush="#B083F0" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="6,6,10,0">
+      <Border x:Name="BisectBanner" DockPanel.Dock="Top" IsVisible="False"
+              Background="{DynamicResource Urras.AccentFaint}" BorderBrush="{DynamicResource Urras.Accent}"
+              BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="6,6,10,0">
         <DockPanel>
           <Button x:Name="BisectStopButton" DockPanel.Dock="Right" Content="Stop bisect" Margin="6,0,0,0" />
           <Button x:Name="BisectSkipButton" DockPanel.Dock="Right" Content="Skip" Margin="6,0,0,0"
@@ -351,8 +354,9 @@ Esc clears it" />
         <TabItem Header="Changes">
           <DockPanel>
             <!-- Shown while a merge, rebase, cherry-pick or revert waits for conflicts to be resolved -->
-            <Border x:Name="OperationBanner" DockPanel.Dock="Top" IsVisible="False" Background="#33E3B341"
-                    BorderBrush="#E3B341" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,6,0,0">
+            <Border x:Name="OperationBanner" DockPanel.Dock="Top" IsVisible="False"
+                    Background="{DynamicResource Urras.WarningFaint}" BorderBrush="{DynamicResource Urras.Warning}"
+                    BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,6,0,0">
               <DockPanel>
                 <Button x:Name="AbortButton" DockPanel.Dock="Right" Content="Abort…" Margin="6,0,0,0" />
                 <Button x:Name="ContinueButton" DockPanel.Dock="Right" Content="Continue" Classes="accent" />
@@ -377,8 +381,8 @@ Esc clears it" />
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                           <local:ChangeKindBadge Change="{Binding}" />
-                          <TextBlock Text="!" FontWeight="Bold" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
-                                     ToolTip.Tip="{Binding Warning}" />
+                          <TextBlock Text="!" FontWeight="Bold" Foreground="{DynamicResource Urras.Warning}"
+                                     IsVisible="{Binding HasWarning}" ToolTip.Tip="{Binding Warning}" />
                           <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                       </DataTemplate>
@@ -397,8 +401,8 @@ Esc clears it" />
                       <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                           <local:ChangeKindBadge Change="{Binding}" />
-                          <TextBlock Text="!" FontWeight="Bold" Foreground="#E3B341" IsVisible="{Binding HasWarning}"
-                                     ToolTip.Tip="{Binding Warning}" />
+                          <TextBlock Text="!" FontWeight="Bold" Foreground="{DynamicResource Urras.Warning}"
+                                     IsVisible="{Binding HasWarning}" ToolTip.Tip="{Binding Warning}" />
                           <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                       </DataTemplate>
@@ -432,8 +436,8 @@ Esc clears it" />
                   <!-- Co-authors: credited with Co-authored-by lines, shown on GitHub and GitLab -->
                   <ToggleButton x:Name="CoAuthorsToggle" Content="Co-authors" Padding="8,2"
                                 ToolTip.Tip="Credit other people on this commit" />
-                  <Border x:Name="CoAuthorsPanel" IsVisible="False" BorderBrush="#33FFFFFF" BorderThickness="1"
-                          CornerRadius="4" Padding="6,4">
+                  <Border x:Name="CoAuthorsPanel" IsVisible="False" BorderBrush="{DynamicResource Urras.Divider}"
+                          BorderThickness="1" CornerRadius="4" Padding="6,4">
                     <DockPanel>
                       <TextBlock DockPanel.Dock="Left" Text="Co-authors" Opacity="0.7" VerticalAlignment="Center"
                                  Margin="0,0,8,0" />

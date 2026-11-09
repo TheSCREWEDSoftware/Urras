@@ -17,8 +17,8 @@ public partial class MainWindow : Window
     private const string GITHUB_APP_PAGE = "https://github.com/settings/connections/applications/";
 
     // Read-only commands run on every refresh; only log them when they fail
-    private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#FF7B72"));
-    private static readonly IBrush NormalBrush = new SolidColorBrush(Color.Parse("#E6EDF3"));
+    private static IBrush ErrorBrush => ThemeBrushes.Error;
+    private static IBrush NormalBrush => ThemeBrushes.Text;
 
     private readonly AppSettings _settings;
     private readonly StringBuilder _log = new StringBuilder();

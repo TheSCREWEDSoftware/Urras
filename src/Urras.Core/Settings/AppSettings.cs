@@ -81,6 +81,9 @@ public sealed class AppSettings
     // Each repository's origin address by folder, so a repository whose folder went missing can be cloned again
     public Dictionary<string, string> CloneAddresses { get; set; } = new Dictionary<string, string>();
 
+    // A theme file's name from the themes folder; null uses the built-in colours of the chosen Theme
+    public string? CustomTheme { get; set; }
+
     // Dialogs and other windows get their own taskbar entry; off keeps Urras to one entry, its main window
     public bool ShowWindowsInTaskbar { get; set; }
 

@@ -17,7 +17,7 @@ public sealed class QuickLaunchWindow : Window
     private const double WINDOW_WIDTH = 620;
     private const double LIST_HEIGHT = 360;
 
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
 
     private readonly IReadOnlyList<QuickItem> _items;
     private readonly TextBox _search;

@@ -74,6 +74,11 @@ you already have installed.
 - AI assistant with the service of your choice (OpenAI-compatible, Anthropic or a command-line agent): commit
   messages from the staged changes, explaining commits, conflict suggestions; off by default
 - Git log panel showing every command Urras runs and its output
+- Themes: built-in Dark and Light, and your own colours in shareable theme files that newer versions keep up to
+  date ([docs/themes.md](docs/themes.md))
+- File menu like GitHub Desktop's: New repository (with a README, a .gitignore template and a licence), Add
+  local repository and Clone (owner/name is enough for GitHub), with the same shortcuts
+- A screen for repositories whose folder is gone (Locate, Clone again or Remove), and a worktree switcher
 
 ## Screenshots
 

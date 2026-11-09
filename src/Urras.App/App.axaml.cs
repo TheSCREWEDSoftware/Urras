@@ -44,6 +44,8 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        // Colours exist from the start; Options' choice replaces them once the settings are read
+        ThemeBrushes.Use(Urras.Core.Settings.Theme.BuiltIn(ThemeBase.Dark), Resources);
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -53,6 +55,8 @@ public partial class App : Application
             desktop.MainWindow = new MainWindow();
             StartAskPass(desktop);
             _ = CredentialSetup.UseManagerIfNeededAsync(Environment.CurrentDirectory);
+            // Theme files from older builds get the colours this one added
+            _ = Task.Run(() => ThemeStore.Default.LoadAll());
 
             // An error in a button or menu action is logged and shown, instead of closing the whole app
             Dispatcher.UIThread.UnhandledException += (_, e) =>

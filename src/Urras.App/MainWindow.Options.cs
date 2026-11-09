@@ -80,6 +80,11 @@ public partial class MainWindow
                 ThemeChoice.System => ThemeVariant.Default,
                 _ => ThemeVariant.Dark
             };
+            Urras.Core.Settings.Theme theme = ChooseTheme(Application.Current);
+            if (!theme.IsBuiltIn)
+                Application.Current.RequestedThemeVariant = theme.Base == ThemeBase.Light ? ThemeVariant.Light
+                                                                                          : ThemeVariant.Dark;
+            ThemeBrushes.Use(theme, Application.Current.Resources);
 
             // A style belongs to one application, so each gets its own (the interface tests start several)
             Styles styles = Application.Current.Styles;
@@ -89,6 +94,15 @@ public partial class MainWindow
 
         SubjectCounter.IsVisible = _settings.Prompts.ShowCommitLengthWarning;
         HideUntrackedBox.IsChecked = _settings.HideUntracked;
+    }
+
+    // The chosen custom theme, or the built-in colours for the dark or light look in use
+    private Urras.Core.Settings.Theme ChooseTheme(Application application)
+    {
+        if (_settings.CustomTheme is { Length: > 0 } name && ThemeStore.Default.Find(name) is { } custom)
+            return custom;
+        bool light = application.ActualThemeVariant == ThemeVariant.Light;
+        return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);
     }
 
     // "VS Code" style name of the chosen editor, for menus

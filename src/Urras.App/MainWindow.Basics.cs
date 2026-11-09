@@ -16,7 +16,7 @@ public partial class MainWindow
     private const int MAX_WARNINGS_LISTED = 5;
     private const int AUTO_FETCH_START_DELAY_MS = 5000;
 
-    private static readonly IBrush WarningBrush = new SolidColorBrush(Color.Parse("#E3B341"));
+    private static IBrush WarningBrush => ThemeBrushes.Warning;
 
     private readonly DispatcherTimer _autoFetchTimer = new DispatcherTimer();
     private List<CommitInfo> _history = new List<CommitInfo>();

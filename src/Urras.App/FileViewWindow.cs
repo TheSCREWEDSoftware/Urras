@@ -19,7 +19,7 @@ public sealed class FileViewWindow : Window
     private const double WINDOW_WIDTH = 1000;
     private const double WINDOW_HEIGHT = 720;
 
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
     private static readonly FontFamily MonoFont =
         new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace");
 

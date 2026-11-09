@@ -16,7 +16,7 @@ public sealed class TreeGuides : Decorator
     private const string PIPE = "|";
     private const string DASH = " -";
 
-    private static readonly IBrush GuideBrush = new SolidColorBrush(Color.Parse("#A5ADB8"));
+    private static IBrush GuideBrush => ThemeBrushes.TreeGuides;
     // The app's own font, so the ASCII guides show on every system; widths are measured, not assumed
     private static readonly Typeface GuideFont = new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
 

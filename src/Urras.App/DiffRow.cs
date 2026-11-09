@@ -1,6 +1,7 @@
 using System.Text;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 using Urras.Core.Syntax;
 
 namespace Urras.App;
@@ -12,41 +13,38 @@ public sealed class DiffRow
     // Spaces shown for a tab; set from Options
     public static int TabWidth { get; set; } = 4;
 
-    private static readonly IBrush NormalBrush = Brush("#E6EDF3");
-    private static readonly IBrush MutedBrush = Brush("#8B949E");
-    private static readonly IBrush WhitespaceBrush = Brush("#6E7681");
-    private static readonly IBrush AddedTextBrush = Brush("#7EE787");
-    private static readonly IBrush RemovedTextBrush = Brush("#FF7B72");
-    private static readonly IBrush HunkTextBrush = Brush("#79C0FF");
-    private static readonly IBrush AddedBackground = Brush("#262EA043");
-    private static readonly IBrush RemovedBackground = Brush("#26F85149");
-    private static readonly IBrush AddedWordBackground = Brush("#662EA043");
-    private static readonly IBrush RemovedWordBackground = Brush("#66F85149");
-    private static readonly IBrush TrailingWhitespaceBackground = Brush("#59F85149");
-    private static readonly IBrush HunkBackground = Brush("#1A388BFD");
-    private static readonly IBrush FileBackground = Brush("#1FFFFFFF");
-    private static readonly IBrush EmptySideBackground = Brush("#0AFFFFFF");
+    private static IBrush NormalBrush => ThemeBrushes.Get(ThemeColours.TEXT);
+    private static IBrush MutedBrush => ThemeBrushes.Get(ThemeColours.MUTED_TEXT);
+    private static IBrush WhitespaceBrush => ThemeBrushes.Get(ThemeColours.DIFF_WHITESPACE);
+    private static IBrush AddedTextBrush => ThemeBrushes.Get(ThemeColours.DIFF_ADDED_TEXT);
+    private static IBrush RemovedTextBrush => ThemeBrushes.Get(ThemeColours.DIFF_REMOVED_TEXT);
+    private static IBrush HunkTextBrush => ThemeBrushes.Get(ThemeColours.DIFF_HUNK_TEXT);
+    private static IBrush AddedBackground => ThemeBrushes.Get(ThemeColours.DIFF_ADDED_BACKGROUND);
+    private static IBrush RemovedBackground => ThemeBrushes.Get(ThemeColours.DIFF_REMOVED_BACKGROUND);
+    private static IBrush AddedWordBackground => ThemeBrushes.Get(ThemeColours.DIFF_ADDED_WORD);
+    private static IBrush RemovedWordBackground => ThemeBrushes.Get(ThemeColours.DIFF_REMOVED_WORD);
+    private static IBrush TrailingWhitespaceBackground => ThemeBrushes.Get(ThemeColours.DIFF_TRAILING_WHITESPACE);
+    private static IBrush HunkBackground => ThemeBrushes.Get(ThemeColours.DIFF_HUNK_BACKGROUND);
+    private static IBrush FileBackground => ThemeBrushes.Get(ThemeColours.DIFF_FILE_BACKGROUND);
+    private static IBrush EmptySideBackground => ThemeBrushes.Get(ThemeColours.DIFF_EMPTY_SIDE);
     private static readonly IReadOnlyList<TextSegment> NoSegments = Array.Empty<TextSegment>();
 
-    // Syntax colours, close to Visual Studio's dark theme so they read well on the red and green line backgrounds
-    private static readonly Dictionary<SyntaxKind, IBrush> SyntaxBrushes = new Dictionary<SyntaxKind, IBrush>
-    {
-        [SyntaxKind.Keyword] = Brush("#569CD6"),
-        [SyntaxKind.Type] = Brush("#4EC9B0"),
-        [SyntaxKind.String] = Brush("#CE9178"),
-        [SyntaxKind.Number] = Brush("#B5CEA8"),
-        [SyntaxKind.Comment] = Brush("#7CA668"),
-        [SyntaxKind.Preprocessor] = Brush("#C586C0"),
-        [SyntaxKind.Tag] = Brush("#569CD6"),
-        [SyntaxKind.Attribute] = Brush("#9CDCFE"),
-        [SyntaxKind.Heading] = Brush("#569CD6"),
-        [SyntaxKind.Emphasis] = Brush("#DCDCAA"),
-        [SyntaxKind.Code] = Brush("#CE9178")
-    };
-
+    // Syntax colours from the theme; the dark defaults are close to Visual Studio's dark theme
     public static IBrush? SyntaxBrush(SyntaxKind kind)
     {
-        return SyntaxBrushes.GetValueOrDefault(kind);
+        string? key = kind switch
+        {
+            SyntaxKind.Keyword or SyntaxKind.Tag or SyntaxKind.Heading => ThemeColours.SYNTAX_KEYWORD,
+            SyntaxKind.Type => ThemeColours.SYNTAX_TYPE,
+            SyntaxKind.String or SyntaxKind.Code => ThemeColours.SYNTAX_STRING,
+            SyntaxKind.Number => ThemeColours.SYNTAX_NUMBER,
+            SyntaxKind.Comment => ThemeColours.SYNTAX_COMMENT,
+            SyntaxKind.Preprocessor => ThemeColours.SYNTAX_PREPROCESSOR,
+            SyntaxKind.Attribute => ThemeColours.SYNTAX_ATTRIBUTE,
+            SyntaxKind.Emphasis => ThemeColours.SYNTAX_EMPHASIS,
+            _ => null
+        };
+        return key == null ? null : ThemeBrushes.Get(key);
     }
 
     public string OldNumber { get; private init; } = string.Empty;
@@ -381,10 +379,5 @@ public sealed class DiffRow
     private static string Number(int? number)
     {
         return number?.ToString() ?? string.Empty;
-    }
-
-    private static IBrush Brush(string color)
-    {
-        return new SolidColorBrush(Color.Parse(color));
     }
 }

@@ -18,7 +18,7 @@ public sealed class BranchPickerView : UserControl
     private const double SECTION_GAP = 10;
     private const double ROW_GAP = 2;
 
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#9AA4AE"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
     private static readonly Thickness RowPadding = new Thickness(8, 5);
 
     private readonly TextBox _filter = new TextBox { Watermark = "Filter" };

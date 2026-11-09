@@ -12,10 +12,10 @@ public sealed class RepositoryNode : INotifyPropertyChanged
 {
     private const double MISSING_OPACITY = 0.55;
 
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
-    private static readonly IBrush AttentionBrush = new SolidColorBrush(Color.Parse("#79C0FF"));
-    private static readonly IBrush LocalBrush = new SolidColorBrush(Color.Parse("#E3B341"));
-    private static readonly IBrush MissingBrush = new SolidColorBrush(Color.Parse("#FF7B72"));
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
+    private static IBrush AttentionBrush => ThemeBrushes.Attention;
+    private static IBrush LocalBrush => ThemeBrushes.Warning;
+    private static IBrush MissingBrush => ThemeBrushes.Error;
 
     private readonly Action<RepositoryNode> _expandedChanged;
     private bool _isExpanded;

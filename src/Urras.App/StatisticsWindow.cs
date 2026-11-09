@@ -19,10 +19,10 @@ public sealed class StatisticsWindow : Window
     private static readonly string[] Periods = { "All time", "Last year", "Last 3 months", "Last month" };
     private static readonly string?[] Since = { null, "1 year ago", "3 months ago", "1 month ago" };
     private static readonly string[] Weekdays = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-    private static readonly IBrush BarBrush = new SolidColorBrush(Color.Parse("#539BF5"));
-    private static readonly IBrush AddedBrush = new SolidColorBrush(Color.Parse("#57AB5A"));
-    private static readonly IBrush RemovedBrush = new SolidColorBrush(Color.Parse("#E5534B"));
-    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8B949E"));
+    private static IBrush BarBrush => ThemeBrushes.Info;
+    private static IBrush AddedBrush => ThemeBrushes.Added;
+    private static IBrush RemovedBrush => ThemeBrushes.Removed;
+    private static IBrush MutedBrush => ThemeBrushes.MutedText;
 
     private readonly GitRepository _repository;
     private readonly StackPanel _content = new StackPanel { Spacing = 18 };
