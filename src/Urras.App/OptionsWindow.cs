@@ -37,6 +37,8 @@ public sealed class OptionsWindow : Window
     private readonly AccountManager _accounts;
     private readonly Func<Window, AccountKind, Task> _addAccount;
     private readonly ContentControl _page = new ContentControl();
+    private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
+
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
     private readonly StackPanel _accountList = new StackPanel { Spacing = 10 };
     private readonly TextBox _githubAppId = new TextBox { Watermark = "GitHub OAuth app client id" };
@@ -157,12 +159,15 @@ public sealed class OptionsWindow : Window
         _assistantCommand.Text = settings.Assistant.Command;
         _pages[ASSISTANT] = AssistantPage();
         _pages[ADVANCED] = AdvancedPage();
+        foreach (string section in _pages.Keys.ToList())
+            _pages[section] = new ScrollViewer { Content = _pages[section], Padding = PagePadding };
 
         ListBox sidebar = new ListBox { ItemsSource = Sections, Width = SIDEBAR_WIDTH };
         sidebar.SelectionChanged += (_, _) =>
         {
+            // Each page keeps its own scroll area: a page can only sit in one, so visiting it again reuses it
             if (sidebar.SelectedItem is string name)
-                _page.Content = new ScrollViewer { Content = _pages[name], Padding = new Thickness(16, 0, 8, 0) };
+                _page.Content = _pages[name];
         };
 
         Button save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
