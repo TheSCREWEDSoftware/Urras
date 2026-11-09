@@ -9,6 +9,48 @@ namespace Urras.App;
 public static class Dialogs
 {
     private const double DIALOG_WIDTH = 460;
+    private const double CHANGE_LIST_HEIGHT = 220;
+
+    public enum UnsavedChoice
+    {
+        KeepEditing,
+        Save,
+        Discard
+    }
+
+    // "You've unsaved changes": each change listed, then Save, Discard or Keep editing
+    public static async Task<UnsavedChoice> UnsavedChangesAsync(Window owner, IReadOnlyList<string> changes)
+    {
+        Window dialog = CreateWindow("Unsaved changes");
+        Button save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
+        Button discard = new Button { Content = "Discard" };
+        Button keep = new Button { Content = "Keep editing", IsCancel = true };
+        save.Click += (_, _) => dialog.Close(UnsavedChoice.Save);
+        discard.Click += (_, _) => dialog.Close(UnsavedChoice.Discard);
+        keep.Click += (_, _) => dialog.Close(UnsavedChoice.KeepEditing);
+
+        StackPanel list = new StackPanel { Spacing = 4 };
+        foreach (string change in changes)
+            list.Children.Add(new TextBlock { Text = "•  " + change, TextWrapping = TextWrapping.Wrap });
+
+        StackPanel buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8
+        };
+        buttons.Children.Add(save);
+        buttons.Children.Add(discard);
+        buttons.Children.Add(keep);
+
+        StackPanel root = new StackPanel { Margin = new Thickness(16), Spacing = 12 };
+        root.Children.Add(Paragraph("You've unsaved changes. Do you want to save them, or discard them before " +
+                                    "leaving?"));
+        root.Children.Add(new ScrollViewer { Content = list, MaxHeight = CHANGE_LIST_HEIGHT });
+        root.Children.Add(buttons);
+        dialog.Content = root;
+        return await dialog.ShowDialog<UnsavedChoice>(owner);
+    }
 
     // Explanatory text under a field is dimmed so the field itself stands out
     private const double HINT_OPACITY = 0.7;

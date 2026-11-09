@@ -46,6 +46,10 @@ public sealed class OptionsWindow : Window
     private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
 
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
+    private readonly SettingTracker _tracker = new SettingTracker();
+
+    // Set once the window may close without asking about unsaved changes
+    private bool _closeAllowed;
     private readonly StackPanel _accountList = new StackPanel { Spacing = 10 };
     private readonly TextBox _githubAppId = new TextBox { Watermark = "GitHub OAuth app client id" };
     private readonly TextBox _gitlabAppId = new TextBox { Watermark = "GitLab application id" };
@@ -208,7 +212,103 @@ public sealed class OptionsWindow : Window
         Content = root;
 
         sidebar.SelectedItem = Sections.Contains(section) ? section : ACCOUNTS;
+        TrackSettings();
         Opened += async (_, _) => await LoadGitSettingsAsync();
+    }
+
+    // Leaving with unsaved changes asks first, listing each one
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (_closeAllowed || e.Cancel)
+            return;
+
+        List<SettingChange> changes = _tracker.Changes();
+        if (changes.Count == 0)
+            return;
+
+        e.Cancel = true;
+        _ = AskAboutChangesAsync(changes);
+    }
+
+    private async Task AskAboutChangesAsync(List<SettingChange> changes)
+    {
+        switch (await Dialogs.UnsavedChangesAsync(this, changes.Select(change => change.ToString()).ToList()))
+        {
+            case Dialogs.UnsavedChoice.Save:
+            {
+                await SaveAsync();
+                break;
+            }
+            case Dialogs.UnsavedChoice.Discard:
+            {
+                _closeAllowed = true;
+                Close(false);
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    // What each setting showed when the window opened, to compare with when it closes
+    private void TrackSettings()
+    {
+        _tracker.Track(ACCOUNTS, "GitHub client id", () => Text(_githubAppId));
+        _tracker.Track(ACCOUNTS, "GitLab application id", () => Text(_gitlabAppId));
+        _tracker.Track(ACCOUNTS, "Forks", () => Selected(_forkDefault));
+        _tracker.Track(INTEGRATIONS, "External editor", () => Selected(_editor));
+        _tracker.Track(INTEGRATIONS, "Editor path", () => Text(_editorPath));
+        _tracker.Track(INTEGRATIONS, "Editor arguments", () => Text(_editorArguments));
+        _tracker.Track(INTEGRATIONS, "Shell", () => Selected(_shell));
+        _tracker.Track(INTEGRATIONS, "Shell path", () => Text(_shellPath));
+        _tracker.Track(INTEGRATIONS, "Shell arguments", () => Text(_shellArguments));
+        _tracker.Track(APPEARANCE, "Theme", () => Chosen(_themes));
+        _tracker.Track(APPEARANCE, "Date format", () => Selected(_dateFormat));
+        _tracker.Track(APPEARANCE, "Time format", () => Selected(_timeFormat));
+        _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
+        _tracker.Track(APPEARANCE, "Full scroll bars", () => OnOff(_fullScrollBars));
+        _tracker.Track(APPEARANCE, "Every window in the taskbar", () => OnOff(_windowsInTaskbar));
+        foreach (CheckBox box in new[]
+                 {
+                     _confirmRemoveRepository, _confirmDiscard, _confirmDropStash, _confirmCheckout,
+                     _confirmRemoveWorktree, _lengthWarning
+                 })
+            _tracker.Track(PROMPTS, box.Content as string ?? "Prompt", () => OnOff(box));
+        _tracker.Track(PROMPTS, "Switching branches with changes", () => Chosen(_switching));
+        _tracker.Track(ASSISTANT, "AI assistant", () => Selected(_assistantKind));
+        _tracker.Track(ASSISTANT, "Address", () => Text(_assistantEndpoint));
+        _tracker.Track(ASSISTANT, "Model", () => Text(_assistantModel));
+        _tracker.Track(ASSISTANT, "Command", () => Text(_assistantCommand));
+        // The key itself is never shown, only that it will change
+        _tracker.Track(ASSISTANT, "Key", () => _forgetKey ? "none" :
+                                               string.IsNullOrWhiteSpace(_assistantKey.Text) ? "the saved key"
+                                                                                             : "a new key");
+        _tracker.Track(ADVANCED, "Background fetch", () => Selected(_autoFetch));
+        _tracker.Track(ADVANCED, "Whitespace check", () => OnOff(_checkWhitespace));
+        _tracker.Track(ADVANCED, "Hide untracked files", () => OnOff(_hideUntracked));
+    }
+
+    private static string Text(TextBox box)
+    {
+        return box.Text?.Trim() ?? string.Empty;
+    }
+
+    private static string Selected(ComboBox box)
+    {
+        return box.SelectedItem?.ToString() ?? string.Empty;
+    }
+
+    private static string OnOff(CheckBox box)
+    {
+        return box.IsChecked == true ? "on" : "off";
+    }
+
+    private static string Chosen(RadioButton[] group)
+    {
+        return group.FirstOrDefault(radio => radio.IsChecked == true)?.Content as string ?? string.Empty;
     }
 
     // Pages
@@ -464,6 +564,9 @@ public sealed class OptionsWindow : Window
         _userName.Text = _loadedName;
         _userEmail.Text = _loadedEmail;
         _defaultBranch.Text = _loadedBranch;
+        _tracker.Track(GIT, "Name", () => Text(_userName));
+        _tracker.Track(GIT, "Email", () => Text(_userEmail));
+        _tracker.Track(GIT, "Default branch", () => Text(_defaultBranch));
     }
 
     private async Task SaveAsync()
@@ -509,6 +612,7 @@ public sealed class OptionsWindow : Window
         await SaveGlobalAsync(GlobalConfig.USER_NAME, _loadedName, _userName.Text);
         await SaveGlobalAsync(GlobalConfig.USER_EMAIL, _loadedEmail, _userEmail.Text);
         await SaveGlobalAsync(GlobalConfig.DEFAULT_BRANCH, _loadedBranch, _defaultBranch.Text);
+        _closeAllowed = true;
         Close(true);
     }
 
