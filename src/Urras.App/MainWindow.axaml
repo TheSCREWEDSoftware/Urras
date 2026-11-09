@@ -153,6 +153,19 @@
 
   <DockPanel>
 
+    <!-- Like GitHub Desktop's File menu; the shortcuts are handled in OnPreviewKeyDown -->
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem x:Name="NewRepositoryItem" Header="New repository…" InputGesture="Ctrl+N" />
+        <MenuItem x:Name="AddLocalRepositoryItem" Header="Add local repository…" InputGesture="Ctrl+O" />
+        <MenuItem x:Name="CloneRepositoryItem" Header="Clone repository…" InputGesture="Ctrl+Shift+O" />
+        <Separator />
+        <MenuItem x:Name="OptionsItem" Header="Options…   Ctrl+," />
+        <Separator />
+        <MenuItem x:Name="ExitItem" Header="Exit" InputGesture="Alt+F4" />
+      </MenuItem>
+    </Menu>
+
     <!-- Toolbar -->
     <Border DockPanel.Dock="Top" Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="#33FFFFFF">
       <DockPanel>

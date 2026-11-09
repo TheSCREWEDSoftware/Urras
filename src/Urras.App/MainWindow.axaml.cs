@@ -46,6 +46,7 @@ public partial class MainWindow : Window
         RemoveRepositoryButton.Click += async (_, _) => await RemoveSelectedAsync();
 
         InitializeSync();
+        InitializeFileMenu();
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
         InitializeBranchPicker();
@@ -733,6 +734,11 @@ public partial class MainWindow : Window
             RepositorySearchBox.Focus();
             RepositorySearchBox.SelectAll();
         }
+        else if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && FileShortcut(e) is { } action)
+        {
+            e.Handled = true;
+            _ = action();
+        }
         else if (e.Key == Key.B && e.KeyModifiers.HasFlag(KeyModifiers.Control))
         {
             e.Handled = true;
@@ -749,6 +755,20 @@ public partial class MainWindow : Window
             e.Handled = true;
             _ = CommitAsync();
         }
+    }
+
+    // Ctrl+N, Ctrl+O, Ctrl+Shift+O and Ctrl+, as in GitHub Desktop
+    private Func<Task>? FileShortcut(KeyEventArgs e)
+    {
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        return e.Key switch
+        {
+            Key.N when !shift => NewRepositoryAsync,
+            Key.O when shift => CloneRepositoryAsync,
+            Key.O => AddRepositoryAsync,
+            Key.OemComma => () => OpenOptionsAsync(OptionsWindow.ACCOUNTS),
+            _ => null
+        };
     }
 
     private void OnGitCommandFinished(string commandLine, GitResult result, bool quiet)

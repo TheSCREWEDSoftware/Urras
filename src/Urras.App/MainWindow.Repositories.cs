@@ -316,20 +316,18 @@ public partial class MainWindow
 
     private async Task CloneRepositoryAsync()
     {
-        string? url = await Dialogs.PromptAsync(this, "Clone", "Repository URL:");
-        if (url == null)
+        string? input = await Dialogs.PromptAsync(this, "Clone a repository",
+                                                  "Repository address, or owner/name for GitHub (such as " +
+                                                  "azerothcore/azerothcore-wotlk):");
+        if (input == null)
             return;
 
+        string url = CloneAddress.Resolve(input);
         string? parent = await PickFolderAsync("Choose where to clone into");
         if (parent == null)
             return;
 
-        string name = url.TrimEnd('/');
-        name = name.Substring(Math.Max(name.LastIndexOfAny(new[] { '/', '\\', ':' }) + 1, 0));
-        if (name.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-            name = name.Substring(0, name.Length - ".git".Length);
-
-        string target = Path.Combine(parent, name);
+        string target = Path.Combine(parent, CloneAddress.FolderName(url));
         if (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any())
         {
             SetStatus(target + " already exists and is not empty.", true);

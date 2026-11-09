@@ -80,6 +80,36 @@ public sealed class GitHubClient : PlatformClient
         return repositories;
     }
 
+    // GitHub's .gitignore templates by name (C++, Node, Unity…); they need no sign-in
+    public async Task<List<string>> GetGitIgnoreNamesAsync()
+    {
+        using JsonDocument result = await GetAsync("/gitignore/templates");
+        return result.RootElement.EnumerateArray().Select(item => item.GetString() ?? string.Empty)
+                     .Where(name => name.Length > 0).ToList();
+    }
+
+    public async Task<string> GetGitIgnoreAsync(string name)
+    {
+        using JsonDocument result = await GetAsync("/gitignore/templates/" + Uri.EscapeDataString(name));
+        return Text(result.RootElement, "source") ?? string.Empty;
+    }
+
+    // GitHub's licence list: its key (mit) and name (MIT License)
+    public async Task<List<(string Key, string Name)>> GetLicensesAsync()
+    {
+        using JsonDocument result = await GetAsync("/licenses");
+        return result.RootElement.EnumerateArray()
+                     .Select(item => (Text(item, "key") ?? string.Empty, Text(item, "name") ?? string.Empty))
+                     .Where(license => license.Item1.Length > 0).ToList();
+    }
+
+    // A licence's text, with placeholders such as [year] and [fullname] still in it
+    public async Task<string> GetLicenseAsync(string key)
+    {
+        using JsonDocument result = await GetAsync("/licenses/" + Uri.EscapeDataString(key));
+        return Text(result.RootElement, "body") ?? string.Empty;
+    }
+
     // permissions.push is only there when signed in; parent only when the repository is a fork
     public override async Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
     {
