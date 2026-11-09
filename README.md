@@ -76,6 +76,10 @@ you already have installed.
 
 ## Screenshots
 
+<img src="docs/screenshots/history-graph.png" alt="Screenshot: history graph"><br>
+History: the commit graph with a lane per branch, branch labels, authors with their pictures, and the commit and
+date of each change
+
 <table>
   <tr>
     <td>
