@@ -214,3 +214,24 @@ public static class SettingsSafetyTests
         }
     }
 }
+
+public static class BranchListTests
+{
+    public static void OffersLocalAndMainRemoteBranches()
+    {
+        List<BranchInfo> branches = new List<BranchInfo>
+        {
+            new BranchInfo("master", true, false, "origin/master", null),
+            new BranchInfo("quest-min-level-hook", false, false, null, null),
+            new BranchInfo("origin/master", false, true, null, null),
+            new BranchInfo("origin/release", false, true, null, null),
+            new BranchInfo("upstream/master", false, true, null, null),
+            new BranchInfo("upstream/fix/crash", false, true, null, null),
+            new BranchInfo("github-desktop-sogladev/feat-melee-leeway", false, true, null, null)
+        };
+        Assert.Equal("master|quest-min-level-hook|origin/release|upstream/fix/crash",
+                     string.Join("|", BranchLists.ForPicker(branches).Select(branch => branch.Name)),
+                     "local ones, then origin's and upstream's without a local twin; pull request remotes left out");
+        Assert.Equal("fix/crash", BranchLists.LocalName("upstream/fix/crash"), "local name");
+    }
+}

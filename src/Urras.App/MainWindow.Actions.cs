@@ -24,6 +24,7 @@ public partial class MainWindow
     private void ShowBranchMenu()
     {
         ContextMenu menu = new ContextMenu();
+        AddMenuItem(menu, "All branches (every remote)…", ChooseAnyBranchAsync);
         AddMenuItem(menu, "New branch…", CreateBranchAsync);
         AddMenuItem(menu, "Delete branch…", DeleteBranchAsync);
         menu.Items.Add(new Separator());
@@ -44,6 +45,16 @@ public partial class MainWindow
             AddMenuItem(menu, "▸ " + command.Name, () => RunCustomCommandAsync(command, CurrentContext()));
         AddMenuItem(menu, "Repository settings…", () => RepositorySettingsAsync(_repository?.Path));
         menu.Open(BranchMenuButton);
+    }
+
+    // Every branch of every remote, searchable, for the ones the branch box leaves out
+    private async Task ChooseAnyBranchAsync()
+    {
+        List<BranchInfo> others = _branches.Where(branch => !branch.IsCurrent).ToList();
+        string? name = await Dialogs.ChooseAsync(this, "All branches", "Type to filter, then pick a branch:",
+                                                 others.Select(branch => branch.Name));
+        if (others.FirstOrDefault(branch => branch.Name == name) is { } chosen)
+            await SwitchFromQuickLaunchAsync(chosen);
     }
 
     private void ShowStashMenu()

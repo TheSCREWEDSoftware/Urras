@@ -184,12 +184,14 @@ public partial class MainWindow : Window
                     .Concat(branches.Where(branch => branch.IsRemote)).ToList();
                 string branchSignature = string.Join("\n", ordered.Select(branch => branch.Name + "\t" +
                                                                          branch.IsCurrent + "\t" + branch.Tracking));
-                if (branchSignature != _branchSignature || !ReferenceEquals(BranchBox.ItemsSource, _branches))
+                _branches = ordered;
+                if (branchSignature != _branchSignature || !ReferenceEquals(BranchBox.ItemsSource, _branchChoices))
                 {
+                    // The box keeps to the branches people switch between; every branch is in All branches…
                     _branchSignature = branchSignature;
-                    _branches = ordered;
-                    BranchBox.ItemsSource = ordered;
-                    BranchBox.SelectedItem = ordered.FirstOrDefault(branch => branch.IsCurrent);
+                    _branchChoices = BranchLists.ForPicker(ordered);
+                    BranchBox.ItemsSource = _branchChoices;
+                    BranchBox.SelectedItem = _branchChoices.FirstOrDefault(branch => branch.IsCurrent);
                 }
 
                 PullButton.Content = status.Behind > 0 ? $"Pull ({status.Behind})" : "Pull";

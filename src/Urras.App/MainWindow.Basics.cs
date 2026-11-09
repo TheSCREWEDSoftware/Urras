@@ -134,6 +134,7 @@ public partial class MainWindow
 
     private string? _filesSignature;
     private string? _branchSignature;
+    private List<BranchInfo> _branchChoices = new List<BranchInfo>();
     private string? _historySignature;
 
     // A new repository starts with fresh lists
