@@ -105,3 +105,49 @@ public static class ForkTests
         Assert.Equal(1, (await repository.GetRootCommitsAsync()).Count, "one first commit");
     }
 }
+
+public static class BranchChangesTests
+{
+    public static async Task KeepsChangesWithTheirBranch()
+    {
+        using TempRepository temp = await TempRepository.CreateAsync();
+        GitRepository repository = new GitRepository(temp.Path);
+        File.WriteAllText(Path.Combine(temp.Path, "a.txt"), "a");
+        Assert.Success(await GitRunner.RunAsync(temp.Path, "add", "a.txt"), "add");
+        Assert.Success(await GitRunner.RunAsync(temp.Path, "commit", "-m", "First"), "commit");
+        Assert.Success(await GitRunner.RunAsync(temp.Path, "branch", "other"), "branch");
+        string main = (await GitRunner.RunAsync(temp.Path, "branch", "--show-current")).Output.Trim();
+
+        File.WriteAllText(Path.Combine(temp.Path, "a.txt"), "changed");
+        File.WriteAllText(Path.Combine(temp.Path, "new.txt"), "new");
+        Assert.Success(await GitRunner.RunAsync(temp.Path, "add", "a.txt"), "stage");
+        Assert.Success(await repository.KeepChangesWithBranchAsync(main), "keep");
+        Assert.Equal(string.Empty, (await GitRunner.RunAsync(temp.Path, "status", "--porcelain")).Output.Trim(),
+                     "clean once kept, untracked files too");
+
+        Assert.Success(await repository.SwitchAsync("other"), "switch away");
+        Assert.True(await repository.RestoreKeptChangesAsync("other") == null, "nothing kept with other");
+        Assert.Success(await repository.SwitchAsync(main), "switch back");
+        Assert.Success((await repository.RestoreKeptChangesAsync(main))!, "restore");
+        Assert.Equal("M  a.txt|?? new.txt",
+                     string.Join("|", (await GitRunner.RunAsync(temp.Path, "status", "--porcelain")).Output
+                                      .Split('\n', StringSplitOptions.RemoveEmptyEntries)),
+                     "back as they were, staging included");
+        Assert.Equal(0, (await repository.GetStashesAsync()).Count, "the kept stash is used up");
+    }
+
+    public static void WritesTheCrashLog()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "urras-crash-" + Guid.NewGuid().ToString("N"), "crash.log");
+        try
+        {
+            Assert.Equal(path, Urras.Core.Settings.CrashLog.Write(new InvalidOperationException("Boom"), "Test", path),
+                         "written");
+            Assert.True(File.ReadAllText(path).Contains("Boom"), "has the error");
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, true);
+        }
+    }
+}

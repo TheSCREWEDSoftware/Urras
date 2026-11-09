@@ -131,7 +131,8 @@ public sealed class OptionsWindow : Window
         {
             Radio("Ask me where the changes should go", "switch"),
             Radio("Always bring my changes to the new branch", "switch"),
-            Radio("Always stash them and leave them on the current branch", "switch")
+            Radio("Always stash them and leave them on the current branch", "switch"),
+            Radio("Keep them with each branch: put away when I leave, back when I return", "switch")
         };
         _switching[(int)prompts.SwitchingWithChanges].IsChecked = true;
 

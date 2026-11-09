@@ -386,54 +386,94 @@ public partial class MainWindow : Window
             branch.IsCurrent)
             return;
 
-        if (!await HandleChangesBeforeSwitchAsync(branch.Name))
+        string? leaving = _status?.Branch;
+        bool clean = _status is { Staged.Count: 0, Unstaged.Count: 0 };
+        BranchSwitchChanges? handled = await HandleChangesBeforeSwitchAsync(branch.Name);
+        if (handled == null)
         {
             await RefreshAsync();
             return;
         }
 
+        bool switched;
+        string arrived = branch.Name;
         if (!branch.IsRemote)
+            switched = await RunGitAsync("Switching to " + branch.Name + "…",
+                                         repository => repository.SwitchAsync(branch.Name),
+                                         "Switched to " + branch.Name + ".");
+        else
         {
-            await RunGitAsync("Switching to " + branch.Name + "…", repository => repository.SwitchAsync(branch.Name),
-                              "Switched to " + branch.Name + ".");
-            return;
+            // Use an existing local branch with the same name, otherwise create one that tracks the remote
+            arrived = branch.Name.Substring(branch.Name.IndexOf('/') + 1);
+            string localName = arrived;
+            bool localExists = _branches.Any(other => !other.IsRemote && other.Name == localName);
+            switched = await RunGitAsync("Switching to " + localName + "…",
+                                         repository => localExists ? repository.SwitchAsync(localName)
+                                                                   : repository.SwitchToRemoteAsync(branch.Name),
+                                         "Switched to " + localName + ".");
         }
 
-        // Use an existing local branch with the same name, otherwise create one that tracks the remote
-        string localName = branch.Name.Substring(branch.Name.IndexOf('/') + 1);
-        bool localExists = _branches.Any(other => !other.IsRemote && other.Name == localName);
-        await RunGitAsync("Switching to " + localName + "…",
-                          repository => localExists ? repository.SwitchAsync(localName)
-                                                    : repository.SwitchToRemoteAsync(branch.Name),
-                          "Switched to " + localName + ".");
+        // Changes kept with the branch come back when nothing else was brought along to clash with them
+        if (switched && (clean || handled != BranchSwitchChanges.Bring))
+            await RestoreKeptChangesAsync(arrived);
+        else if (!switched && handled == BranchSwitchChanges.KeepWithBranch)
+            await RestoreKeptChangesAsync(leaving);
     }
 
-    // Brings uncommitted changes along or stashes them, as Options says; false when cancelled
-    private async Task<bool> HandleChangesBeforeSwitchAsync(string target)
+    // Brings back what was kept with the branch now checked out (or with the one left, if switching failed)
+    private async Task RestoreKeptChangesAsync(string? branch)
     {
-        if (_repository == null || _status == null ||
-            (_status.Staged.Count == 0 && _status.Unstaged.All(change => change.Kind == ChangeKind.Untracked)))
-            return true;
+        if (_repository == null || branch == null)
+            return;
 
+        GitResult? restored = await _repository.RestoreKeptChangesAsync(branch);
+        if (restored != null)
+            ReportResult(restored, "Switched to " + branch + " and brought back the changes you left on it.");
+        await RefreshAsync();
+    }
+
+    // Brings changes along, stashes them or keeps them with the branch; null when cancelled or failed
+    private async Task<BranchSwitchChanges?> HandleChangesBeforeSwitchAsync(string target)
+    {
         BranchSwitchChanges mode = _settings.Prompts.SwitchingWithChanges;
+        if (_repository == null || _status == null)
+            return BranchSwitchChanges.Bring;
+
+        // Kept changes include untracked files, so they stay with their branch too
+        bool keeping = mode == BranchSwitchChanges.KeepWithBranch;
+        bool untrackedOnly = _status.Staged.Count == 0 &&
+                             _status.Unstaged.All(change => change.Kind == ChangeKind.Untracked);
+        if (_status.Staged.Count == 0 && _status.Unstaged.Count == 0)
+            return keeping ? BranchSwitchChanges.KeepWithBranch : BranchSwitchChanges.Bring;
+        if (untrackedOnly && !keeping)
+            return BranchSwitchChanges.Bring;
+
         string current = _status.Branch ?? "the current branch";
         if (mode == BranchSwitchChanges.Ask)
         {
             string bring = "Bring my changes to " + target;
             string leave = "Stash them and leave them on " + current;
+            string keep = "Keep them with " + current + " (they come back when you switch back)";
             string? choice = await Dialogs.ChooseAsync(this, "Uncommitted changes",
                                                        "You have uncommitted changes. Where should they go?",
-                                                       new[] { bring, leave });
+                                                       new[] { bring, leave, keep });
             if (choice == null)
-                return false;
-            mode = choice == bring ? BranchSwitchChanges.Bring : BranchSwitchChanges.Stash;
+                return null;
+            mode = choice == bring ? BranchSwitchChanges.Bring :
+                   choice == keep ? BranchSwitchChanges.KeepWithBranch : BranchSwitchChanges.Stash;
         }
 
         if (mode == BranchSwitchChanges.Bring)
-            return true;
+            return mode;
+
+        if (mode == BranchSwitchChanges.KeepWithBranch && _status.Branch != null)
+        {
+            GitResult kept = await _repository.KeepChangesWithBranchAsync(_status.Branch);
+            return ReportResult(kept, "Your changes stay with " + current + ".") ? mode : null;
+        }
 
         GitResult stash = await _repository.StashAsync("Left on " + current + " when switching to " + target, false);
-        return ReportResult(stash, "Stashed your changes on " + current + ".");
+        return ReportResult(stash, "Stashed your changes on " + current + ".") ? BranchSwitchChanges.Stash : null;
     }
 
     private async Task CreateBranchAsync()

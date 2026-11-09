@@ -15,7 +15,10 @@ public enum BranchSwitchChanges
 {
     Ask,
     Bring,
-    Stash
+    Stash,
+
+    // Each branch keeps its own uncommitted changes: put away when leaving, back when returning
+    KeepWithBranch
 }
 
 // Which questions Urras asks before doing something that can't easily be undone

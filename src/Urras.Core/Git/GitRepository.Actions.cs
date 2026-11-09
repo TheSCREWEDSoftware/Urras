@@ -126,6 +126,29 @@ public sealed partial class GitRepository
         return Run(arguments);
     }
 
+    // The stash message that marks changes kept with a branch
+    public static string KeptChangesMessage(string branch)
+    {
+        return KEPT_CHANGES_PREFIX + branch;
+    }
+
+    public const string KEPT_CHANGES_PREFIX = "Urras: kept with ";
+
+    // Puts every change away, untracked files and staging included, until the branch is checked out again
+    public Task<GitResult> KeepChangesWithBranchAsync(string branch)
+    {
+        return StashAsync(KeptChangesMessage(branch), true);
+    }
+
+    // Brings back the changes kept with a branch, staged as they were; null when there are none
+    public async Task<GitResult?> RestoreKeptChangesAsync(string branch)
+    {
+        string marker = ": " + KeptChangesMessage(branch);
+        StashInfo? kept = (await GetStashesAsync()).FirstOrDefault(stash => stash.Message.EndsWith(
+                                                                       marker, StringComparison.Ordinal));
+        return kept == null ? null : await StashPopAsync(kept.Reference);
+    }
+
     public Task<GitResult> StashApplyAsync(string reference)
     {
         return Run("stash", "apply", "--index", reference);
