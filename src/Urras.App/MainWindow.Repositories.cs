@@ -23,10 +23,26 @@ public partial class MainWindow
     private bool _summariesRunning;
     private bool _summariesPending;
     private bool _rootsLearned;
+    private bool _searching;
 
     private void InitializeRepositoryTree()
     {
         GroupingBox.SelectedIndex = GroupingIndex();
+        RepositorySearchBox.TextChanged += (_, _) => BuildRepositoryTree(false);
+        RepositorySearchBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                RepositorySearchBox.Text = string.Empty;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter && FirstRepository(_rootNodes) is { } first)
+            {
+                // Enter opens the first repository found
+                RepositoryTree.SelectedItem = first;
+                e.Handled = true;
+            }
+        };
         GroupingBox.SelectionChanged += async (_, _) => await OnGroupingChangedAsync();
         NewGroupButton.Click += async (_, _) => await NewGroupAsync(null);
         RepositoryTree.SelectionChanged += async (_, _) => await OnTreeSelectionChangedAsync();
@@ -59,7 +75,8 @@ public partial class MainWindow
 
     // Building the tree
 
-    private void BuildRepositoryTree()
+    // A search rebuilds the tree on every key, without asking Git about every repository again
+    private void BuildRepositoryTree(bool refreshSummaries = true)
     {
         List<RepositoryTreeNode> tree;
         if (_settings.GroupByFolder)
@@ -70,6 +87,11 @@ public partial class MainWindow
             RepositoryLayout.Reconcile(_settings.ManualLayout, _settings.Repositories);
             tree = RepositoryLayout.ToTree(_settings.ManualLayout);
         }
+
+        // While searching, everything found is shown opened up, without changing what is saved as collapsed
+        string query = RepositorySearchBox.Text?.Trim() ?? string.Empty;
+        _searching = query.Length > 0;
+        tree = RepositoryLayout.Filter(tree, query);
 
         _repositoryNodes.Clear();
         _rootNodes = new ObservableCollection<RepositoryNode>(tree.Select(node => CreateNode(node, null)));
@@ -90,12 +112,18 @@ public partial class MainWindow
         SelectCurrentRepositoryNode();
         UpdatePinnedBar();
         UpdateHints();
-        _ = RefreshSummariesAsync();
+        if (refreshSummaries)
+            _ = RefreshSummariesAsync();
+    }
+
+    private static RepositoryNode? FirstRepository(IEnumerable<RepositoryNode> nodes)
+    {
+        return nodes.SelectMany(node => node.SelfAndDescendants()).FirstOrDefault(node => node.Path != null);
     }
 
     private RepositoryNode CreateNode(RepositoryTreeNode source, RepositoryNode? parent)
     {
-        bool expanded = !source.IsGroup ||
+        bool expanded = !source.IsGroup || _searching ||
                         (source.Item?.Group?.IsExpanded ??
                          !_settings.CollapsedFolders.Contains(source.Folder ?? string.Empty,
                                                               RepositoryLayout.PathComparer));
@@ -112,6 +140,9 @@ public partial class MainWindow
 
     private void OnNodeExpandedChanged(RepositoryNode node)
     {
+        if (_searching)
+            return;
+
         if (node.Source.Item?.Group is LayoutGroup group)
             group.IsExpanded = node.IsExpanded;
         else if (node.Source.Folder is string folder)

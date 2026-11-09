@@ -166,6 +166,45 @@ public static class RepositoryLayout
         return roots;
     }
 
+    // What matches every word in its name, path or groups' names; a matching group keeps all it holds
+    public static List<RepositoryTreeNode> Filter(IEnumerable<RepositoryTreeNode> nodes, string? query)
+    {
+        string[] words = (query ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries |
+                                                            StringSplitOptions.TrimEntries);
+        return words.Length == 0 ? nodes.ToList() : FilterNodes(nodes, words, string.Empty);
+    }
+
+    private static List<RepositoryTreeNode> FilterNodes(IEnumerable<RepositoryTreeNode> nodes, string[] words,
+                                                        string groups)
+    {
+        List<RepositoryTreeNode> kept = new List<RepositoryTreeNode>();
+        foreach (RepositoryTreeNode node in nodes)
+        {
+            string text = groups + " " + node.Name + " " + (node.RepositoryPath ?? string.Empty);
+            if (words.All(word => text.Contains(word, StringComparison.OrdinalIgnoreCase)))
+            {
+                kept.Add(node);
+                continue;
+            }
+
+            if (!node.IsGroup)
+                continue;
+
+            List<RepositoryTreeNode> children = FilterNodes(node.Children, words, groups + " " + node.Name);
+            if (children.Count == 0)
+                continue;
+
+            RepositoryTreeNode copy = new RepositoryTreeNode(node.Name, null, node.Folder, node.Item)
+            {
+                IsPinned = node.IsPinned
+            };
+            copy.Children.AddRange(children);
+            kept.Add(copy);
+        }
+
+        return kept;
+    }
+
     private static string OwnerOf((string Path, RemoteIdentity? Remote) copy)
     {
         return copy.Remote?.Owner ?? Path.GetFileName(Path.GetDirectoryName(copy.Path)) ?? "local";
@@ -249,6 +288,11 @@ public static class RepositoryLayout
                                   .Count() < twins.Count;
             string where = sameNames ? System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(copy.Path) ?? "")
                                      : System.IO.Path.GetFileName(copy.Path);
+            // A folder at the top of a drive has no parent name, so the drive (F:) tells it apart instead
+            if (where.Length == 0)
+                where = System.IO.Path.GetPathRoot(copy.Path)?.TrimEnd('\\', '/') ?? string.Empty;
+            if (where.Length == 0)
+                where = copy.Path;
             yield return (copy.Path, text + " (" + where + ")");
         }
     }

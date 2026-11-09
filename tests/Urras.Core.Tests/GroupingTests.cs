@@ -76,6 +76,31 @@ public static class GroupingTests
                      "nothing shared, nothing grouped");
     }
 
+    public static void SearchesNamesFoldersAndGroups()
+    {
+        List<RepositoryTreeNode> tree = RepositoryLayout.BuildByName(Remotes.Keys, path => Remotes[path]);
+        Assert.Equal("azerothcore-mop; azerothcore-wotlk[Aceddian, TheSCREWEDSoftware (b), TheSCREWEDSoftware (c)]",
+                     Describe(RepositoryLayout.Filter(tree, "AZEROTH")), "a group matching keeps all it holds");
+        Assert.Equal("azerothcore-wotlk[Aceddian]", Describe(RepositoryLayout.Filter(tree, "wotlk aced")),
+                     "every word, across the group's name and the repository's");
+        Assert.Equal("scratch", Describe(RepositoryLayout.Filter(tree, "/r/scr")), "by folder");
+        Assert.Equal(0, RepositoryLayout.Filter(tree, "nothing-like-this").Count, "nothing found");
+        Assert.Equal(tree.Count, RepositoryLayout.Filter(tree, "  ").Count, "an empty search shows everything");
+    }
+
+    public static void TellsApartCopiesAtTheTopOfADrive()
+    {
+        string first = Path.GetFullPath("/Additions");
+        string second = Path.GetFullPath("/x/Additions");
+        Dictionary<string, RemoteIdentity?> remotes = new()
+        {
+            [first] = new RemoteIdentity("TheSCREWEDSoftware", "AzerothCore-Additions", "github.com"),
+            [second] = new RemoteIdentity("TheSCREWEDSoftware", "AzerothCore-Additions", "github.com")
+        };
+        string labels = Describe(RepositoryLayout.BuildByName(remotes.Keys, path => remotes[path]));
+        Assert.True(!labels.Contains("()"), "no empty brackets: " + labels);
+    }
+
     public static void GroupsByOwnerLikeGitHubDesktop()
     {
         List<RepositoryTreeNode> tree = RepositoryLayout.BuildByOwner(Remotes.Keys, path => Remotes[path]);

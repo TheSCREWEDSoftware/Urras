@@ -716,6 +716,13 @@ public partial class MainWindow : Window
             e.Handled = true;
             _ = RefreshAsync();
         }
+        else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) &&
+                 !e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            e.Handled = true;
+            RepositorySearchBox.Focus();
+            RepositorySearchBox.SelectAll();
+        }
         else if (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control))
         {
             e.Handled = true;

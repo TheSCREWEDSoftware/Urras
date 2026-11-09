@@ -94,6 +94,30 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void SearchesTheRepositoryList()
+    {
+        MainWindow window = OpenWindow();
+        TreeView tree = window.FindControl<TreeView>("RepositoryTree")!;
+        TextBox search = window.FindControl<TextBox>("RepositorySearchBox")!;
+        int Repositories() => tree.Items.OfType<RepositoryNode>().SelectMany(node => node.SelfAndDescendants())
+                                  .Count(node => node.Path != null);
+        Assert.Equal(3, Repositories());
+
+        search.Text = "nothing-matches-this";
+        Ui.Pump();
+        Assert.Equal(0, Repositories());
+        Assert.True(window.FindControl<TextBlock>("RepositoryHint")!.IsVisible, "says nothing matched");
+
+        search.Text = "wiki";
+        Ui.Pump();
+        Assert.Equal(3, Repositories());
+        search.Text = string.Empty;
+        Ui.Pump();
+        Assert.Equal(3, Repositories());
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void OptionsOpenFromTheMainWindow()
     {
         MainWindow window = OpenWindow();

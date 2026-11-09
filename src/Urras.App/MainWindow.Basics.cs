@@ -151,7 +151,9 @@ public partial class MainWindow
     private void UpdateHints()
     {
         bool hasRepository = _repository != null;
-        RepositoryHint.IsVisible = _settings.Repositories.Count == 0;
+        RepositoryHint.IsVisible = _settings.Repositories.Count == 0 || (_searching && _rootNodes.Count == 0);
+        RepositoryHint.Text = _settings.Repositories.Count == 0 ? "Add a repository with Add… or Clone… to get started"
+                                                                : "No repositories match the search";
         UnstagedHint.IsVisible = hasRepository && UnstagedList.ItemCount == 0;
         bool filtered = _status != null && _status.Unstaged.Count > 0;
         UnstagedHint.Text = filtered ? "No changes match the filter, or they are hidden untracked files" : "No changes";
