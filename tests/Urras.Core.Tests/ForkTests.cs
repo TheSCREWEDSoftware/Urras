@@ -235,3 +235,28 @@ public static class BranchListTests
         Assert.Equal("fix/crash", BranchLists.LocalName("upstream/fix/crash"), "local name");
     }
 }
+
+public static class CommitSubjectTests
+{
+    private static string Show(string subject)
+    {
+        return string.Concat(CommitSubject.Parts(subject)
+                                          .Select(part => part.IsCode ? "[" + part.Text + "]" : part.Text));
+    }
+
+    public static void MarksCodeAndBranchNames()
+    {
+        Assert.Equal("Merge branch [master] into [fix/togc-unlock-conditions]",
+                     Show("Merge branch 'master' into fix/togc-unlock-conditions"), "merge of a branch");
+        Assert.Equal("Merge branch [main] of https://github.com/o/r into [dev]",
+                     Show("Merge branch 'main' of https://github.com/o/r into dev"), "merge from another address");
+        Assert.Equal("Merge remote-tracking branch [origin/main]", Show("Merge remote-tracking branch 'origin/main'"),
+                     "remote-tracking");
+        Assert.Equal("Merge pull request #12 from [owner/feature]", Show("Merge pull request #12 from owner/feature"),
+                     "pull request");
+        Assert.Equal("fix: set [WorldMapAreaId] in [quest_poi]", Show("fix: set `WorldMapAreaId` in `quest_poi`"),
+                     "backticks, shown without them");
+        Assert.Equal("plain summary", Show("plain summary"), "nothing to mark");
+        Assert.Equal("", Show(""), "empty");
+    }
+}

@@ -235,6 +235,30 @@ public partial class MainWindow
         AddMenuItem(menu, "View on " + platform, () => Report(SystemShell.OpenUrl(url)));
     }
 
+    // A commit's page on the repository's website, or null without one
+    private string? CommitUrl(string hash)
+    {
+        RemoteIdentity? origin = _repository == null ? null : RemoteIdentity.Read(_repository.Path);
+        if (origin?.WebUrl is not { } site)
+            return null;
+
+        string path = PlatformNameFor(origin.Host) switch
+        {
+            "GitLab" => "/-/commit/",
+            "Bitbucket" or "Bitbucket Server" => "/commits/",
+            _ => "/commit/"
+        };
+        return site + path + hash;
+    }
+
+    // The author's profile when a GitHub private address says who they are, otherwise the commit (which links them)
+    private string? AuthorUrl(CommitInfo commit)
+    {
+        if (GitHubClient.FromNoreplyEmail(commit.Email) is { } user)
+            return "https://github.com/" + Uri.EscapeDataString(user.Login);
+        return CommitUrl(commit.Hash);
+    }
+
     // Where each platform shows a file at a revision; Gitea tells commits and branches apart in the address
     private static string FilePagePath(string platform, string revision)
     {

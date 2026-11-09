@@ -13,6 +13,27 @@ public partial class MainWindow
 
     private void InitializeHistoryTools()
     {
+        // A click on an author's name or picture, or on a commit's hash, opens it on the website instead of selecting
+        HistoryList.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (!e.GetCurrentPoint(HistoryList).Properties.IsLeftButtonPressed)
+                return;
+
+            for (Control? control = e.Source as Control; control != null && control != HistoryList;
+                 control = control.Parent as Control)
+            {
+                if (control.Tag is not string link || control.DataContext is not CommitInfo commit || commit.IsStash)
+                    continue;
+
+                string? url = link == "author" ? AuthorUrl(commit) : CommitUrl(commit.Hash);
+                if (url == null)
+                    return;
+                e.Handled = true;
+                _ = Report(SystemShell.OpenUrl(url));
+                return;
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
         SearchModeBox.SelectedIndex = 0;
         SearchBox.KeyDown += async (_, e) =>
         {

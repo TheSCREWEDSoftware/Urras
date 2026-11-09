@@ -107,6 +107,10 @@ public sealed class CommitInfo
 
     // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
     public string Refs { get; init; } = string.Empty;
+
+    // The summary split into text and code, worked out when first shown
+    public IReadOnlyList<SubjectPart> SubjectParts => _subjectParts ??= CommitSubject.Parts(Subject);
+    private IReadOnlyList<SubjectPart>? _subjectParts;
     public bool HasRefs => RefBadges.Count > 0;
 
     // Refs split into badges: the checked-out branch, other local branches, remote branches and tags

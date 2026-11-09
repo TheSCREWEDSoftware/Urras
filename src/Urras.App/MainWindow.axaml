@@ -8,6 +8,13 @@
         MinWidth="900" MinHeight="560">
 
   <Window.Styles>
+    <!-- Names and commits in History open their page on the website when clicked -->
+    <Style Selector=":is(Control).link">
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="TextBlock.link:pointerover">
+      <Setter Property="TextDecorations" Value="Underline" />
+    </Style>
     <Style Selector="TextBlock.header">
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -449,16 +456,19 @@ Esc clears it" />
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
-                      <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                      <local:CommitSubjectBlock Parts="{Binding SubjectParts}" TextTrimming="CharacterEllipsis"
+                                                VerticalAlignment="Center" />
                     </DockPanel>
                     <DockPanel Grid.Column="1" Margin="8,0,0,0">
                       <local:AvatarView DockPanel.Dock="Left" Email="{Binding Email}" PersonName="{Binding Author}"
-                                        Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        Margin="0,0,6,0" VerticalAlignment="Center" Tag="author" Classes="link" />
                       <TextBlock Text="{Binding Author}" TextTrimming="CharacterEllipsis" Opacity="0.7"
-                                 VerticalAlignment="Center" />
+                                 VerticalAlignment="Center" Tag="author" Classes="link"
+                                 ToolTip.Tip="Open their profile, or this commit when the profile isn't known" />
                     </DockPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono" Opacity="0.7"
-                               Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono link" Opacity="0.7"
+                               Margin="8,0,0,0" VerticalAlignment="Center" Tag="commit"
+                               ToolTip.Tip="Open this commit on the website" />
                     <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
                                VerticalAlignment="Center" />
                   </Grid>
