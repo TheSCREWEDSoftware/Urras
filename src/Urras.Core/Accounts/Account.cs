@@ -81,6 +81,19 @@ public sealed class Account
 // A user found on a platform, for co-authors and pictures
 public sealed record PlatformUser(long Id, string Login, string? Name, string? AvatarUrl, string? Email = null);
 
+// Whether the signed-in user can push to a repository, and the repository it was forked from, if any
+public sealed record PlatformAccess(bool CanPush, string? ParentOwner, string? ParentName)
+{
+    public bool IsFork => ParentOwner != null && ParentName != null;
+
+    // "owner/name" from a full name such as "azerothcore/wiki" or "group/sub/project"
+    public static (string? Owner, string? Name) Split(string? fullName)
+    {
+        int slash = fullName?.LastIndexOf('/') ?? -1;
+        return slash > 0 && slash < fullName!.Length - 1 ? (fullName[..slash], fullName[(slash + 1)..]) : (null, null);
+    }
+}
+
 // A repository on a platform, for cloning
 public sealed record PlatformRepository(string FullName, string CloneUrl, string? Description, bool IsPrivate,
                                         bool IsFork)

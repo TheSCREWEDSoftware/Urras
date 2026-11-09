@@ -127,23 +127,36 @@ public static class RepositoryLayout
         return node;
     }
 
-    // One group per repository name with each fork or clone inside it, named by owner; single copies alone
+    // One group per repository name, each copy inside named by owner; with kin, only related copies group
     public static List<RepositoryTreeNode> BuildByName(IEnumerable<string> repositories,
-                                                       Func<string, RemoteIdentity?> identify)
+                                                       Func<string, RemoteIdentity?> identify,
+                                                       Func<string, IReadOnlyCollection<string>>? kin = null)
     {
-        List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
+        List<List<(string Path, RemoteIdentity? Remote)>> families = new List<List<(string, RemoteIdentity?)>>();
         foreach (IGrouping<string, (string Path, RemoteIdentity? Remote)> group in Identify(repositories, identify)
                      .GroupBy(entry => (entry.Remote?.Name ?? Path.GetFileName(entry.Path)).ToLowerInvariant()))
+            families.AddRange(kin == null ? new[] { group.ToList() } : Related(group.ToList(), kin));
+
+        // Unrelated repositories that share a name are told apart by owner
+        Dictionary<string, int> named = families.GroupBy(family => NameOf(family[0]).ToLowerInvariant())
+                                                .ToDictionary(group => group.Key, group => group.Count());
+        List<RepositoryTreeNode> roots = new List<RepositoryTreeNode>();
+        foreach (List<(string Path, RemoteIdentity? Remote)> copies in families)
         {
-            List<(string Path, RemoteIdentity? Remote)> copies = group.ToList();
-            string name = copies[0].Remote?.Name ?? Path.GetFileName(copies[0].Path);
+            string name = NameOf(copies[0]);
+            bool shared = named[name.ToLowerInvariant()] > 1;
+            if (shared)
+                name += " (" + string.Join(", ", copies.Select(OwnerOf).Distinct(StringComparer.OrdinalIgnoreCase)
+                                                       .Order(StringComparer.OrdinalIgnoreCase)) + ")";
             if (copies.Count == 1)
             {
                 roots.Add(new RepositoryTreeNode(name, copies[0].Path, null, null));
                 continue;
             }
 
-            RepositoryTreeNode node = new RepositoryTreeNode(name, null, "name:" + group.Key, null);
+            string key = "name:" + NameOf(copies[0]).ToLowerInvariant() +
+                         (shared ? ":" + copies[0].Path.ToLowerInvariant() : string.Empty);
+            RepositoryTreeNode node = new RepositoryTreeNode(name, null, key, null);
             foreach ((string path, string label) in Labels(copies, copy => copy.Remote?.Owner ?? "local"))
                 node.Children.Add(new RepositoryTreeNode(label, path, null, null));
             roots.Add(node);
@@ -151,6 +164,39 @@ public static class RepositoryLayout
 
         Sort(roots);
         return roots;
+    }
+
+    private static string OwnerOf((string Path, RemoteIdentity? Remote) copy)
+    {
+        return copy.Remote?.Owner ?? Path.GetFileName(Path.GetDirectoryName(copy.Path)) ?? "local";
+    }
+
+    private static string NameOf((string Path, RemoteIdentity? Remote) copy)
+    {
+        return copy.Remote?.Name ?? Path.GetFileName(copy.Path);
+    }
+
+    // Splits same-named copies into families: two are related when they share any kin key
+    private static List<List<(string Path, RemoteIdentity? Remote)>> Related(
+        List<(string Path, RemoteIdentity? Remote)> copies, Func<string, IReadOnlyCollection<string>> kin)
+    {
+        int[] family = Enumerable.Range(0, copies.Count).ToArray();
+        int Find(int index) => family[index] == index ? index : family[index] = Find(family[index]);
+
+        Dictionary<string, int> owners = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < copies.Count; ++i)
+        {
+            foreach (string key in kin(copies[i].Path))
+            {
+                if (owners.TryGetValue(key, out int other))
+                    family[Find(i)] = Find(other);
+                else
+                    owners[key] = i;
+            }
+        }
+
+        return Enumerable.Range(0, copies.Count).GroupBy(Find)
+                         .Select(group => group.Select(index => copies[index]).ToList()).ToList();
     }
 
     // One group per owner, like GitHub Desktop; repositories without a remote go under Other

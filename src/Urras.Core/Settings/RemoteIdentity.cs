@@ -3,36 +3,58 @@ namespace Urras.Core.Settings;
 // Owner and name of a repository's origin, read from .git/config without starting git
 public sealed record RemoteIdentity(string Owner, string Name, string Host)
 {
+    public const string ORIGIN = "origin";
+
     // Null for repositories without an origin remote
     public static RemoteIdentity? Read(string repository)
     {
+        return ReadAll(repository).TryGetValue(ORIGIN, out RemoteIdentity? origin) ? origin : null;
+    }
+
+    // Every remote by name, such as origin and upstream; empty when the configuration can't be read
+    public static Dictionary<string, RemoteIdentity> ReadAll(string repository)
+    {
+        Dictionary<string, RemoteIdentity> remotes = new Dictionary<string, RemoteIdentity>(StringComparer.Ordinal);
         string? config = ConfigFile(repository);
         if (config == null)
-            return null;
+            return remotes;
 
-        string? url = null;
-        bool inOrigin = false;
+        string? remote = null;
         try
         {
             foreach (string raw in File.ReadLines(config))
             {
                 string line = raw.Trim();
                 if (line.StartsWith('['))
-                    inOrigin = line.Replace(" ", string.Empty).Equals("[remote\"origin\"]", StringComparison.Ordinal);
-                else if (inOrigin && line.StartsWith("url", StringComparison.Ordinal) && line.Contains('='))
-                {
-                    url = line[(line.IndexOf('=') + 1)..].Trim();
-                    break;
-                }
+                    remote = RemoteSection(line);
+                else if (remote != null && line.StartsWith("url", StringComparison.Ordinal) && line.Contains('=') &&
+                         !remotes.ContainsKey(remote) && FromUrl(line[(line.IndexOf('=') + 1)..].Trim()) is { } url)
+                    remotes[remote] = url;
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return null;
+            return remotes;
         }
 
-        return url == null ? null : FromUrl(url);
+        return remotes;
     }
+
+    // "upstream" for [remote "upstream"]; null for other sections
+    private static string? RemoteSection(string line)
+    {
+        const string PREFIX = "[remote\"";
+        string compact = line.Replace(" ", string.Empty);
+        if (!compact.StartsWith(PREFIX, StringComparison.Ordinal) || !compact.EndsWith("\"]", StringComparison.Ordinal))
+            return null;
+        return compact[PREFIX.Length..^2];
+    }
+
+    // The same repository on the same host, whatever the letter case or how it is reached
+    public string Key => (Host + "/" + Owner + "/" + Name).ToLowerInvariant();
+
+    // Its page on the platform, for web hosts; null for local paths
+    public string? WebUrl => Host.Length == 0 || Host == Owner ? null : "https://" + Host + "/" + Owner + "/" + Name;
 
     // HTTPS (host/Owner/Name.git), scp-like SSH (git@host:Owner/Name.git), ssh:// with a port, and local paths
     public static RemoteIdentity? FromUrl(string url)

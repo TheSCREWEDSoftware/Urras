@@ -63,6 +63,12 @@ public abstract class PlatformClient
         return Task.FromResult(new List<PlatformPullRequest>());
     }
 
+    // Push access and the fork's parent for a repository; null when the platform can't tell
+    public virtual Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
+    {
+        return Task.FromResult<PlatformAccess?>(null);
+    }
+
     // Who a commit belongs to on the platform, for their picture; null when the platform can't tell
     public virtual Task<PlatformUser?> GetCommitAuthorAsync(string owner, string repository, string hash,
                                                             string email)
@@ -85,6 +91,13 @@ public abstract class PlatformClient
 
     // The web page for opening a pull request from branch into target
     public abstract string NewPullRequestUrl(string owner, string repository, string branch, string target);
+
+    // The web page for opening a pull request from a fork's branch into its parent; null when not supported
+    public virtual string? NewForkPullRequestUrl(string owner, string repository, string forkOwner, string branch,
+                                                 string target)
+    {
+        return null;
+    }
 
     // The git ref a pull request's commits can be fetched from; null to use its source branch instead
     public virtual string? PullRequestRef(int number)

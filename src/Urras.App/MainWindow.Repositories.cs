@@ -22,6 +22,7 @@ public partial class MainWindow
     private RepositoryNode? _contextNode;
     private bool _summariesRunning;
     private bool _summariesPending;
+    private bool _rootsLearned;
 
     private void InitializeRepositoryTree()
     {
@@ -47,7 +48,10 @@ public partial class MainWindow
 
         string? last = _settings.LastRepository;
         if (last != null && _settings.Repositories.Contains(last, RepositoryLayout.PathComparer))
+        {
             _repository = new GitRepository(last);
+            _ = UpdateForkSafelyAsync(last, false);
+        }
 
         BuildRepositoryTree();
     }
@@ -161,7 +165,10 @@ public partial class MainWindow
         ShowChangesDiff(null, string.Empty);
         ShowCommitDiff(null, string.Empty);
         UpdatePinnedBar();
+        UpdateViewOnlineButton();
         await RefreshAsync();
+        if (path != null)
+            await UpdateForkSafelyAsync(path, true);
     }
 
     // Status labels
@@ -195,6 +202,15 @@ public partial class MainWindow
                 }));
                 UpdateGroupDetails();
             } while (_summariesPending);
+
+            // Newly known first commits can bring forks together, or split unrelated repositories apart
+            if (_rootsLearned)
+            {
+                _rootsLearned = false;
+                _settings.Save();
+                if (_settings.GroupByFolder && _settings.Grouping == RepositoryGrouping.Name)
+                    BuildRepositoryTree();
+            }
         }
         finally
         {
@@ -207,6 +223,16 @@ public partial class MainWindow
         RepositorySummary summary = await RepositorySummary.LoadAsync(path);
         string key = RepositoryLayout.Normalize(path);
         _summaries[key] = summary;
+        if (summary.State != RepositoryState.Missing && !_settings.RootCommits.ContainsKey(key))
+        {
+            List<string> roots = await new GitRepository(path).GetRootCommitsAsync();
+            if (roots.Count > 0)
+            {
+                _settings.RootCommits[key] = roots;
+                _rootsLearned = true;
+            }
+        }
+
         if (_repositoryNodes.TryGetValue(key, out RepositoryNode? node))
             node.ApplySummary(summary);
 
@@ -537,8 +563,17 @@ public partial class MainWindow
             {
                 RepositoryGrouping.Folder => RepositoryLayout.BuildByFolder(rest),
                 RepositoryGrouping.Owner => RepositoryLayout.BuildByOwner(rest, RemoteIdentity.Read),
-                _ => RepositoryLayout.BuildByName(rest, RemoteIdentity.Read)
+                _ => RepositoryLayout.BuildByName(rest, RemoteIdentity.Read, Kin)
             }, _settings.PinnedRepositories);
+    }
+
+    // What relates copies of a repository: its remotes and its first commits
+    private IReadOnlyCollection<string> Kin(string path)
+    {
+        List<string> keys = RemoteIdentity.ReadAll(path).Values.Select(remote => remote.Key).ToList();
+        if (_settings.RootCommits.TryGetValue(RepositoryLayout.Normalize(path), out List<string>? roots))
+            keys.AddRange(roots.Select(root => "root:" + root));
+        return keys;
     }
 
     // Pin a folder group or a repository to the top of the list and to the toolbar

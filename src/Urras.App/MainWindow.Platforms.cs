@@ -24,10 +24,10 @@ public partial class MainWindow
         }
     }
 
-    // The account and owner/name for the open repository's origin, or a message saying what's missing
+    // The account and owner/name pull requests go to (a fork's parent, unless chosen otherwise), or a message
     private async Task<(PlatformClient? Client, RemoteIdentity? Remote)> PlatformForRepositoryAsync()
     {
-        RemoteIdentity? remote = _repository == null ? null : RemoteIdentity.Read(_repository.Path);
+        RemoteIdentity? remote = _repository == null ? null : OnlineTargets(_repository.Path).Target;
         if (remote == null)
         {
             SetStatus("This repository has no origin remote on a hosting platform.", true);
@@ -65,7 +65,7 @@ public partial class MainWindow
         switch (action)
         {
             case "Check out" when pull != null:
-                await CheckOutPullRequestAsync(client, pull);
+                await CheckOutPullRequestAsync(client, remote, pull);
                 break;
             case "Open in browser" when pull != null:
                 await Report(SystemShell.OpenUrl(pull.Url));
@@ -81,9 +81,13 @@ public partial class MainWindow
         }
     }
 
-    private async Task CheckOutPullRequestAsync(PlatformClient client, PlatformPullRequest pull)
+    private async Task CheckOutPullRequestAsync(PlatformClient client, RemoteIdentity remote, PlatformPullRequest pull)
     {
         string? reference = client.PullRequestRef(pull.Number);
+        // A fork's parent isn't a remote here, so its pull requests are fetched from its address
+        RemoteIdentity? origin = _repository == null ? null : RemoteIdentity.Read(_repository.Path);
+        string source = origin?.Key == remote.Key || remote.WebUrl == null ? RemoteIdentity.ORIGIN
+                                                                           : remote.WebUrl + ".git";
         if (reference == null)
         {
             await RunGitAsync("Checking out " + pull.SourceBranch + "…",
@@ -94,7 +98,7 @@ public partial class MainWindow
 
         string branch = PULL_REQUEST_BRANCH_PREFIX + pull.Number;
         await RunGitAsync("Checking out pull request #" + pull.Number + "…",
-                          repository => repository.CheckOutPullRequestAsync(reference, branch),
+                          repository => repository.CheckOutPullRequestAsync(reference, branch, source),
                           "Checked out pull request #" + pull.Number + " as " + branch + ".");
     }
 
@@ -108,7 +112,13 @@ public partial class MainWindow
         }
 
         string target = await _repository.GetDefaultBranchAsync();
-        await Report(SystemShell.OpenUrl(client.NewPullRequestUrl(remote.Owner, remote.Name, branch, target)));
+        RemoteIdentity? origin = RemoteIdentity.Read(_repository.Path);
+        string? fromFork = origin == null || origin.Key == remote.Key
+            ? null
+            : client.NewForkPullRequestUrl(remote.Owner, remote.Name, origin.Owner, branch, target);
+        await Report(SystemShell.OpenUrl(fromFork ?? client.NewPullRequestUrl(origin?.Owner ?? remote.Owner,
+                                                                              origin?.Name ?? remote.Name, branch,
+                                                                              target)));
     }
 
     private async Task ShowNotificationsAsync()

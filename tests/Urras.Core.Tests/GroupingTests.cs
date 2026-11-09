@@ -45,6 +45,37 @@ public static class GroupingTests
         Assert.Equal("name:azerothcore-wotlk", tree[1].Folder, "a key for remembering collapsed groups");
     }
 
+    // Same name, different projects: only copies sharing a remote or a first commit are grouped
+    public static void GroupsOnlyRelatedCopiesByName()
+    {
+        string screwed = Path.GetFullPath("/w/screwed/wiki");
+        string vmangos = Path.GetFullPath("/w/vmangos/wiki");
+        string azeroth = Path.GetFullPath("/w/azerothcore/wiki");
+        Dictionary<string, RemoteIdentity?> remotes = new()
+        {
+            [screwed] = new RemoteIdentity("TheSCREWEDSoftware", "wiki", "github.com"),
+            [vmangos] = new RemoteIdentity("vmangos", "wiki", "github.com"),
+            [azeroth] = new RemoteIdentity("azerothcore", "wiki", "github.com")
+        };
+        Dictionary<string, string[]> kin = new()
+        {
+            [screwed] = new[] { "root:aaa" },
+            [vmangos] = new[] { "root:bbb" },
+            [azeroth] = new[] { "root:aaa" }
+        };
+
+        List<RepositoryTreeNode> tree = RepositoryLayout.BuildByName(remotes.Keys, path => remotes[path],
+                                                                     path => kin[path]);
+        Assert.Equal("wiki (azerothcore, TheSCREWEDSoftware)[azerothcore, TheSCREWEDSoftware]; wiki (vmangos)",
+                     Describe(tree),
+                     "the fork with its parent; the unrelated wiki on its own, told apart by owner");
+
+        kin[azeroth] = Array.Empty<string>();
+        tree = RepositoryLayout.BuildByName(remotes.Keys, path => remotes[path], path => kin[path]);
+        Assert.Equal("wiki (azerothcore); wiki (TheSCREWEDSoftware); wiki (vmangos)", Describe(tree),
+                     "nothing shared, nothing grouped");
+    }
+
     public static void GroupsByOwnerLikeGitHubDesktop()
     {
         List<RepositoryTreeNode> tree = RepositoryLayout.BuildByOwner(Remotes.Keys, path => Remotes[path]);

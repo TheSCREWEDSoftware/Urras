@@ -149,6 +149,7 @@
     <Border DockPanel.Dock="Top" Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="#33FFFFFF">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+          <Button x:Name="ViewOnlineButton" Content="View online" IsVisible="False" />
           <Button x:Name="FetchButton" Content="Fetch" />
           <Button x:Name="PullButton" Content="Pull" />
           <Button x:Name="PushButton" Content="Push" />

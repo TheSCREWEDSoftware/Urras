@@ -69,6 +69,30 @@ public sealed class GitLabClient : PlatformClient
         return repositories;
     }
 
+    private const long DEVELOPER_ACCESS = 30;
+
+    // Developers and above can push; the access comes from the project or from its group
+    public override async Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
+    {
+        using JsonDocument result = await GetAsync(Project(owner, repository));
+        JsonElement root = result.RootElement;
+        long access = 0;
+        if (root.TryGetProperty("permissions", out JsonElement permissions))
+        {
+            foreach (string kind in new[] { "project_access", "group_access" })
+            {
+                if (permissions.TryGetProperty(kind, out JsonElement level) && level.ValueKind == JsonValueKind.Object)
+                    access = Math.Max(access, Number(level, "access_level"));
+            }
+        }
+
+        bool forked = root.TryGetProperty("forked_from_project", out JsonElement parent) &&
+                      parent.ValueKind == JsonValueKind.Object;
+        (string? parentOwner, string? parentName) =
+            forked ? PlatformAccess.Split(Text(parent, "path_with_namespace")) : (null, null);
+        return new PlatformAccess(access >= DEVELOPER_ACCESS, parentOwner, parentName);
+    }
+
     public override async Task<List<PlatformPullRequest>> GetPullRequestsAsync(string owner, string repository)
     {
         string path = Project(owner, repository) + "/merge_requests?state=opened&per_page=" + PAGE_SIZE;

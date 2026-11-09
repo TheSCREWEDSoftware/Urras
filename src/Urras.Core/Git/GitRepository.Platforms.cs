@@ -3,10 +3,11 @@ namespace Urras.Core.Git;
 // Git steps behind platform features: checking out a pull request, finding the main branch
 public partial class GitRepository
 {
-    // Fetches a pull request's commits (refs such as pull/5/head) into a local branch and switches to it
-    public async Task<GitResult> CheckOutPullRequestAsync(string pullRequestRef, string localBranch)
+    // Fetches a pull request's commits into a local branch and switches; source may be a remote or an address
+    public async Task<GitResult> CheckOutPullRequestAsync(string pullRequestRef, string localBranch,
+                                                          string source = "origin")
     {
-        GitResult fetch = await Run("fetch", "origin", "+" + pullRequestRef + ":" + localBranch);
+        GitResult fetch = await Run("fetch", source, "+" + pullRequestRef + ":" + localBranch);
         return fetch.Success ? await Run("switch", localBranch) : fetch;
     }
 

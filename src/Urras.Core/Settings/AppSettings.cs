@@ -68,6 +68,9 @@ public sealed class AppSettings
     // Markdown files show rendered, old and new side by side, instead of as a text diff
     public bool MarkdownPreview { get; set; } = true;
 
+    // Each repository's first commits, by folder, so forks of one project group together without asking Git again
+    public Dictionary<string, List<string>> RootCommits { get; set; } = new Dictionary<string, List<string>>();
+
     // Scroll bars stay full width, instead of thin until the mouse is over them
     public bool AlwaysShowScrollBars { get; set; } = true;
 

@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         InitializeLineStaging();
         InitializeBisect();
         InitializeAccounts();
+        InitializeForks();
         ApplyPreferences();
         InitializeCoAuthors();
         InitializeAssistant();

@@ -309,6 +309,8 @@ public partial class MainWindow
         }
 
         AddMenuItem(menu, "Copy path", () => CopyAsync(folder));
+        if (node.Path != null)
+            AddViewOnlineItems(menu, node.Path);
         menu.Items.Add(new Separator());
     }
 

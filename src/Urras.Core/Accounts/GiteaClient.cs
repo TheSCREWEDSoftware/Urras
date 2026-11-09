@@ -76,6 +76,20 @@ public sealed class GiteaClient : PlatformClient
         return repositories;
     }
 
+    // permissions.push is only there when signed in; parent only when the repository is a fork
+    public override async Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
+    {
+        using JsonDocument result = await GetAsync("/repos/" + Uri.EscapeDataString(owner) + "/" +
+                                                   Uri.EscapeDataString(repository));
+        JsonElement root = result.RootElement;
+        bool push = root.TryGetProperty("permissions", out JsonElement permissions) && Flag(permissions, "push");
+        (string? parentOwner, string? parentName) = root.TryGetProperty("parent", out JsonElement parent) &&
+                                                    parent.ValueKind == JsonValueKind.Object
+            ? PlatformAccess.Split(Text(parent, "full_name"))
+            : (null, null);
+        return new PlatformAccess(push, parentOwner, parentName);
+    }
+
     public override async Task<List<PlatformPullRequest>> GetPullRequestsAsync(string owner, string repository)
     {
         using JsonDocument result = await GetAsync("/repos/" + owner + "/" + repository + "/pulls?state=open&limit=" +
@@ -123,6 +137,13 @@ public sealed class GiteaClient : PlatformClient
     {
         return new CoAuthor(user.Name is { Length: > 0 } name ? name : user.Login,
                             user.Login + "@noreply." + new Uri(WebUrl).Host, user.Login);
+    }
+
+    public override string NewForkPullRequestUrl(string owner, string repository, string forkOwner, string branch,
+                                                 string target)
+    {
+        return WebUrl + "/" + owner + "/" + repository + "/compare/" + Uri.EscapeDataString(target) + "..." +
+               Uri.EscapeDataString(forkOwner) + ":" + Uri.EscapeDataString(branch);
     }
 
     public override string NewPullRequestUrl(string owner, string repository, string branch, string target)

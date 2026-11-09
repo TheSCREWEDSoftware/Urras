@@ -13,6 +13,9 @@ public static class Dialogs
     // Explanatory text under a field is dimmed so the field itself stands out
     private const double HINT_OPACITY = 0.7;
 
+    // Space above a heading inside a dialog
+    private static readonly Thickness SectionGap = new Thickness(0, 8, 0, 0);
+
     public static async Task<bool> ConfirmAsync(Window owner, string title, string message, string confirmText)
     {
         Window dialog = CreateWindow(title);
@@ -301,10 +304,59 @@ public static class Dialogs
     }
 
     public sealed record RepositorySettingsResult(Urras.Core.Git.LineEndingPolicy Policy, bool EditorConfig,
-                                                  bool Normalize);
+                                                  bool Normalize, Urras.Core.Git.ForkTarget? Fork);
+
+    // A fork and its parent as owner/name, the current choice, and what the user can push to
+    public sealed record ForkChoice(string? Parent, string Fork, Urras.Core.Git.ForkTarget Target, string Access);
+
+    // Asks how a fork will be used, like GitHub Desktop does; null when cancelled
+    public static async Task<Urras.Core.Git.ForkTarget?> ForkTargetAsync(Window owner, ForkChoice choice)
+    {
+        Window dialog = CreateWindow("How are you planning to use this fork?");
+        (Control radios, Func<Urras.Core.Git.ForkTarget> selected) = ForkRadios(choice);
+        Button save = new Button { Content = "Continue", IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        save.Click += (_, _) => dialog.Close(selected());
+        cancel.Click += (_, _) => dialog.Close(null);
+
+        StackPanel input = new StackPanel { Spacing = 10 };
+        input.Children.Add(radios);
+        input.Children.Add(Hint("Pull requests, \"View on…\" and checking out pull requests use the repository you " +
+                                "choose. You can change it later in Repository settings."));
+        input.Children.Add(Hint(choice.Access));
+        dialog.Content = Layout(Paragraph("This repository is a fork of " + choice.Parent + ". How do you plan to " +
+                                          "use it?"), input, save, cancel);
+        return await dialog.ShowDialog<Urras.Core.Git.ForkTarget?>(owner);
+    }
+
+    private static (Control Radios, Func<Urras.Core.Git.ForkTarget> Selected) ForkRadios(ForkChoice choice)
+    {
+        RadioButton parent = new RadioButton
+        {
+            GroupName = "fork",
+            Content = "To contribute to the parent project (" + choice.Parent + ")",
+            IsChecked = choice.Target != Urras.Core.Git.ForkTarget.Own
+        };
+        RadioButton own = new RadioButton
+        {
+            GroupName = "fork",
+            Content = "For my own purposes (" + choice.Fork + ")",
+            IsChecked = choice.Target == Urras.Core.Git.ForkTarget.Own
+        };
+        StackPanel radios = new StackPanel { Spacing = 4 };
+        radios.Children.Add(parent);
+        radios.Children.Add(own);
+        return (radios, () => own.IsChecked == true ? Urras.Core.Git.ForkTarget.Own : Urras.Core.Git.ForkTarget.Parent);
+    }
+
+    private static TextBlock Hint(string text)
+    {
+        return new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Opacity = HINT_OPACITY };
+    }
 
     public static async Task<RepositorySettingsResult?> RepositorySettingsAsync(Window owner, string name,
-                                                                                Urras.Core.Git.LineEndingPolicy current)
+                                                                                Urras.Core.Git.LineEndingPolicy current,
+                                                                                ForkChoice fork)
     {
         Urras.Core.Git.LineEndingPolicy[] policies =
         {
@@ -333,15 +385,24 @@ public static class Dialogs
         };
         Button save = new Button { Content = "Save", IsDefault = true };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        Func<Urras.Core.Git.ForkTarget>? forkTarget = null;
+        Control? forkRadios = null;
+        if (fork.Parent != null)
+            (forkRadios, forkTarget) = ForkRadios(fork);
         save.Click += (_, _) => dialog.Close(new RepositorySettingsResult(policies[Math.Max(0, policy.SelectedIndex)],
                                                                           editorConfig.IsChecked == true,
-                                                                          normalize.IsChecked == true));
+                                                                          normalize.IsChecked == true,
+                                                                          forkTarget?.Invoke()));
         cancel.Click += (_, _) => dialog.Close(null);
 
         StackPanel input = new StackPanel { Spacing = 10 };
         input.Children.Add(policy);
         input.Children.Add(editorConfig);
         input.Children.Add(normalize);
+        input.Children.Add(new TextBlock { Text = "Fork", FontWeight = FontWeight.SemiBold, Margin = SectionGap });
+        if (forkRadios != null)
+            input.Children.Add(forkRadios);
+        input.Children.Add(Hint(fork.Access));
         TextBlock label = Paragraph("Line endings for this repository. Urras writes the rule to .gitattributes, and " +
                                     "optionally .editorconfig; commit those files to share the rule.");
         dialog.Content = Layout(label, input, save, cancel);

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -441,10 +442,21 @@ public partial class MainWindow
 
         GitRepository repository = new GitRepository(path);
         LineEndingPolicy current = await LineEndingRules.ReadAsync(path);
+        await UpdateForkSafelyAsync(path, false);
+        RemoteIdentity? origin = RemoteIdentity.Read(path);
+        ForkSettings fork = _forkSettings.TryGetValue(path, out ForkSettings? known)
+            ? known
+            : await repository.GetForkSettingsAsync();
+        Dialogs.ForkChoice forkChoice = origin == null
+            ? new Dialogs.ForkChoice(null, string.Empty, fork.Target, "This repository has no origin remote.")
+            : ForkChoiceFor(path, origin, fork);
         Dialogs.RepositorySettingsResult? result =
-            await Dialogs.RepositorySettingsAsync(this, Path.GetFileName(path), current);
+            await Dialogs.RepositorySettingsAsync(this, Path.GetFileName(path), current, forkChoice);
         if (result == null)
             return;
+
+        if (result.Fork is { } target && target != fork.Target)
+            await SaveForkTargetAsync(path, target);
 
         await LineEndingRules.WriteAsync(path, result.Policy, result.EditorConfig);
         string saved = result.Policy == LineEndingPolicy.Custom ? "Line-ending rules unchanged."
