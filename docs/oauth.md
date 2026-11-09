@@ -24,7 +24,12 @@ For GitHub Enterprise Server, register the app on that server the same way and p
 
 ## GitLab
 
-1. Open GitLab, then Preferences > Applications > Add new application (or Admin > Applications on your own server).
+GitLab's access tokens expire after two hours and must be renewed with a refresh token, which Urras doesn't do yet,
+so GitLab sign-in through the browser would sign you out every two hours. Until it does, use a personal access
+token for GitLab.
+
+1. Open GitLab, select your avatar > Edit profile, then in the left sidebar **Access > Applications** (Access opens
+   into a submenu), and Add new application. On your own server, Admin > Applications works too.
 2. Name: `Urras`. Redirect URI: the Urras repository page. Untick **Confidential**.
 3. Scopes: `api` and `read_user`. Save.
 4. Copy the **Application ID**, and paste it under Options > Accounts > GitLab application id, or set
