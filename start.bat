@@ -32,4 +32,26 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Urras opens in its own window; if it's gone again a few seconds later it crashed, and its log says why
+set STARTUP_CHECK_SECONDS=4
+echo Opening Urras...
 start "" "src\Urras.App\bin\Release\net10.0\Urras.exe"
+timeout /t %STARTUP_CHECK_SECONDS% /nobreak >nul
+tasklist /fi "imagename eq Urras.exe" 2>nul | find /i "Urras.exe" >nul
+if not errorlevel 1 (
+    echo Urras is open.
+    exit /b 0
+)
+
+echo.
+echo Urras closed right after starting.
+set "CRASH_LOG=%APPDATA%\Urras\crash.log"
+if exist "%CRASH_LOG%" (
+    echo The end of %CRASH_LOG%:
+    echo.
+    powershell -NoProfile -Command "Get-Content -LiteralPath $env:CRASH_LOG -Tail 40"
+) else (
+    echo It left no crash.log; Windows' Event Viewer may have it under Windows Logs ^> Application.
+)
+pause
+exit /b 1
