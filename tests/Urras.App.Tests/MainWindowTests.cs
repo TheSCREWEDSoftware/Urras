@@ -68,6 +68,31 @@ public sealed class MainWindowTests : IDisposable
         window.Close();
     }
 
+    // A refresh with nothing new keeps the lists as they are; a new commit replaces the history
+    [AvaloniaFact]
+    public void RefreshKeepsUnchangedLists()
+    {
+        MainWindow window = OpenWindow();
+        ListBox history = window.FindControl<ListBox>("HistoryList")!;
+        Button refresh = window.FindControl<Button>("RefreshButton")!;
+        Ui.Pump(() => history.ItemCount > 0);
+        object? before = history.ItemsSource;
+
+        refresh.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump(() => false, 1000);
+        Assert.Same(before, history.ItemsSource);
+
+        string clone = Path.Combine(_root, "c", "wiki");
+        File.WriteAllText(Path.Combine(clone, "notes.txt"), "notes");
+        Ui.Git(clone, "add", "notes.txt");
+        Ui.Git(clone, "commit", "-q", "-m", "Notes");
+        refresh.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump(() => !ReferenceEquals(before, history.ItemsSource));
+        Assert.NotSame(before, history.ItemsSource);
+        Assert.Equal(2, history.ItemCount);
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void OptionsOpenFromTheMainWindow()
     {

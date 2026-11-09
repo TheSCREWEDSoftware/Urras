@@ -101,13 +101,19 @@ public partial class MainWindow
             .ToList();
         List<FileChange> staged = _status.Staged.Where(Matches).ToList();
 
-        bool wasSuppressed = _suppressSelection;
-        _suppressSelection = true;
-        UnstagedList.ItemsSource = unstaged;
-        StagedList.ItemsSource = staged;
-        UnstagedList.SelectedItem = unstaged.FirstOrDefault(change => change.Path == selectedUnstaged);
-        StagedList.SelectedItem = staged.FirstOrDefault(change => change.Path == selectedStaged);
-        _suppressSelection = wasSuppressed;
+        // Unchanged lists are left alone, keeping their scroll position and selection
+        string signature = FilesSignature(unstaged) + "\0" + FilesSignature(staged);
+        if (signature != _filesSignature || UnstagedList.ItemsSource == null)
+        {
+            _filesSignature = signature;
+            bool wasSuppressed = _suppressSelection;
+            _suppressSelection = true;
+            UnstagedList.ItemsSource = unstaged;
+            StagedList.ItemsSource = staged;
+            UnstagedList.SelectedItem = unstaged.FirstOrDefault(change => change.Path == selectedUnstaged);
+            StagedList.SelectedItem = staged.FirstOrDefault(change => change.Path == selectedStaged);
+            _suppressSelection = wasSuppressed;
+        }
 
         int hidden = _status.Unstaged.Count - unstaged.Count;
         UnstagedHeader.Text = hidden > 0 ? $"Changes ({unstaged.Count}, {hidden} hidden)"
@@ -115,6 +121,31 @@ public partial class MainWindow
         StagedHeader.Text = staged.Count < _status.Staged.Count ? $"Staged ({staged.Count} of {_status.Staged.Count})"
                                                                 : $"Staged ({staged.Count})";
         UpdateHints();
+    }
+
+    private string? _filesSignature;
+    private string? _branchSignature;
+    private string? _historySignature;
+
+    // A new repository starts with fresh lists
+    private void ResetListSignatures()
+    {
+        _filesSignature = null;
+        _branchSignature = null;
+        _historySignature = null;
+    }
+
+    private static string FilesSignature(IEnumerable<FileChange> changes)
+    {
+        return string.Join("\n", changes.Select(change => change.Kind + "\t" + change.Path + "\t" +
+                                                          change.OriginalPath));
+    }
+
+    // Commits, their labels (branches, tags) and stashes; a change in any of them redraws the history
+    private static string HistorySignature(IEnumerable<CommitInfo> history)
+    {
+        return string.Join("\n", history.Select(commit => commit.Hash + "\t" + commit.Refs + "\t" +
+                                                          commit.Stash?.Reference));
     }
 
     private void UpdateHints()

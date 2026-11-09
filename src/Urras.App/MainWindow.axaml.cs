@@ -82,11 +82,6 @@ public partial class MainWindow : Window
         CommitDiffModeBox.SelectionChanged += (_, _) => OnDiffModeChanged(CommitDiffModeBox);
 
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
-        Activated += async (_, _) =>
-        {
-            await RefreshAsync();
-            await RefreshSummariesAsync();
-        };
         Closed += (_, _) => GitRunner.CommandFinished -= OnGitCommandFinished;
 
         InitializeBasics();
@@ -97,6 +92,7 @@ public partial class MainWindow : Window
         InitializeBisect();
         InitializeAccounts();
         InitializeForks();
+        InitializeWatching();
         ApplyPreferences();
         InitializeCoAuthors();
         InitializeAssistant();
@@ -144,18 +140,31 @@ public partial class MainWindow : Window
             return;
         }
 
+        MarkRefreshed();
         try
         {
             string? selectedCommit = (HistoryList.SelectedItem as CommitInfo)?.Hash;
 
-            RepositoryStatus status = await _repository.GetStatusAsync();
-            List<BranchInfo> branches = await _repository.GetBranchesAsync();
-            List<CommitInfo> history = await _repository.GetHistoryAsync(filter: _historyFilter,
-                                                                         allBranches: _settings.HistoryAllBranches);
+            // Independent reads, so they run side by side
+            Task<RepositoryStatus> statusTask = _repository.GetStatusAsync();
+            Task<List<BranchInfo>> branchesTask = _repository.GetBranchesAsync();
+            Task<List<CommitInfo>> historyTask = _repository.GetHistoryAsync(
+                filter: _historyFilter, allBranches: _settings.HistoryAllBranches);
+            await Task.WhenAll(statusTask, branchesTask, historyTask);
+            RepositoryStatus status = statusTask.Result;
+            List<BranchInfo> branches = branchesTask.Result;
+            List<CommitInfo> history = historyTask.Result;
 
+            // An unchanged history keeps its list, so the scroll position and selection stay put
+            string historySignature = (_historyFilter == null ? "all\n" : "search\n") + HistorySignature(history);
+            bool historyChanged = historySignature != _historySignature ||
+                                  !ReferenceEquals(HistoryList.ItemsSource, _history);
+            if (!historyChanged)
+                history = _history;
             // A search leaves gaps between commits, so the graph is only drawn for the full history
-            if (_historyFilter == null)
+            else if (_historyFilter == null)
                 CommitGraph.Assign(history);
+            _historySignature = historySignature;
             await ApplyLineEndingWarningsAsync(status);
             await UpdateOperationBannerAsync(status);
             _status = status;
@@ -173,16 +182,25 @@ public partial class MainWindow : Window
 
                 List<BranchInfo> ordered = branches.Where(branch => !branch.IsRemote)
                     .Concat(branches.Where(branch => branch.IsRemote)).ToList();
-                _branches = ordered;
-                BranchBox.ItemsSource = ordered;
-                BranchBox.SelectedItem = ordered.FirstOrDefault(branch => branch.IsCurrent);
+                string branchSignature = string.Join("\n", ordered.Select(branch => branch.Name + "\t" +
+                                                                         branch.IsCurrent + "\t" + branch.Tracking));
+                if (branchSignature != _branchSignature || !ReferenceEquals(BranchBox.ItemsSource, _branches))
+                {
+                    _branchSignature = branchSignature;
+                    _branches = ordered;
+                    BranchBox.ItemsSource = ordered;
+                    BranchBox.SelectedItem = ordered.FirstOrDefault(branch => branch.IsCurrent);
+                }
 
                 PullButton.Content = status.Behind > 0 ? $"Pull ({status.Behind})" : "Pull";
                 PushButton.Content = status.Ahead > 0 ? $"Push ({status.Ahead})" :
                                      status.Upstream == null && !status.IsDetached ? "Publish" : "Push";
 
-                HistoryList.ItemsSource = history;
-                HistoryList.SelectedItem = history.FirstOrDefault(commit => commit.Hash == selectedCommit);
+                if (historyChanged)
+                {
+                    HistoryList.ItemsSource = history;
+                    HistoryList.SelectedItem = history.FirstOrDefault(commit => commit.Hash == selectedCommit);
+                }
             }
             finally
             {
@@ -549,6 +567,11 @@ public partial class MainWindow : Window
 
     private void ShowChangesDiff(string? text, string title)
     {
+        // The same diff already on screen isn't rebuilt, so a refresh doesn't make it jump
+        if (text != null && text == _changesDiffText && title == DiffTitle.Text && DiffList.IsVisible &&
+            DiffList.ItemsSource != null)
+            return;
+
         _changesDiffText = text;
         DiffTitle.Text = title;
         ShowText(ImageView, MarkdownView, DiffList);

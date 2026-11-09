@@ -24,11 +24,11 @@ public partial class MainWindow
     }
 
     // Reads the saved choice, asks the platform about forks and access, and asks how a new fork is used
-    private async Task UpdateForkSafelyAsync(string path, bool ask)
+    private async Task UpdateForkSafelyAsync(string path, bool ask, bool force = false)
     {
         try
         {
-            await UpdateForkAsync(path, ask);
+            await UpdateForkAsync(path, ask, force);
         }
         catch (PlatformException exception)
         {
@@ -36,12 +36,15 @@ public partial class MainWindow
         }
     }
 
-    private async Task UpdateForkAsync(string path, bool ask)
+    // The platform is asked once per session per repository, unless forced (Repository settings, after signing in)
+    private async Task UpdateForkAsync(string path, bool ask, bool force)
     {
         GitRepository repository = new GitRepository(path);
         ForkSettings fork = await repository.GetForkSettingsAsync();
         _forkSettings[path] = fork;
         UpdateViewOnlineButton();
+        if (!force && _forkAccess.TryGetValue(path, out ForkAccess? known) && known.Username != null)
+            return;
 
         RemoteIdentity? origin = RemoteIdentity.Read(path);
         if (origin == null)

@@ -47,8 +47,8 @@ public sealed class RepositorySummary
         if (!Directory.Exists(path) || (!Directory.Exists(gitEntry) && !File.Exists(gitEntry)))
             return new RepositorySummary { State = RepositoryState.Missing };
 
-        GitResult statusResult = await GitRunner.RunAsync(path, "status", "--porcelain=v2", "--branch", "-z",
-                                                          "--untracked-files=all");
+        GitResult statusResult = await GitRunner.RunAsync(path, "--no-optional-locks", "status", "--porcelain=v2",
+                                                          "--branch", "-z", "--untracked-files=all");
         if (!statusResult.Success)
             return new RepositorySummary { State = RepositoryState.Missing };
 

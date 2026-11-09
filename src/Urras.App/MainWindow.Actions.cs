@@ -442,7 +442,7 @@ public partial class MainWindow
 
         GitRepository repository = new GitRepository(path);
         LineEndingPolicy current = await LineEndingRules.ReadAsync(path);
-        await UpdateForkSafelyAsync(path, false);
+        await UpdateForkSafelyAsync(path, false, true);
         RemoteIdentity? origin = RemoteIdentity.Read(path);
         ForkSettings fork = _forkSettings.TryGetValue(path, out ForkSettings? known)
             ? known

@@ -50,6 +50,7 @@ public partial class MainWindow
         if (last != null && _settings.Repositories.Contains(last, RepositoryLayout.PathComparer))
         {
             _repository = new GitRepository(last);
+            WatchRepository(last);
             _ = UpdateForkSafelyAsync(last, false);
         }
 
@@ -166,6 +167,8 @@ public partial class MainWindow
         ShowCommitDiff(null, string.Empty);
         UpdatePinnedBar();
         UpdateViewOnlineButton();
+        ResetListSignatures();
+        WatchRepository(path);
         await RefreshAsync();
         if (path != null)
             await UpdateForkSafelyAsync(path, true);
@@ -182,6 +185,7 @@ public partial class MainWindow
         }
 
         _summariesRunning = true;
+        _lastSummaries = DateTime.UtcNow;
         try
         {
             do

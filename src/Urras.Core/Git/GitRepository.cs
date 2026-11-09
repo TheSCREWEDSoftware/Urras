@@ -48,7 +48,9 @@ public sealed partial class GitRepository
 
     public async Task<RepositoryStatus> GetStatusAsync()
     {
-        GitResult result = await Run("status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all");
+        // Without optional locks, status doesn't rewrite the index, which would wake the folder watcher again
+        GitResult result = await Run("--no-optional-locks", "status", "--porcelain=v2", "--branch", "-z",
+                                     "--untracked-files=all");
         if (!result.Success)
             throw new GitException(result.Message);
 
