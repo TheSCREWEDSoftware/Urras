@@ -13,6 +13,7 @@ public partial class MainWindow
         ContextMenu menu = new ContextMenu();
         AddMenuItem(menu, "All repositories in a folder…", ImportFromFolderAsync);
         AddMenuItem(menu, "Repositories from GitHub Desktop", ImportFromGitHubDesktopAsync);
+        AddMenuItem(menu, "Fork choices from GitHub Desktop", () => ImportDesktopForkChoicesAsync(false));
         AddMenuItem(menu, "Clone from your accounts…", CloneFromAccountAsync);
         menu.Open(ImportButton);
     }
@@ -33,6 +34,37 @@ public partial class MainWindow
         List<string> found = await Task.Run(() => RepositoryImport.FromGitHubDesktop());
         await AddFoundAsync(found, "Couldn't find GitHub Desktop's repositories. If they are in one folder (often " +
                                    "Documents\\GitHub), use All repositories in a folder instead.");
+        await ImportDesktopForkChoicesAsync(true);
+    }
+
+    // GitHub Desktop's fork choices, for repositories without one in Urras; quiet means silent when none were taken
+    private async Task ImportDesktopForkChoicesAsync(bool quiet)
+    {
+        Dictionary<string, ForkTarget> choices = await Task.Run(() => RepositoryImport.GitHubDesktopForkChoices());
+        int taken = 0;
+        foreach (string path in _settings.Repositories.ToList())
+        {
+            if (!choices.TryGetValue(path.TrimEnd('\\', '/'), out ForkTarget target) || !Directory.Exists(path))
+                continue;
+
+            GitRepository repository = new GitRepository(path);
+            ForkSettings current = await repository.GetForkSettingsAsync();
+            if (current.Target != ForkTarget.Unset)
+                continue;
+            // A parent Urras only guessed isn't saved with the choice; one the user confirmed stays
+            await repository.SaveForkSettingsAsync(current.Confirmed ? current.Parent : null, target);
+            taken++;
+        }
+
+        _forkSettings.Clear();
+        UpdateViewOnlineButton();
+        if (taken > 0)
+            SetStatus(taken == 1 ? "Took GitHub Desktop's fork choice for 1 repository."
+                                 : $"Took GitHub Desktop's fork choices for {taken} repositories.", false);
+        else if (!quiet)
+            SetStatus(choices.Count == 0 ? "GitHub Desktop has no fork choices saved."
+                                         : "Every fork GitHub Desktop has a choice for already has one in Urras.",
+                      false);
     }
 
     // Lets the user untick some, then adds the rest; ones already in the list are left unticked

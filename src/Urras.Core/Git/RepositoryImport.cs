@@ -94,6 +94,51 @@ public static partial class RepositoryImport
         return paths;
     }
 
+    // GitHub Desktop's fork choice per folder: its records hold path and workflowPreferences.forkContributionTarget
+    public static Dictionary<string, ForkTarget> GitHubDesktopForkChoices(string? appData = null)
+    {
+        appData ??= Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string database = Path.Combine(appData, "GitHub Desktop", "IndexedDB");
+        Dictionary<string, ForkTarget> choices = new Dictionary<string, ForkTarget>(StringComparer.OrdinalIgnoreCase);
+        if (!Directory.Exists(database))
+            return choices;
+
+        // LevelDB writes newer files with higher numbers, so a later file's record is the newer one
+        foreach (string file in Directory.EnumerateFiles(database, "*", SearchOption.AllDirectories)
+                                         .OrderBy(FileNumber).ThenBy(file => file, StringComparer.Ordinal))
+        {
+            foreach (byte[] chunk in LevelDbText.Contents(file))
+            {
+                foreach (Dictionary<string, object?> record in V8Values.ObjectsIn(chunk))
+                {
+                    if (record.GetValueOrDefault("path") is string path && path.Length > 0 &&
+                        record.GetValueOrDefault("workflowPreferences") is Dictionary<string, object?> preferences &&
+                        DesktopTarget(preferences.GetValueOrDefault("forkContributionTarget")) is { } target)
+                        choices[path.TrimEnd('\\', '/')] = target;
+                }
+            }
+        }
+
+        return choices;
+    }
+
+    // GitHub Desktop's ForkContributionTarget: 'parent' or 'self'
+    private static ForkTarget? DesktopTarget(object? value)
+    {
+        return value switch
+        {
+            "parent" => ForkTarget.Parent,
+            "self" => ForkTarget.Own,
+            _ => null
+        };
+    }
+
+    // 000123 for 000123.ldb; files without a number come first
+    private static long FileNumber(string file)
+    {
+        return long.TryParse(Path.GetFileNameWithoutExtension(file), out long number) ? number : -1;
+    }
+
     // Strings are stored as one byte per character, or two when they hold other characters; both are searched
     private static void AddPathsIn(byte[] bytes, HashSet<string> paths)
     {
