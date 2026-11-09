@@ -32,6 +32,9 @@ jobs:
       - name: Core tests
         run: dotnet run --project tests/Urras.Core.Tests -c Release
 
+      - name: Interface tests (Avalonia headless)
+        run: dotnet test tests/Urras.App.Tests -c Release
+
       - name: Coverage (xUnit and coverlet)
         run: >-
           dotnet test tests/Urras.Core.Tests.XUnit -c Release --collect:"XPlat Code Coverage"

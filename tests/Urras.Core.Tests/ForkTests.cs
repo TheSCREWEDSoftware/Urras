@@ -151,3 +151,22 @@ public static class BranchChangesTests
         }
     }
 }
+
+public static class SettingsFolderTests
+{
+    public static void MovesWithTheVariable()
+    {
+        string? before = Environment.GetEnvironmentVariable(Urras.Core.Settings.AppSettings.FOLDER_VARIABLE);
+        string folder = Path.Combine(Path.GetTempPath(), "urras-settings-folder");
+        try
+        {
+            Environment.SetEnvironmentVariable(Urras.Core.Settings.AppSettings.FOLDER_VARIABLE, folder);
+            Assert.Equal(folder, Path.GetDirectoryName(Urras.Core.Settings.AppSettings.DefaultPath), "moved");
+            Assert.Equal(folder, Path.GetDirectoryName(Urras.Core.Settings.CrashLog.DefaultPath), "log follows");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Urras.Core.Settings.AppSettings.FOLDER_VARIABLE, before);
+        }
+    }
+}

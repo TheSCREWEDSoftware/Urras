@@ -6,7 +6,8 @@ Thanks for helping. Before opening a pull request:
 2. Write commit messages following [.git_commit_template.txt](.git_commit_template.txt). To use the template:
    `git config commit.template .git_commit_template.txt`.
 3. Run the core tests: `dotnet run --project tests/Urras.Core.Tests`, or `dotnet test` in your editor. For
-   coverage: `dotnet test tests/Urras.Core.Tests.XUnit --collect:"XPlat Code Coverage"`.
+   coverage: `dotnet test tests/Urras.Core.Tests.XUnit --collect:"XPlat Code Coverage"`. The interface tests
+   open every window and dialog without showing them: `dotnet test tests/Urras.App.Tests`.
 4. Check your changes: `check-standards.bat` on Windows or `./check-standards.sh` on Linux (use `--unpushed`
    before opening the pull request).
 5. Fill in the pull request template, including the AI disclosure if AI tools were used.

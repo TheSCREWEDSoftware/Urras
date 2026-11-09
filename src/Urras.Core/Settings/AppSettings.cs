@@ -120,9 +120,15 @@ public sealed class AppSettings
     // Folder groups the user collapsed in the automatic layout
     public List<string> CollapsedFolders { get; set; } = new List<string>();
 
-    // %APPDATA%\Urras on Windows, ~/.config/Urras on Linux
+    // Moves the settings folder, so tests never touch the real settings
+    public const string FOLDER_VARIABLE = "URRAS_SETTINGS_FOLDER";
+
+    // %APPDATA%\Urras on Windows, ~/.config/Urras on Linux, unless URRAS_SETTINGS_FOLDER says otherwise
     public static string DefaultPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APP_FOLDER_NAME,
+        Path.Combine(Environment.GetEnvironmentVariable(FOLDER_VARIABLE) is { Length: > 0 } folder
+                         ? folder
+                         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                        APP_FOLDER_NAME),
                      SETTINGS_FILE_NAME);
 
     public static AppSettings Load(string? path = null)

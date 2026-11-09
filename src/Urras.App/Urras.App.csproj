@@ -20,6 +20,11 @@
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
+  <!-- The interface tests reach the windows' named controls -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Urras.App.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Urras.Core\Urras.Core.csproj" />
   </ItemGroup>
