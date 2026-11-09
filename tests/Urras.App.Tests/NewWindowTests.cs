@@ -3,6 +3,7 @@ using System.Text;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
+using Urras.Core.Accounts;
 using Urras.Core.Settings;
 using Xunit;
 
@@ -20,6 +21,23 @@ public sealed class NewWindowTests
             string body = request.RequestUri!.AbsolutePath == "/licenses"
                 ? "[{\"key\":\"mit\",\"name\":\"MIT License\"}]"
                 : "[\"C++\",\"Node\"]";
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            });
+        }
+    }
+
+    // GitHub's organisations and a new repository, answered without the network
+    private sealed class FakeGitHub : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+                                                               CancellationToken cancellationToken)
+        {
+            string body = request.Method == HttpMethod.Post
+                ? "{\"full_name\":\"ryan/B_Forlorn-Hope---Complete\",\"clone_url\":" +
+                  "\"https://github.com/ryan/B_Forlorn-Hope---Complete.git\",\"private\":true}"
+                : "[{\"id\":1,\"login\":\"Phantom-Sonar\"}]";
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json")
@@ -47,6 +65,31 @@ public sealed class NewWindowTests
         Assert.False(Ui.Find<Button>(window, button => button.Content as string == "Create repository").IsEnabled);
         window.Close();
         Ui.Pump(() => task.IsCompleted);
+        owner.Close();
+    }
+
+    // Like GitHub Desktop's: the organisations listed, the name the site will use shown, and Publish makes it
+    [AvaloniaFact]
+    public void PublishRepositoryListsOrganisationsAndPublishes()
+    {
+        Window owner = Owner();
+        Account account = new Account
+        {
+            Kind = AccountKind.GitHub, ApiUrl = GitHubClient.GITHUB_API, Username = "ryan"
+        };
+        GitHubClient client = new GitHubClient(new HttpClient(new FakeGitHub()), "t");
+        PublishRepositoryWindow window = new PublishRepositoryWindow(
+            new List<(Account Account, PlatformClient Client)> { (account, client) }, "B_Forlorn Hope - Complete");
+        Task<PlatformRepository?> task = window.ShowDialog<PlatformRepository?>(owner);
+        Ui.Pump(() => Ui.Find<ComboBox>(window, combo => combo.IsVisible).ItemCount > 1);
+        Assert.Equal(2, Ui.Find<ComboBox>(window, combo => combo.IsVisible).ItemCount);
+        const string RENAMED = "Will be published as B_Forlorn-Hope---Complete";
+        Assert.NotNull(Ui.Find<TextBlock>(window, text => text.Text == RENAMED));
+
+        Ui.Find<Button>(window, button => button.Content as string == "Publish repository")
+          .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump(() => task.IsCompleted);
+        Assert.Equal("https://github.com/ryan/B_Forlorn-Hope---Complete.git", task.Result?.CloneUrl);
         owner.Close();
     }
 

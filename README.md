@@ -39,6 +39,8 @@ you already have installed.
 - Branches: switch, create, delete, check out remote branches
 - Fetch, pull and push from one button, like GitHub Desktop's: an arrow up or down, the ahead and behind counts,
   and when it last fetched; the first push publishes the branch
+- Publish repository: a repository with no remote is made on GitHub, GitLab or Gitea (under your account or an
+  organization, private or public), added as origin and pushed
 - Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`
   and `.editorconfig`) before they are committed
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template

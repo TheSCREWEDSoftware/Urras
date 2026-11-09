@@ -149,7 +149,9 @@ public partial class MainWindow : Window
             Task<List<CommitInfo>> historyTask = _repository.GetHistoryAsync(
                 filter: _historyFilter, allBranches: _settings.HistoryAllBranches);
             Task<DateTimeOffset?> fetchedTask = _repository.GetLastFetchedAsync();
-            await Task.WhenAll(statusTask, branchesTask, historyTask, fetchedTask);
+            Task<List<string>> remotesTask = _repository.GetRemotesAsync();
+            await Task.WhenAll(statusTask, branchesTask, historyTask, fetchedTask, remotesTask);
+            _hasRemote = remotesTask.Result.Count > 0;
             RepositoryStatus status = statusTask.Result;
             List<BranchInfo> branches = branchesTask.Result;
             List<CommitInfo> history = historyTask.Result;

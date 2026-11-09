@@ -7,7 +7,8 @@ public enum SyncKind
     Fetch,
     Pull,
     Push,
-    Publish
+    Publish,
+    PublishRepository
 }
 
 // What the main sync button offers, like GitHub Desktop's: publish, pull, push, or fetch when there's nothing else
@@ -15,8 +16,14 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
 {
     private const string DEFAULT_REMOTE = "origin";
 
-    public static SyncState For(RepositoryStatus status, DateTimeOffset? lastFetched, DateTimeOffset now)
+    // hasRemote false: there's nowhere to push yet, so the button offers to make the repository online
+    public static SyncState For(RepositoryStatus status, DateTimeOffset? lastFetched, DateTimeOffset now,
+                                bool hasRemote = true)
     {
+        if (!hasRemote)
+            return new SyncState(SyncKind.PublishRepository, "Publish repository",
+                                 "Publish this repository to GitHub", 0, 0);
+
         string remote = Remote(status.Upstream) ?? DEFAULT_REMOTE;
         string fetched = lastFetched is { } when
             ? "Last fetched " + RelativeTime.Describe(when, now)

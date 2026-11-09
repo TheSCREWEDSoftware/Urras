@@ -76,6 +76,36 @@ public sealed class GiteaClient : PlatformClient
         return repositories;
     }
 
+    public override bool CanCreateRepositories => true;
+
+    public override async Task<List<PlatformOrganization>> GetOrganizationsAsync()
+    {
+        using JsonDocument result = await GetAsync("/user/orgs?limit=" + GITEA_PAGE_SIZE);
+        return result.RootElement.EnumerateArray()
+                     .Select(item => new PlatformOrganization(Number(item, "id"),
+                                                              Text(item, "username") ?? Text(item, "name") ??
+                                                              string.Empty))
+                     .Where(organization => organization.Login.Length > 0)
+                     .OrderBy(organization => organization.Login, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public override async Task<PlatformRepository> CreateRepositoryAsync(NewRemoteRepository repository)
+    {
+        string path = repository.Organization is { } organization
+            ? "/orgs/" + Uri.EscapeDataString(organization.Login) + "/repos"
+            : "/user/repos";
+        using JsonDocument result = await SendAsync(HttpMethod.Post, path, new Dictionary<string, object>
+        {
+            ["name"] = repository.Name,
+            ["description"] = repository.Description,
+            ["private"] = repository.IsPrivate
+        });
+        JsonElement item = result.RootElement;
+        return new PlatformRepository(Text(item, "full_name") ?? repository.Name, Text(item, "clone_url") ??
+                                          throw new PlatformException("Gitea didn't say where the repository is."),
+                                      Text(item, "description"), Flag(item, "private"), false);
+    }
+
     // permissions.push is only there when signed in; parent only when the repository is a fork
     public override async Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
     {

@@ -80,6 +80,35 @@ public sealed class GitHubClient : PlatformClient
         return repositories;
     }
 
+    public override bool CanCreateRepositories => true;
+
+    // Organisations the signed-in user belongs to, like GitHub Desktop's list when publishing
+    public override async Task<List<PlatformOrganization>> GetOrganizationsAsync()
+    {
+        using JsonDocument result = await GetAsync("/user/orgs?per_page=" + PAGE_SIZE);
+        return result.RootElement.EnumerateArray()
+                     .Select(item => new PlatformOrganization(Number(item, "id"), Text(item, "login") ?? string.Empty))
+                     .Where(organization => organization.Login.Length > 0)
+                     .OrderBy(organization => organization.Login, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public override async Task<PlatformRepository> CreateRepositoryAsync(NewRemoteRepository repository)
+    {
+        string path = repository.Organization is { } organization
+            ? "/orgs/" + Uri.EscapeDataString(organization.Login) + "/repos"
+            : "/user/repos";
+        using JsonDocument result = await SendAsync(HttpMethod.Post, path, new Dictionary<string, object>
+        {
+            ["name"] = repository.Name,
+            ["description"] = repository.Description,
+            ["private"] = repository.IsPrivate
+        });
+        JsonElement item = result.RootElement;
+        return new PlatformRepository(Text(item, "full_name") ?? repository.Name, Text(item, "clone_url") ??
+                                          throw new PlatformException("GitHub didn't say where the repository is."),
+                                      Text(item, "description"), Flag(item, "private"), false);
+    }
+
     // GitHub's .gitignore templates by name (C++, Node, Unity…); they need no sign-in
     public async Task<List<string>> GetGitIgnoreNamesAsync()
     {

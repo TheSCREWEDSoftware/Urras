@@ -34,6 +34,8 @@ public partial class MainWindow
 
     private readonly RotateTransform _spin = new RotateTransform();
     private bool _syncing;
+    // Without a remote the button offers Publish repository instead
+    private bool _hasRemote = true;
     private SyncState? _sync;
     private DateTimeOffset? _lastFetched;
 
@@ -52,6 +54,11 @@ public partial class MainWindow
     {
         if (_repository == null || _busy)
             return;
+        if (kind == SyncKind.PublishRepository)
+        {
+            await PublishRepositoryAsync();
+            return;
+        }
 
         StartSyncAnimation(kind);
         try
@@ -141,6 +148,13 @@ public partial class MainWindow
         string remote = SyncState.Remote(_status?.Upstream) ?? "origin";
         bool publish = _status is { IsDetached: false, Upstream: null };
         ContextMenu menu = new ContextMenu();
+        if (!_hasRemote)
+        {
+            AddMenuItem(menu, "Publish repository…", PublishRepositoryAsync);
+            menu.Open(SyncMenuButton);
+            return;
+        }
+
         SyncKind shown = _sync?.Kind ?? SyncKind.Fetch;
         if (shown != SyncKind.Fetch)
             AddMenuItem(menu, "Fetch " + remote, () => RunSyncAsync(SyncKind.Fetch));
@@ -170,7 +184,7 @@ public partial class MainWindow
             return;
         }
 
-        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now);
+        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote);
         BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
         BranchCounts.Text = SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;
@@ -178,7 +192,7 @@ public partial class MainWindow
         SyncIcon.Data = _sync.Kind switch
         {
             SyncKind.Pull => DownArrow,
-            SyncKind.Push or SyncKind.Publish => UpArrow,
+            SyncKind.Push or SyncKind.Publish or SyncKind.PublishRepository => UpArrow,
             _ => FetchArrows
         };
         SyncBadgeText.Text = _sync.Badge;
@@ -188,6 +202,7 @@ public partial class MainWindow
             SyncKind.Pull => "Bring in the commits on the remote",
             SyncKind.Push => "Send your commits to the remote",
             SyncKind.Publish => "Publish this branch so others can see it",
+            SyncKind.PublishRepository => "Make this repository on GitHub, GitLab or Gitea and push it there",
             _ => "Fetch the latest changes from the remote"
         });
     }

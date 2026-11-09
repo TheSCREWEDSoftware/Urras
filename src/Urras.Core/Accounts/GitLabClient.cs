@@ -71,6 +71,40 @@ public sealed class GitLabClient : PlatformClient
 
     private const long DEVELOPER_ACCESS = 30;
 
+    public override bool CanCreateRepositories => true;
+
+    // Groups where the user is at least a developer, which by default may make projects
+    public override async Task<List<PlatformOrganization>> GetOrganizationsAsync()
+    {
+        using JsonDocument result = await GetAsync("/groups?min_access_level=" + DEVELOPER_ACCESS + "&per_page=" +
+                                                   PAGE_SIZE);
+        return result.RootElement.EnumerateArray()
+                     .Select(item => new PlatformOrganization(Number(item, "id"), Text(item, "full_path") ??
+                                                                                  string.Empty))
+                     .Where(organization => organization.Login.Length > 0)
+                     .OrderBy(organization => organization.Login, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public override async Task<PlatformRepository> CreateRepositoryAsync(NewRemoteRepository repository)
+    {
+        Dictionary<string, object> body = new Dictionary<string, object>
+        {
+            ["name"] = repository.Name,
+            ["path"] = repository.Name,
+            ["description"] = repository.Description,
+            ["visibility"] = repository.IsPrivate ? "private" : "public"
+        };
+        if (repository.Organization is { } group)
+            body["namespace_id"] = group.Id;
+
+        using JsonDocument result = await SendAsync(HttpMethod.Post, "/projects", body);
+        JsonElement item = result.RootElement;
+        return new PlatformRepository(Text(item, "path_with_namespace") ?? repository.Name,
+                                      Text(item, "http_url_to_repo") ??
+                                          throw new PlatformException("GitLab didn't say where the project is."),
+                                      Text(item, "description"), Text(item, "visibility") != "public", false);
+    }
+
     // Developers and above can push; the access comes from the project or from its group
     public override async Task<PlatformAccess?> GetAccessAsync(string owner, string repository)
     {

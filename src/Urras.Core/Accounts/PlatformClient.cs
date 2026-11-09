@@ -105,6 +105,20 @@ public abstract class PlatformClient
         return "pull/" + number + "/head";
     }
 
+    // Whether Urras can make repositories here, for publishing a repository that has no remote
+    public virtual bool CanCreateRepositories => false;
+
+    public virtual Task<List<PlatformOrganization>> GetOrganizationsAsync()
+    {
+        return Task.FromResult(new List<PlatformOrganization>());
+    }
+
+    // Makes an empty repository and returns it, with the address to push to
+    public virtual Task<PlatformRepository> CreateRepositoryAsync(NewRemoteRepository repository)
+    {
+        throw new PlatformException("Urras can't make repositories on " + PlatformName + " yet.");
+    }
+
     // The website, from the API address
     public virtual string WebUrl => Api;
 
@@ -158,8 +172,44 @@ public abstract class PlatformClient
                 HttpStatusCode.Unauthorized => "The token was refused; it may have expired or been revoked.",
                 HttpStatusCode.Forbidden => PlatformName + " refused the request (rate limit or missing permission).",
                 HttpStatusCode.NotFound => "Not found.",
-                _ => PlatformName + " answered " + (int)response.StatusCode + "."
+                _ => PlatformName + " answered " + (int)response.StatusCode + ErrorDetail(text) + "."
             });
+        }
+    }
+
+    // ": name already exists on this account" from the answer's message, so a refusal says why
+    public static string ErrorDetail(string answer)
+    {
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(answer);
+            JsonElement root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return string.Empty;
+
+            // GitHub and Gitea put the reason in errors, GitLab in message, which can also be an object
+            if (root.TryGetProperty("errors", out JsonElement errors) && errors.ValueKind == JsonValueKind.Array &&
+                errors.EnumerateArray().Select(error => error.ValueKind == JsonValueKind.Object
+                                                   ? Text(error, "message")
+                                                   : error.ValueKind == JsonValueKind.String ? error.GetString()
+                                                                                              : null)
+                      .FirstOrDefault(message => !string.IsNullOrEmpty(message)) is { } first)
+                return ": " + first;
+            if (!root.TryGetProperty("message", out JsonElement message))
+                return string.Empty;
+            if (message.ValueKind == JsonValueKind.String)
+                return ": " + message.GetString();
+            if (message.ValueKind == JsonValueKind.Object)
+                return ": " + string.Join("; ", message.EnumerateObject().Select(field =>
+                                              field.Name + " " + string.Join(", ", field.Value.ValueKind ==
+                                                  JsonValueKind.Array
+                                                  ? field.Value.EnumerateArray().Select(item => item.ToString())
+                                                  : new[] { field.Value.ToString() })));
+            return string.Empty;
+        }
+        catch (JsonException)
+        {
+            return string.Empty;
         }
     }
 

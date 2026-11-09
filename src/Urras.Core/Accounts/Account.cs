@@ -98,6 +98,19 @@ public sealed record PlatformAccess(bool CanPush, string? ParentOwner, string? P
     }
 }
 
+// An organisation (a group on GitLab) the signed-in user can make repositories in
+public sealed record PlatformOrganization(long Id, string Login)
+{
+    public override string ToString()
+    {
+        return Login;
+    }
+}
+
+// What to make when publishing: no organisation puts it under the signed-in user
+public sealed record NewRemoteRepository(string Name, string Description, bool IsPrivate,
+                                         PlatformOrganization? Organization);
+
 // A repository on a platform, for cloning
 public sealed record PlatformRepository(string FullName, string CloneUrl, string? Description, bool IsPrivate,
                                         bool IsFork)

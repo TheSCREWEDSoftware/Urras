@@ -367,7 +367,8 @@ public sealed partial class GitRepository
 
         List<string> remotes = await GetRemotesAsync();
         if (remotes.Count == 0)
-            return new GitResult(-1, string.Empty, "Cannot push: this repository has no remote.");
+            return new GitResult(-1, string.Empty,
+                                 "Cannot push: this repository has no remote yet. Publish repository puts it online.");
 
         string remote = remotes.Contains("origin") ? "origin" : remotes[0];
         return await RunWithProgress(progress, "push", "--set-upstream", remote, status.Branch!);
@@ -381,6 +382,17 @@ public sealed partial class GitRepository
 
         return result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
+    }
+
+    public Task<GitResult> AddRemoteAsync(string name, string url)
+    {
+        return Run("remote", "add", name, url);
+    }
+
+    // False in a new repository whose first commit hasn't been made, where there's nothing to push yet
+    public async Task<bool> HasCommitsAsync()
+    {
+        return !await IsUnbornAsync();
     }
 
     private async Task<bool> IsUnbornAsync()
