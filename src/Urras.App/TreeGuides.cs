@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -27,7 +28,12 @@ public sealed class TreeGuides : Decorator
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        if (_node != null)
+            _node.PropertyChanged -= OnNodeChanged;
+
         _node = DataContext as RepositoryNode;
+        if (_node != null)
+            _node.PropertyChanged += OnNodeChanged;
         InvalidateVisual();
     }
 
@@ -43,7 +49,7 @@ public sealed class TreeGuides : Decorator
         base.Render(context);
         RepositoryNode? node = _node;
         TreeViewItem? item = this.FindAncestorOfType<TreeViewItem>();
-        if (node?.Parent == null || item == null)
+        if (node == null || item == null)
             return;
 
         _fontSize = this.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault()?.FontSize ?? DEFAULT_FONT_SIZE;
@@ -73,6 +79,16 @@ public sealed class TreeGuides : Decorator
                 Pipes(context, x, lines);
             ancestor = ancestor.Parent;
         }
+
+        // An open group's | under its arrow leads down to its children's branches
+        if (node.IsGroup && node.IsExpanded && node.Children.Count > 0 && ChevronMiddle(item) is double ownX)
+            Pipes(context, ownX, below);
+    }
+
+    private void OnNodeChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(RepositoryNode.IsExpanded))
+            InvalidateVisual();
     }
 
     // Halfway down each line of text in the row: the name, then the details
