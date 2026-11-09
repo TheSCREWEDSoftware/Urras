@@ -57,6 +57,11 @@ public sealed class MainWindowTests : IDisposable
                                                 .SelectMany(node => node.SelfAndDescendants())
                                                 .Where(node => node.Path != null).ToList();
         Assert.Equal(3, repositories.Count);
+        Assert.Equal("main", window.FindControl<TextBlock>("BranchButtonText")!.Text);
+
+        // The branch picker opens without an error
+        window.FindControl<Button>("BranchButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump(() => false, 500);
 
         foreach (RepositoryNode node in repositories)
         {

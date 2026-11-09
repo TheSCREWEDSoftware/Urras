@@ -99,8 +99,6 @@ public partial class MainWindow
 
     private Task SwitchFromQuickLaunchAsync(BranchInfo branch)
     {
-        // Selecting it in the branch box switches, the same way as picking it there
-        BranchBox.SelectedItem = branch;
-        return Task.CompletedTask;
+        return SwitchToBranchAsync(branch);
     }
 }

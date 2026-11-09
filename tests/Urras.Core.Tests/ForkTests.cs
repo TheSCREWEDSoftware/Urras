@@ -260,3 +260,64 @@ public static class CommitSubjectTests
         Assert.Equal("", Show(""), "empty");
     }
 }
+
+public static class BranchPickerTests
+{
+    private static readonly List<BranchInfo> Branches = new List<BranchInfo>
+    {
+        new BranchInfo("quest-min-level-hook", true, false, null, null),
+        new BranchInfo("master", false, false, "origin/master", null),
+        new BranchInfo("feedback_messages", false, false, null, null),
+        new BranchInfo("Bonestrippers", false, false, null, null),
+        new BranchInfo("origin/master", false, true, null, null),
+        new BranchInfo("origin/A-Spark-of-Hope", false, true, null, null),
+        new BranchInfo("github-desktop-sogladev/feat-melee-leeway", false, true, null, null)
+    };
+
+    private static string Show(List<BranchSection> sections)
+    {
+        return string.Join("; ", sections.Select(section => section.Title + ": " +
+                                                            string.Join(", ", section.Branches.Select(b => b.Name))));
+    }
+
+    public static void GroupsLikeGitHubDesktop()
+    {
+        Assert.Equal("Default branch: master; Recent branches: feedback_messages, quest-min-level-hook; " +
+                     "Other branches: Bonestrippers, origin/A-Spark-of-Hope",
+                     Show(BranchLists.Sections(Branches, "master",
+                                               new[] { "feedback_messages", "master", "quest-min-level-hook", "gone" },
+                                               null)),
+                     "default, recently used (only branches that exist), then the rest with local ones first");
+        Assert.Equal("Matching branches: github-desktop-sogladev/feat-melee-leeway",
+                     Show(BranchLists.Sections(Branches, "master", Array.Empty<string>(), "melee")),
+                     "a filter searches every remote too");
+        Assert.Equal(0, BranchLists.Sections(Branches, "master", Array.Empty<string>(), "nothing").Count, "none");
+    }
+
+    public static async Task ReadsDatesAndRecentBranches()
+    {
+        using TempRepository temp = await TempRepository.CreateAsync();
+        temp.Write("a.txt", "a");
+        await temp.CommitAllAsync("First");
+        Assert.Success(await temp.Repository.CreateBranchAsync("feature", true), "branch");
+        Assert.Success(await temp.Repository.SwitchAsync("main"), "back");
+
+        Dictionary<string, DateTimeOffset> dates = await temp.Repository.GetBranchDatesAsync();
+        Assert.True(dates.ContainsKey("main") && dates.ContainsKey("feature"), "a date for each branch");
+        List<string> recent = await temp.Repository.GetRecentBranchesAsync();
+        Assert.Equal("main|feature", string.Join("|", recent), "newest first");
+    }
+
+    public static void SaysHowLongAgo()
+    {
+        DateTimeOffset now = new DateTimeOffset(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
+        Assert.Equal("just now", Urras.Core.Settings.RelativeTime.Describe(now.AddSeconds(-5), now), "seconds");
+        Assert.Equal("3 minutes ago", Urras.Core.Settings.RelativeTime.Describe(now.AddMinutes(-3), now), "minutes");
+        Assert.Equal("1 hour ago", Urras.Core.Settings.RelativeTime.Describe(now.AddHours(-1), now), "an hour");
+        Assert.Equal("yesterday", Urras.Core.Settings.RelativeTime.Describe(now.AddDays(-1), now), "a day");
+        Assert.Equal("21 days ago", Urras.Core.Settings.RelativeTime.Describe(now.AddDays(-21), now), "days");
+        Assert.Equal("last month", Urras.Core.Settings.RelativeTime.Describe(now.AddDays(-40), now), "a month");
+        Assert.Equal("11 months ago", Urras.Core.Settings.RelativeTime.Describe(now.AddDays(-340), now), "months");
+        Assert.Equal("2 years ago", Urras.Core.Settings.RelativeTime.Describe(now.AddDays(-800), now), "years");
+    }
+}

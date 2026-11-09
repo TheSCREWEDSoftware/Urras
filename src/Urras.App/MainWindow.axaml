@@ -167,7 +167,17 @@
           <!-- Fixed width, matching the repository panel, so the branch box doesn't move with the name -->
           <TextBlock x:Name="RepositoryTitle" Text="No repository" FontSize="16" FontWeight="SemiBold"
                      VerticalAlignment="Center" Width="286" TextTrimming="CharacterEllipsis" />
-          <ComboBox x:Name="BranchBox" MinWidth="240" ToolTip.Tip="Switch branch" />
+          <Button x:Name="BranchButton" MinWidth="240" MaxWidth="320" HorizontalContentAlignment="Stretch"
+                  ToolTip.Tip="Switch branch, see pull requests, or merge (Ctrl+B)">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Text="▾" VerticalAlignment="Center" Margin="8,0,0,0" />
+              <StackPanel>
+                <TextBlock Text="Current branch" FontSize="11" Opacity="0.7" />
+                <TextBlock x:Name="BranchButtonText" Text="No branch" FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DockPanel>
+          </Button>
           <Button x:Name="BranchMenuButton" Content="Branch ▾"
                   ToolTip.Tip="New or delete branch, merge, rebase, tags, repository settings" />
           <Button x:Name="StashMenuButton" Content="Stash ▾" ToolTip.Tip="Stash changes, or manage stashes" />

@@ -56,7 +56,7 @@ public partial class MainWindow : Window
                                                               "Pushed.");
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
-        BranchBox.SelectionChanged += async (_, _) => await OnBranchSelectedAsync();
+        InitializeBranchPicker();
 
         UnstagedList.SelectionChanged += async (_, _) => await OnFileSelectedAsync(UnstagedList, StagedList, false);
         StagedList.SelectionChanged += async (_, _) => await OnFileSelectedAsync(StagedList, UnstagedList, true);
@@ -182,17 +182,8 @@ public partial class MainWindow : Window
 
                 List<BranchInfo> ordered = branches.Where(branch => !branch.IsRemote)
                     .Concat(branches.Where(branch => branch.IsRemote)).ToList();
-                string branchSignature = string.Join("\n", ordered.Select(branch => branch.Name + "\t" +
-                                                                         branch.IsCurrent + "\t" + branch.Tracking));
                 _branches = ordered;
-                if (branchSignature != _branchSignature || !ReferenceEquals(BranchBox.ItemsSource, _branchChoices))
-                {
-                    // The box keeps to the branches people switch between; every branch is in All branches…
-                    _branchSignature = branchSignature;
-                    _branchChoices = BranchLists.ForPicker(ordered);
-                    BranchBox.ItemsSource = _branchChoices;
-                    BranchBox.SelectedItem = _branchChoices.FirstOrDefault(branch => branch.IsCurrent);
-                }
+                BranchButtonText.Text = status.IsDetached ? "(detached HEAD)" : status.Branch ?? "No branch";
 
                 PullButton.Content = status.Behind > 0 ? $"Pull ({status.Behind})" : "Pull";
                 PushButton.Content = status.Ahead > 0 ? $"Push ({status.Ahead})" :
@@ -244,7 +235,7 @@ public partial class MainWindow : Window
         StagedList.ItemsSource = null;
         HistoryList.ItemsSource = null;
         _branches = new List<BranchInfo>();
-        BranchBox.ItemsSource = null;
+        BranchButtonText.Text = "No branch";
         ShowChangesDiff(null, string.Empty);
         ShowCommitDiff(null, string.Empty);
         UnstagedHeader.Text = "Changes";
@@ -400,10 +391,9 @@ public partial class MainWindow : Window
 
     // Branches
 
-    private async Task OnBranchSelectedAsync()
+    private async Task SwitchToBranchAsync(BranchInfo branch)
     {
-        if (_suppressSelection || _repository == null || BranchBox.SelectedItem is not BranchInfo branch ||
-            branch.IsCurrent)
+        if (_repository == null || branch.IsCurrent)
             return;
 
         string? leaving = _status?.Branch;
@@ -700,9 +690,9 @@ public partial class MainWindow : Window
         bool ready = _repository != null && !_busy;
         foreach (Control control in new Control[]
                  {
-                     FetchButton, PullButton, PushButton, RefreshButton, BranchBox, BranchMenuButton, StashMenuButton,
-                     StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton, DiscardButton,
-                     CommitButton
+                     FetchButton, PullButton, PushButton, RefreshButton, BranchButton, BranchMenuButton,
+                     StashMenuButton, StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton,
+                     DiscardButton, CommitButton
                  })
         {
             control.IsEnabled = ready;
@@ -727,6 +717,11 @@ public partial class MainWindow : Window
             e.Handled = true;
             RepositorySearchBox.Focus();
             RepositorySearchBox.SelectAll();
+        }
+        else if (e.Key == Key.B && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+            _ = OpenBranchPickerAsync();
         }
         else if (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control))
         {

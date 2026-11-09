@@ -28,4 +28,47 @@ public static class BranchLists
         int slash = remoteBranch.IndexOf('/');
         return slash > 0 && MainRemotes.Contains(remoteBranch[..slash], StringComparer.Ordinal);
     }
+
+    // Default branch, recently used ones, then the rest, like GitHub Desktop; a filter searches every remote instead
+    public static List<BranchSection> Sections(IReadOnlyList<BranchInfo> branches, string? defaultBranch,
+                                               IReadOnlyList<string> recent, string? filter)
+    {
+        string text = filter?.Trim() ?? string.Empty;
+        if (text.Length > 0)
+        {
+            List<BranchInfo> matches = branches.Where(branch => branch.Name.Contains(text,
+                                                                                    StringComparison.OrdinalIgnoreCase))
+                                               .OrderBy(branch => branch.IsRemote)
+                                               .ThenBy(branch => branch.Name, StringComparer.OrdinalIgnoreCase)
+                                               .ToList();
+            return matches.Count == 0 ? new List<BranchSection>()
+                                      : new List<BranchSection> { new BranchSection("Matching branches", matches) };
+        }
+
+        List<BranchInfo> offered = ForPicker(branches);
+        List<BranchSection> sections = new List<BranchSection>();
+        BranchInfo? main = offered.FirstOrDefault(branch => !branch.IsRemote && branch.Name == defaultBranch) ??
+                           offered.FirstOrDefault(branch => branch.IsRemote && LocalName(branch.Name) == defaultBranch);
+        if (main != null)
+            sections.Add(new BranchSection("Default branch", new List<BranchInfo> { main }));
+
+        List<BranchInfo> recentBranches = recent.Select(name => offered.FirstOrDefault(branch => !branch.IsRemote &&
+                                                                                           branch.Name == name))
+                                                .OfType<BranchInfo>().Where(branch => branch != main)
+                                                .Distinct().Take(RECENT_COUNT).ToList();
+        if (recentBranches.Count > 0)
+            sections.Add(new BranchSection("Recent branches", recentBranches));
+
+        List<BranchInfo> others = offered.Where(branch => branch != main && !recentBranches.Contains(branch))
+                                         .OrderBy(branch => branch.IsRemote)
+                                         .ThenBy(branch => branch.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        if (others.Count > 0)
+            sections.Add(new BranchSection("Other branches", others));
+        return sections;
+    }
+
+    public const int RECENT_COUNT = 5;
 }
+
+// A titled group of branches in the picker
+public sealed record BranchSection(string Title, List<BranchInfo> Branches);
