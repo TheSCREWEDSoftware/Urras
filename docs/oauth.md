@@ -1,8 +1,11 @@
 # Signing in through the browser
 
-GitHub Desktop signs in through the browser because GitHub knows it as a registered app. Urras works the same way
-once it is registered: one registration covers everyone who uses that copy of Urras. Without it, Urras asks for a
-personal access token instead.
+GitHub Desktop signs in through the browser because GitHub knows it as a registered app. Urras works the same way:
+it is registered on github.com, and its client id is built in (`GITHUB_CLIENT_ID` in `DeviceSignIn.cs`), so GitHub
+sign-in goes through the browser with nothing to set up. A client id is public by design; there is no secret.
+
+The steps below are for registering your own copy, a GitHub Enterprise server or GitLab. Without a registration,
+Urras asks for a personal access token instead.
 
 ## GitHub
 

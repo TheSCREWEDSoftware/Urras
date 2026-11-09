@@ -9,8 +9,8 @@ public sealed record DeviceCode(string DeviceCodeValue, string UserCode, string 
 // OAuth device flow (RFC 8628): the user approves a code in the browser and Urras receives a token
 public sealed class DeviceSignIn
 {
-    // Registered OAuth app ids; empty until the owner registers Urras (see docs/oauth.md)
-    public const string GITHUB_CLIENT_ID = "";
+    // Urras's registered app ids, public by design so they ship in the app; GitLab's is empty until registered
+    public const string GITHUB_CLIENT_ID = "Ov23lioCGrtLNlpGcwJG";
     public const string GITLAB_CLIENT_ID = "";
 
     public const string GITHUB_SCOPES = "repo read:user notifications";

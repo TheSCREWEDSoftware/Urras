@@ -218,8 +218,9 @@ public sealed class OptionsWindow : Window
                          "and notifications, and clone your repositories. Tokens are kept in your system's " +
                          "credential store."),
                     Heading("Signing in through the browser"),
-                    Note("GitHub and GitLab sign in through the browser once Urras is registered with them as an " +
-                         "app, which takes two minutes. Until then, or for other platforms, you paste a token."),
+                    Note("GitHub signs in through the browser. GitLab, and GitHub Enterprise servers, do too once " +
+                         "Urras is registered with them as an app, which takes two minutes; the ids go below. " +
+                         "Other platforms use a pasted token."),
                     Links.ToPage("How to register Urras (docs/oauth.md)", Links.Document("docs/oauth.md")),
                     Label("GitHub client id"), _githubAppId, Label("GitLab application id"), _gitlabAppId);
     }

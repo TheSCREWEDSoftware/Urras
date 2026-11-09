@@ -44,8 +44,10 @@ public static class DeviceSignInTests
     public static void NeedsARegisteredApp()
     {
         HttpClient http = new HttpClient();
-        Assert.True(DeviceSignIn.For(AccountKind.GitHub, string.Empty, http, null) == null ||
-                    DeviceSignIn.GITHUB_CLIENT_ID.Length > 0, "no app id: a token is pasted instead");
+        Assert.True(DeviceSignIn.For(AccountKind.GitHub, string.Empty, http, null) != null,
+                    "github.com signs in through the browser with Urras's own app");
+        Assert.True(DeviceSignIn.For(AccountKind.GitHubEnterprise, "https://github.example.com", http, null) == null,
+                    "an Enterprise server needs its own app id: a token is pasted instead");
         Assert.True(DeviceSignIn.For(AccountKind.Gitea, "https://codeberg.org", http, "x") == null,
                     "Gitea has no device flow");
         Assert.True(DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.example.com", http, "x") != null,
