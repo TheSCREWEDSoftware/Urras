@@ -344,24 +344,36 @@ public static class Dialogs
         return await dialog.ShowDialog<string?>(owner);
     }
 
+    // The answer to the fork question, and whether it goes for every fork without a choice of its own
+    public sealed record ForkAnswer(Urras.Core.Git.ForkTarget Target, bool ForAllForks);
+
     // Asks how a fork will be used, like GitHub Desktop does; null when cancelled
-    public static async Task<Urras.Core.Git.ForkTarget?> ForkTargetAsync(Window owner, ForkChoice choice)
+    public static async Task<ForkAnswer?> ForkTargetAsync(Window owner, ForkChoice choice)
     {
         Window dialog = CreateWindow("How are you planning to use this fork?");
         (Control radios, Func<Urras.Core.Git.ForkTarget> selected) = ForkRadios(choice);
+        CheckBox all = new CheckBox
+        {
+            Content = new TextBlock
+            {
+                Text = "Use this for all my forks, without asking (Options > Accounts changes it)",
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
         Button save = new Button { Content = "Continue", IsDefault = true };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
-        save.Click += (_, _) => dialog.Close(selected());
+        save.Click += (_, _) => dialog.Close(new ForkAnswer(selected(), all.IsChecked == true));
         cancel.Click += (_, _) => dialog.Close(null);
 
         StackPanel input = new StackPanel { Spacing = 10 };
         input.Children.Add(radios);
+        input.Children.Add(all);
         input.Children.Add(Hint("Pull requests, \"View on…\" and checking out pull requests use the repository you " +
                                 "choose. You can change it later in Repository settings."));
         input.Children.Add(Hint(choice.Access));
         dialog.Content = Layout(Paragraph("This repository is a fork of " + choice.Parent + ". How do you plan to " +
                                           "use it?"), input, save, cancel);
-        return await dialog.ShowDialog<Urras.Core.Git.ForkTarget?>(owner);
+        return await dialog.ShowDialog<ForkAnswer?>(owner);
     }
 
     private static (Control Radios, Func<Urras.Core.Git.ForkTarget> Selected) ForkRadios(ForkChoice choice)
@@ -369,13 +381,13 @@ public static class Dialogs
         RadioButton parent = new RadioButton
         {
             GroupName = "fork",
-            Content = "To contribute to the parent project (" + choice.Parent + ")",
+            Content = Wrapped("To contribute to the parent project\n" + choice.Parent),
             IsChecked = UsesParent(choice)
         };
         RadioButton own = new RadioButton
         {
             GroupName = "fork",
-            Content = "For my own purposes (" + choice.Fork + ")",
+            Content = Wrapped("For my own purposes\n" + choice.Fork),
             IsChecked = !UsesParent(choice)
         };
         StackPanel radios = new StackPanel { Spacing = 4 };
@@ -389,6 +401,12 @@ public static class Dialogs
     {
         return choice.Target == Urras.Core.Git.ForkTarget.Parent ||
                (choice.Target == Urras.Core.Git.ForkTarget.Unset && choice.ParentByDefault);
+    }
+
+    // Long repository names wrap instead of running off the edge
+    private static TextBlock Wrapped(string text)
+    {
+        return new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
     }
 
     private static TextBlock Hint(string text)

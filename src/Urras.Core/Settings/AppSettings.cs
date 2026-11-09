@@ -49,6 +49,10 @@ public sealed class AppSettings
     // On: the repository list mirrors the folders on disk. Off: ManualLayout is used
     public bool GroupByFolder { get; set; } = true;
 
+    // How forks without a choice of their own are used; Unset asks for each one
+    [JsonConverter(typeof(JsonStringEnumConverter<Urras.Core.Git.ForkTarget>))]
+    public Urras.Core.Git.ForkTarget DefaultForkTarget { get; set; } = Urras.Core.Git.ForkTarget.Unset;
+
     // How the automatic list groups repositories (GroupByFolder on means automatic)
     [JsonConverter(typeof(JsonStringEnumConverter<RepositoryGrouping>))]
     public RepositoryGrouping Grouping { get; set; } = RepositoryGrouping.Name;

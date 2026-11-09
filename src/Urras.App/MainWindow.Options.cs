@@ -24,6 +24,9 @@ public partial class MainWindow
 
         ApplyPreferences();
         RestartAutoFetch();
+        // The choice for all forks may have changed, so each fork's effective choice is read again
+        _forkSettings.Clear();
+        UpdateViewOnlineButton();
         UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();

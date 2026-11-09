@@ -93,6 +93,7 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _checkWhitespace;
     private readonly CheckBox _hideUntracked;
     private readonly CheckBox _fullScrollBars;
+    private readonly ComboBox _forkDefault;
 
     public OptionsWindow(AppSettings settings, AccountManager accounts, Func<Window, AccountKind, Task> addAccount,
                          string section = ACCOUNTS)
@@ -145,6 +146,11 @@ public sealed class OptionsWindow : Window
         _checkWhitespace = Check("Ask before committing whitespace problems (such as trailing spaces)",
                                  settings.CheckWhitespaceBeforeCommit);
         _hideUntracked = Check("Hide untracked files in Changes", settings.HideUntracked);
+        _forkDefault = Combo(new List<string>
+        {
+            "Ask for each fork", "Contribute to the parent project", "Use forks for my own purposes"
+        }, null);
+        _forkDefault.SelectedIndex = (int)settings.DefaultForkTarget;
         _fullScrollBars = Check("Always show full scroll bars, not only when the mouse is over them",
                                 settings.AlwaysShowScrollBars);
 
@@ -222,7 +228,10 @@ public sealed class OptionsWindow : Window
                          "Urras is registered with them as an app, which takes two minutes; the ids go below. " +
                          "Other platforms use a pasted token."),
                     Links.ToPage("How to register Urras (docs/oauth.md)", Links.Document("docs/oauth.md")),
-                    Label("GitHub client id"), _githubAppId, Label("GitLab application id"), _gitlabAppId);
+                    Label("GitHub client id"), _githubAppId, Label("GitLab application id"), _gitlabAppId,
+                    Heading("Forks"), _forkDefault,
+                    Note("Where pull requests and \"View on…\" go for forks that have no choice of their own. A " +
+                         "fork's own choice, in its Repository settings, always comes first."));
     }
 
     private void ShowAccounts()
@@ -450,6 +459,7 @@ public sealed class OptionsWindow : Window
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
         _settings.HideUntracked = _hideUntracked.IsChecked == true;
         _settings.AlwaysShowScrollBars = _fullScrollBars.IsChecked == true;
+        _settings.DefaultForkTarget = (ForkTarget)Math.Max(0, _forkDefault.SelectedIndex);
         _settings.Save();
 
         // Only what changed is written to the global Git configuration

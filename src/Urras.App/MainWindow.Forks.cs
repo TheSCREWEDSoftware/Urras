@@ -40,7 +40,7 @@ public partial class MainWindow
     private async Task UpdateForkAsync(string path, bool ask, bool force)
     {
         GitRepository repository = new GitRepository(path);
-        ForkSettings fork = await repository.GetForkSettingsAsync();
+        ForkSettings fork = WithDefault(await repository.GetForkSettingsAsync());
         _forkSettings[path] = fork;
         UpdateViewOnlineButton();
         if (!force && _forkAccess.TryGetValue(path, out ForkAccess? known) && known.Username != null)
@@ -80,9 +80,26 @@ public partial class MainWindow
         if (!ask || access is not { IsFork: true } || fork.Target != ForkTarget.Unset || !_forkAsked.Add(path))
             return;
 
-        ForkTarget? choice = await Dialogs.ForkTargetAsync(this, ForkChoiceFor(path, origin, fork));
-        if (choice is { } target)
-            await SaveForkTargetAsync(path, target);
+        Dialogs.ForkAnswer? answer = await Dialogs.ForkTargetAsync(this, ForkChoiceFor(path, origin, fork));
+        if (answer == null)
+            return;
+
+        if (answer.ForAllForks)
+        {
+            // Every fork without a choice of its own follows this, so no other fork asks
+            _settings.DefaultForkTarget = answer.Target;
+            _settings.Save();
+        }
+
+        await SaveForkTargetAsync(path, answer.Target);
+    }
+
+    // A fork without a choice of its own follows the one made for all forks, if any
+    private ForkSettings WithDefault(ForkSettings fork)
+    {
+        return fork.Target == ForkTarget.Unset && _settings.DefaultForkTarget != ForkTarget.Unset
+            ? fork with { Target = _settings.DefaultForkTarget }
+            : fork;
     }
 
     private static async Task<PlatformAccess?> AccessAsync(PlatformClient client, RemoteIdentity remote)
