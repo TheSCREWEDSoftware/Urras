@@ -82,7 +82,8 @@ public sealed class Account
 public sealed record PlatformUser(long Id, string Login, string? Name, string? AvatarUrl, string? Email = null);
 
 // Whether the signed-in user can push to a repository, and the repository it was forked from, if any
-public sealed record PlatformAccess(bool CanPush, string? ParentOwner, string? ParentName)
+public sealed record PlatformAccess(bool CanPush, string? ParentOwner, string? ParentName,
+                                    string? DefaultBranch = null)
 {
     public bool IsFork => ParentOwner != null && ParentName != null;
 

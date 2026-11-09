@@ -415,20 +415,20 @@ public partial class MainWindow : Window
 
         // Changes kept with the branch come back when nothing else was brought along to clash with them
         if (switched && (clean || handled != BranchSwitchChanges.Bring))
-            await RestoreKeptChangesAsync(arrived);
+            await RestoreKeptChangesAsync(arrived, "Switched to " + arrived + " and brought back its changes.");
         else if (!switched && handled == BranchSwitchChanges.KeepWithBranch)
-            await RestoreKeptChangesAsync(leaving);
+            await RestoreKeptChangesAsync(leaving, "Couldn't switch, so your changes were put back.");
     }
 
     // Brings back what was kept with the branch now checked out (or with the one left, if switching failed)
-    private async Task RestoreKeptChangesAsync(string? branch)
+    private async Task RestoreKeptChangesAsync(string? branch, string successText)
     {
         if (_repository == null || branch == null)
             return;
 
         GitResult? restored = await _repository.RestoreKeptChangesAsync(branch);
         if (restored != null)
-            ReportResult(restored, "Switched to " + branch + " and brought back the changes you left on it.");
+            ReportResult(restored, successText);
         await RefreshAsync();
     }
 

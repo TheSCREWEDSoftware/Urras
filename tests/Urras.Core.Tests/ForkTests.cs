@@ -34,7 +34,8 @@ public static class ForkTests
         {
             ["/repos/TheSCREWEDSoftware/wiki"] = "{\"fork\":true,\"permissions\":{\"push\":true}," +
                                                  "\"parent\":{\"full_name\":\"azerothcore/wiki\"}}",
-            ["/repos/azerothcore/wiki"] = "{\"fork\":false,\"permissions\":{\"push\":false}}"
+            ["/repos/azerothcore/wiki"] = "{\"fork\":false,\"permissions\":{\"push\":false}," +
+                                          "\"default_branch\":\"master\"}"
         })), "t");
 
         PlatformAccess fork = (await client.GetAccessAsync("TheSCREWEDSoftware", "wiki"))!;
@@ -42,6 +43,7 @@ public static class ForkTests
         Assert.True(fork.IsFork, "is a fork");
         PlatformAccess parent = (await client.GetAccessAsync("azerothcore", "wiki"))!;
         Assert.True(!parent.IsFork && !parent.CanPush, "parent, read only");
+        Assert.Equal("master", parent.DefaultBranch, "the parent's main branch, for pull requests into it");
         Assert.Equal("https://github.com/azerothcore/wiki/compare/master...TheSCREWEDSoftware:fix%2Ftypo",
                      client.NewForkPullRequestUrl("azerothcore", "wiki", "TheSCREWEDSoftware", "fix/typo", "master"),
                      "pull request from the fork into the parent");
@@ -57,6 +59,10 @@ public static class ForkTests
         Assert.Equal(parent, new ForkSettings(parent, ForkTarget.Parent).ContributionTarget(fork), "parent");
         Assert.Equal(fork, new ForkSettings(parent, ForkTarget.Own).ContributionTarget(fork), "own purposes");
         Assert.Equal(fork, new ForkSettings(null, ForkTarget.Unset).ContributionTarget(fork), "not a fork");
+        Assert.Equal(fork, new ForkSettings(parent, ForkTarget.Unset, false).ContributionTarget(fork),
+                     "an upstream remote alone doesn't redirect anything");
+        Assert.Equal(parent, new ForkSettings(parent, ForkTarget.Parent, false).ContributionTarget(fork),
+                     "unless chosen");
 
         Dictionary<string, RemoteIdentity> remotes = new Dictionary<string, RemoteIdentity>
         {
@@ -83,6 +89,7 @@ public static class ForkTests
 
         ForkSettings fresh = await repository.GetForkSettingsAsync();
         Assert.Equal("vmangos", fresh.Parent?.Owner, "upstream until the platform says otherwise");
+        Assert.True(!fresh.Confirmed, "only a guess");
         Assert.Equal(ForkTarget.Unset, fresh.Target, "not chosen");
 
         await repository.SaveForkSettingsAsync(new RemoteIdentity("azerothcore", "wiki", "github.com"), ForkTarget.Own);

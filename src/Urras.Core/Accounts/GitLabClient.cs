@@ -90,7 +90,7 @@ public sealed class GitLabClient : PlatformClient
                       parent.ValueKind == JsonValueKind.Object;
         (string? parentOwner, string? parentName) =
             forked ? PlatformAccess.Split(Text(parent, "path_with_namespace")) : (null, null);
-        return new PlatformAccess(access >= DEVELOPER_ACCESS, parentOwner, parentName);
+        return new PlatformAccess(access >= DEVELOPER_ACCESS, parentOwner, parentName, Text(root, "default_branch"));
     }
 
     public override async Task<List<PlatformPullRequest>> GetPullRequestsAsync(string owner, string repository)

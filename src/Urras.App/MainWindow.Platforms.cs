@@ -113,9 +113,12 @@ public partial class MainWindow
 
         string target = await _repository.GetDefaultBranchAsync();
         RemoteIdentity? origin = RemoteIdentity.Read(_repository.Path);
+        // Into the parent's own main branch, which may not be named like the fork's
+        string parentBranch = _forkAccess.TryGetValue(_repository.Path, out ForkAccess? access) &&
+                              access.ParentBranch is { } known ? known : target;
         string? fromFork = origin == null || origin.Key == remote.Key
             ? null
-            : client.NewForkPullRequestUrl(remote.Owner, remote.Name, origin.Owner, branch, target);
+            : client.NewForkPullRequestUrl(remote.Owner, remote.Name, origin.Owner, branch, parentBranch);
         await Report(SystemShell.OpenUrl(fromFork ?? client.NewPullRequestUrl(origin?.Owner ?? remote.Owner,
                                                                               origin?.Name ?? remote.Name, branch,
                                                                               target)));

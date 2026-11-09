@@ -175,6 +175,9 @@ public sealed class AppSettings
     public void RemoveRepository(string path)
     {
         Repositories.RemoveAll(existing => PathsEqual(existing, path));
+        // Another repository may be cloned into the same folder later, with a different history
+        foreach (string key in RootCommits.Keys.Where(key => PathsEqual(key, path)).ToList())
+            RootCommits.Remove(key);
         if (ManualLayout != null)
             RepositoryLayout.RemoveRepository(ManualLayout, path);
         if (LastRepository != null && PathsEqual(LastRepository, path))

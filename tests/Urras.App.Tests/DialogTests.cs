@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Interactivity;
 using Urras.Core.Accounts;
 using Urras.Core.Git;
 using Urras.Core.Settings;
@@ -57,6 +58,22 @@ public sealed class DialogTests
         Assert.Null(Ui.OpenAndClose(owner, () => Dialogs.ForkTargetAsync(owner, Fork)));
         Ui.OpenAndClose(owner, () => Dialogs.RepositorySettingsAsync(owner, "wiki", LineEndingPolicy.Custom, Fork));
         Ui.OpenAndClose(owner, () => Dialogs.RepositorySettingsAsync(owner, "Urras", LineEndingPolicy.Lf, NotAFork));
+        owner.Close();
+    }
+
+    // Saving line endings mustn't quietly answer the fork question as well
+    [AvaloniaFact]
+    public void SavingRepositorySettingsLeavesTheForkChoiceAlone()
+    {
+        Window owner = Owner();
+        Task<Dialogs.RepositorySettingsResult?> task =
+            Dialogs.RepositorySettingsAsync(owner, "wiki", LineEndingPolicy.Custom, Fork);
+        Ui.Pump(() => owner.OwnedWindows.Count > 0);
+        Button save = Ui.Find<Button>(owner.OwnedWindows[^1], button => button.Content as string == "Save");
+        save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump(() => task.IsCompleted);
+        Assert.True(task.IsCompleted, "saved");
+        Assert.Null(task.GetAwaiter().GetResult()!.Fork);
         owner.Close();
     }
 

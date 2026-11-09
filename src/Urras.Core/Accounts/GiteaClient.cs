@@ -87,7 +87,7 @@ public sealed class GiteaClient : PlatformClient
                                                     parent.ValueKind == JsonValueKind.Object
             ? PlatformAccess.Split(Text(parent, "full_name"))
             : (null, null);
-        return new PlatformAccess(push, parentOwner, parentName);
+        return new PlatformAccess(push, parentOwner, parentName, Text(root, "default_branch"));
     }
 
     public override async Task<List<PlatformPullRequest>> GetPullRequestsAsync(string owner, string repository)

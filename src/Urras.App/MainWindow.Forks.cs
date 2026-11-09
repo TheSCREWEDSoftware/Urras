@@ -9,7 +9,8 @@ namespace Urras.App;
 public partial class MainWindow
 {
     // What the platform said: who is signed in, and push access to the fork (origin) and its parent
-    private sealed record ForkAccess(string? Username, bool? CanPushOrigin, bool? CanPushParent, bool Checked);
+    private sealed record ForkAccess(string? Username, bool? CanPushOrigin, bool? CanPushParent, bool Checked,
+                                     string? ParentBranch = null);
 
     private readonly Dictionary<string, ForkSettings> _forkSettings =
         new Dictionary<string, ForkSettings>(RepositoryLayout.PathComparer);
@@ -61,13 +62,14 @@ public partial class MainWindow
             if (fork.Parent?.Key != parent.Key)
             {
                 await repository.SaveForkSettingsAsync(parent, fork.Target);
-                fork = fork with { Parent = parent };
+                fork = fork with { Parent = parent, Confirmed = true };
                 _forkSettings[path] = fork;
             }
         }
 
         PlatformAccess? parentAccess = fork.Parent == null ? null : await AccessAsync(client, fork.Parent);
-        _forkAccess[path] = new ForkAccess(account.Username, access?.CanPush, parentAccess?.CanPush, access != null);
+        _forkAccess[path] = new ForkAccess(account.Username, access?.CanPush, parentAccess?.CanPush, access != null,
+                                           parentAccess?.DefaultBranch);
         if (_repository == null || !RepositoryLayout.PathComparer.Equals(_repository.Path, path))
             return;
 
@@ -111,7 +113,7 @@ public partial class MainWindow
     private Dialogs.ForkChoice ForkChoiceFor(string path, RemoteIdentity origin, ForkSettings fork)
     {
         return new Dialogs.ForkChoice(fork.Parent == null ? null : FullName(fork.Parent), FullName(origin),
-                                      fork.Target, AccessText(path, origin, fork));
+                                      fork.Target, AccessText(path, origin, fork), fork.Confirmed);
     }
 
     // Who is signed in and what they can push to, in plain words
@@ -183,7 +185,7 @@ public partial class MainWindow
         remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin);
         ForkSettings fork = _forkSettings.TryGetValue(path, out ForkSettings? known)
             ? known
-            : new ForkSettings(ForkSettings.ParentFrom(null, origin, remotes), ForkTarget.Unset);
+            : new ForkSettings(ForkSettings.ParentFrom(null, origin, remotes), ForkTarget.Unset, false);
         RemoteIdentity? target = fork.ContributionTarget(origin);
         RemoteIdentity? other = fork.Parent == null ? null : target?.Key == origin?.Key ? fork.Parent : origin;
         return (target, other);

@@ -307,7 +307,8 @@ public static class Dialogs
                                                   bool Normalize, Urras.Core.Git.ForkTarget? Fork);
 
     // A fork and its parent as owner/name, the current choice, and what the user can push to
-    public sealed record ForkChoice(string? Parent, string Fork, Urras.Core.Git.ForkTarget Target, string Access);
+    public sealed record ForkChoice(string? Parent, string Fork, Urras.Core.Git.ForkTarget Target, string Access,
+                                    bool ParentByDefault = true);
 
     // Asks how a fork will be used, like GitHub Desktop does; null when cancelled
     public static async Task<Urras.Core.Git.ForkTarget?> ForkTargetAsync(Window owner, ForkChoice choice)
@@ -335,18 +336,25 @@ public static class Dialogs
         {
             GroupName = "fork",
             Content = "To contribute to the parent project (" + choice.Parent + ")",
-            IsChecked = choice.Target != Urras.Core.Git.ForkTarget.Own
+            IsChecked = UsesParent(choice)
         };
         RadioButton own = new RadioButton
         {
             GroupName = "fork",
             Content = "For my own purposes (" + choice.Fork + ")",
-            IsChecked = choice.Target == Urras.Core.Git.ForkTarget.Own
+            IsChecked = !UsesParent(choice)
         };
         StackPanel radios = new StackPanel { Spacing = 4 };
         radios.Children.Add(parent);
         radios.Children.Add(own);
         return (radios, () => own.IsChecked == true ? Urras.Core.Git.ForkTarget.Own : Urras.Core.Git.ForkTarget.Parent);
+    }
+
+    // What is in effect now: the parent when chosen, or by default once the platform confirmed the fork
+    private static bool UsesParent(ForkChoice choice)
+    {
+        return choice.Target == Urras.Core.Git.ForkTarget.Parent ||
+               (choice.Target == Urras.Core.Git.ForkTarget.Unset && choice.ParentByDefault);
     }
 
     private static TextBlock Hint(string text)
@@ -389,10 +397,15 @@ public static class Dialogs
         Control? forkRadios = null;
         if (fork.Parent != null)
             (forkRadios, forkTarget) = ForkRadios(fork);
-        save.Click += (_, _) => dialog.Close(new RepositorySettingsResult(policies[Math.Max(0, policy.SelectedIndex)],
-                                                                          editorConfig.IsChecked == true,
-                                                                          normalize.IsChecked == true,
-                                                                          forkTarget?.Invoke()));
+        // Only a changed choice is saved, so saving line endings doesn't also decide the fork question
+        Urras.Core.Git.ForkTarget? shown = forkTarget?.Invoke();
+        save.Click += (_, _) =>
+        {
+            Urras.Core.Git.ForkTarget? chosen = forkTarget?.Invoke();
+            dialog.Close(new RepositorySettingsResult(policies[Math.Max(0, policy.SelectedIndex)],
+                                                      editorConfig.IsChecked == true, normalize.IsChecked == true,
+                                                      chosen == shown ? null : chosen));
+        };
         cancel.Click += (_, _) => dialog.Close(null);
 
         StackPanel input = new StackPanel { Spacing = 10 };

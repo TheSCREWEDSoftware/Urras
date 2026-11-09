@@ -11,17 +11,18 @@ public enum ForkTarget
     Own
 }
 
-// What Urras knows about a repository being a fork, kept in the repository's own Git configuration
-public sealed record ForkSettings(RemoteIdentity? Parent, ForkTarget Target)
+// A fork's parent and choice, kept in its Git configuration; an unconfirmed parent is only an upstream remote
+public sealed record ForkSettings(RemoteIdentity? Parent, ForkTarget Target, bool Confirmed = true)
 {
     public const string PARENT_KEY = "urras.forkParent";
     public const string TARGET_KEY = "urras.forkTarget";
     public const string UPSTREAM = "upstream";
 
-    // The repository pull requests, issues and "View on…" go to
+    // The repository pull requests and "View on…" go to; a guessed parent only when chosen
     public RemoteIdentity? ContributionTarget(RemoteIdentity? origin)
     {
-        return Parent != null && Target != ForkTarget.Own ? Parent : origin;
+        bool toParent = Target == ForkTarget.Parent || (Target == ForkTarget.Unset && Confirmed);
+        return Parent != null && toParent ? Parent : origin;
     }
 
     public static ForkTarget ParseTarget(string? text)
@@ -74,8 +75,10 @@ public partial class GitRepository
         GitResult target = await Run("config", "--get", ForkSettings.TARGET_KEY);
         Dictionary<string, RemoteIdentity> remotes = RemoteIdentity.ReadAll(Path);
         remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin);
-        return new ForkSettings(ForkSettings.ParentFrom(parent.Success ? parent.Output : null, origin, remotes),
-                                ForkSettings.ParseTarget(target.Success ? target.Output : null));
+        string? saved = parent.Success ? parent.Output : null;
+        return new ForkSettings(ForkSettings.ParentFrom(saved, origin, remotes),
+                                ForkSettings.ParseTarget(target.Success ? target.Output : null),
+                                !string.IsNullOrWhiteSpace(saved));
     }
 
     // Saves the parent (owner/name) and the choice; a null parent or Unset choice removes the setting
