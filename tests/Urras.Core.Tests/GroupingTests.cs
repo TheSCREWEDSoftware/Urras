@@ -84,6 +84,7 @@ public static class GroupingTests
         Assert.Equal("azerothcore-wotlk[Aceddian]", Describe(RepositoryLayout.Filter(tree, "wotlk aced")),
                      "every word, across the group's name and the repository's");
         Assert.Equal("scratch", Describe(RepositoryLayout.Filter(tree, "/r/scr")), "by folder");
+        Assert.Equal("scratch", Describe(RepositoryLayout.Filter(tree, "\\r\\scr")), "with backslashes too");
         Assert.Equal(0, RepositoryLayout.Filter(tree, "nothing-like-this").Count, "nothing found");
         Assert.Equal(tree.Count, RepositoryLayout.Filter(tree, "  ").Count, "an empty search shows everything");
     }

@@ -169,8 +169,9 @@ public static class RepositoryLayout
     // What matches every word in its name, path or groups' names; a matching group keeps all it holds
     public static List<RepositoryTreeNode> Filter(IEnumerable<RepositoryTreeNode> nodes, string? query)
     {
-        string[] words = (query ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries |
-                                                            StringSplitOptions.TrimEntries);
+        // / and \ are the same in a search, so folders can be typed either way on any system
+        string[] words = (query ?? string.Empty).Replace('\\', '/').Split(' ', StringSplitOptions.RemoveEmptyEntries |
+                                                                               StringSplitOptions.TrimEntries);
         return words.Length == 0 ? nodes.ToList() : FilterNodes(nodes, words, string.Empty);
     }
 
@@ -180,7 +181,7 @@ public static class RepositoryLayout
         List<RepositoryTreeNode> kept = new List<RepositoryTreeNode>();
         foreach (RepositoryTreeNode node in nodes)
         {
-            string text = groups + " " + node.Name + " " + (node.RepositoryPath ?? string.Empty);
+            string text = (groups + " " + node.Name + " " + (node.RepositoryPath ?? string.Empty)).Replace('\\', '/');
             if (words.All(word => text.Contains(word, StringComparison.OrdinalIgnoreCase)))
             {
                 kept.Add(node);
