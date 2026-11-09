@@ -1,0 +1,48 @@
+name: Website
+
+# Publishes the site folder, with the icon and screenshots, to https://thescrewedsoftware.github.io/Urras/
+# (Settings > Pages > Source: GitHub Actions). Runs when the site or screenshots change on main, or by hand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/screenshots/**"
+      - "src/Urras.App/Assets/urras.png"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One publish at a time; a newer one replaces one still waiting
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather the site
+        run: |
+          mkdir -p public/screenshots
+          cp site/* public/
+          cp docs/screenshots/*.png public/screenshots/
+          cp src/Urras.App/Assets/urras.png public/urras.png
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

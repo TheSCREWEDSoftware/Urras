@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Urras: a fast, native Git client</title>
+  <meta name="description" content="Urras is a fast, native Git client for Windows and Linux, free and open source.">
+  <link rel="icon" href="urras.png">
+  <style>
+    :root {
+      --background: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #7fd8ff;
+      --accent-strong: #1f8fe0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    main { max-width: 980px; margin: 0 auto; padding: 48px 20px 64px; }
+
+    header { text-align: center; margin-bottom: 40px; }
+    header img { width: 120px; height: 120px; }
+    h1 { font-size: 2.6rem; margin: 8px 0 4px; }
+    .tagline { color: var(--muted); font-size: 1.15rem; margin: 0 0 24px; }
+
+    .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .button.primary { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .button:hover { border-color: var(--accent); }
+    .note { color: var(--muted); font-size: 0.9rem; margin-top: 12px; }
+
+    h2 { font-size: 1.5rem; margin: 48px 0 16px; }
+
+    .hero { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); }
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    figure { margin: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    figure img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      object-position: top left;
+      border-radius: 6px;
+      display: block;
+    }
+    figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
+
+    a { color: var(--accent); }
+    footer { margin-top: 56px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="urras.png" alt="Urras icon: shards of ice in a blizzard">
+    <h1>Urras</h1>
+    <p class="tagline">A fast, native Git client for Windows and Linux. Free and open source.</p>
+    <div class="buttons">
+      <a class="button primary" href="https://github.com/TheSCREWEDSoftware/Urras/releases/latest">Download →</a>
+      <a class="button" href="https://github.com/TheSCREWEDSoftware/Urras">View on GitHub →</a>
+    </div>
+    <p class="note">Windows (.zip) and Linux (.tar.gz), one file with nothing else to install.</p>
+  </header>
+
+  <a href="screenshots/main-window.png"><img class="hero" src="screenshots/main-window.png"
+       alt="Urras: the repository list grouped by name with search, the changes and a diff"></a>
+
+  <h2>What it does</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>All your repositories</h3>
+      <p>Grouped by name with their forks, by folder, by owner or by hand. Pin, search (Ctrl+F) and import
+        everything from a folder or from GitHub Desktop in one go.</p>
+    </div>
+    <div class="card">
+      <h3>Changes, line by line</h3>
+      <p>Stage, unstage or discard single lines or hunks. Unified, split or raw diffs with syntax colours,
+        word-level highlights, Markdown rendered and images compared.</p>
+    </div>
+    <div class="card">
+      <h3>History and the past</h3>
+      <p>A commit graph across every branch, blame, file history, searching commits, comparing commits and
+        branches, and the reflog for finding lost work.</p>
+    </div>
+    <div class="card">
+      <h3>The big Git jobs</h3>
+      <p>Merge, rebase and interactive rebase, a conflict resolver you can edit, bisect, stashes, tags,
+        submodules, worktrees and Git LFS.</p>
+    </div>
+    <div class="card">
+      <h3>GitHub, GitLab and more</h3>
+      <p>Accounts on GitHub, GitLab, Gitea, Codeberg and Bitbucket: pull requests, notifications, profile
+        pictures, co-authors by @username, and forks that know where changes go.</p>
+    </div>
+    <div class="card">
+      <h3>Quick and careful</h3>
+      <p>Native, not a web page in a window. Refreshes when something changes, asks before anything that can
+        lose work, and keeps a daily backup of its settings.</p>
+    </div>
+  </div>
+
+  <h2>Screenshots</h2>
+  <div class="gallery">
+    <figure>
+      <a href="screenshots/branch-menu.png"><img src="screenshots/branch-menu.png" alt="The Branch menu" loading="lazy"></a>
+      <figcaption>Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/repository-menu.png"><img src="screenshots/repository-menu.png" alt="A repository's menu" loading="lazy"></a>
+      <figcaption>Open a repository elsewhere, view it on GitHub, fetch, pull, pin and group</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/markdown-preview.png"><img src="screenshots/markdown-preview.png" alt="A Markdown file rendered" loading="lazy"></a>
+      <figcaption>Markdown rendered instead of shown as text</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/file-filter.png"><img src="screenshots/file-filter.png" alt="Filtering the changes" loading="lazy"></a>
+      <figcaption>Filtering the changes, with syntax colours in the diff</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/import-dialog.png"><img src="screenshots/import-dialog.png" alt="Choosing repositories to add" loading="lazy"></a>
+      <figcaption>Adding many repositories at once</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/options-prompts.png"><img src="screenshots/options-prompts.png" alt="Options: prompts" loading="lazy"></a>
+      <figcaption>Which questions to ask, and what happens to changes when switching branch</figcaption>
+    </figure>
+  </div>
+
+  <footer>
+    Urras is free software under the
+    <a href="https://github.com/TheSCREWEDSoftware/Urras/blob/main/LICENSE">GNU AGPL 3.0</a>.
+    Made by <a href="https://thescrewedsoftware.github.io/">TheSCREWEDSoftware</a>.
+  </footer>
+</main>
+</body>
+</html>
