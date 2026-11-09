@@ -10,17 +10,20 @@ namespace Urras.App;
 // Wraps a repository row and writes the tree's guides beside it in plain text: | for a line going on, |-- for a branch
 public sealed class TreeGuides : Decorator
 {
-    private const double GUIDE_FONT_SIZE = 12;
+    private const double DEFAULT_FONT_SIZE = 14;
     private const double GAP = 3;
-    private const int MIN_DASHES = 2;
+    private const int MIN_DASHES = 1;
     private const string PIPE = "|";
     private const string DASH = "-";
 
-    private static readonly IBrush GuideBrush = new SolidColorBrush(Color.Parse("#6E7681"));
+    private static readonly IBrush GuideBrush = new SolidColorBrush(Color.Parse("#A5ADB8"));
     // The app's own font, so the ASCII guides show on every system; widths are measured, not assumed
-    private static readonly Typeface GuideFont = new Typeface(FontFamily.Default);
+    private static readonly Typeface GuideFont = new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
 
     private RepositoryNode? _node;
+
+    // As big as the row's name, so the guides read as clearly as the text beside them
+    private double _fontSize = DEFAULT_FONT_SIZE;
 
     protected override void OnDataContextChanged(EventArgs e)
     {
@@ -49,6 +52,7 @@ public sealed class TreeGuides : Decorator
         if (node?.Parent == null || item == null)
             return;
 
+        _fontSize = this.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault()?.FontSize ?? DEFAULT_FONT_SIZE;
         List<double> lines = TextLineMiddles();
         double nameY = lines[0];
         List<double> below = lines.Skip(1).ToList();
@@ -122,7 +126,7 @@ public sealed class TreeGuides : Decorator
     }
 
     // |-- from under the parent's arrow, with dashes up to where the row begins
-    private static void Branch(DrawingContext context, double x, double end, double y)
+    private void Branch(DrawingContext context, double x, double end, double y)
     {
         FormattedText pipe = Text(PIPE);
         double dashWidth = Text(DASH).Width;
@@ -130,22 +134,22 @@ public sealed class TreeGuides : Decorator
         Write(context, PIPE + new string(DASH[0], dashes), x - pipe.Width / 2, y);
     }
 
-    private static void Pipes(DrawingContext context, double x, IEnumerable<double> lines)
+    private void Pipes(DrawingContext context, double x, IEnumerable<double> lines)
     {
         double half = Text(PIPE).Width / 2;
         foreach (double y in lines)
             Write(context, PIPE, x - half, y);
     }
 
-    private static void Write(DrawingContext context, string text, double left, double middle)
+    private void Write(DrawingContext context, string text, double left, double middle)
     {
         FormattedText formatted = Text(text);
         context.DrawText(formatted, new Point(left, middle - formatted.Height / 2));
     }
 
-    private static FormattedText Text(string text)
+    private FormattedText Text(string text)
     {
         return new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                                 GuideFont, GUIDE_FONT_SIZE, GuideBrush);
+                                 GuideFont, _fontSize, GuideBrush);
     }
 }
