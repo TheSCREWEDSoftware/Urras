@@ -121,4 +121,31 @@ public static class SyncTests
                      "when it last fetched");
         Assert.Equal("Current branch · never fetched", SyncState.BranchCaption(null, Now), "never");
     }
+
+    public static void ReadsGitsProgressLines()
+    {
+        GitProgress? writing = GitProgress.Parse("Writing objects:  45% (9/20), 1.20 MiB | 2.00 MiB/s");
+        Assert.Equal("Writing objects 45%", writing?.ToString(), "phase and percent");
+        Assert.Equal("Counting objects", GitProgress.Parse("remote: Counting objects: 100% (5/5), done.")?.Phase,
+                     "the remote's own progress");
+        Assert.Equal(null, GitProgress.Parse("error: failed to push some refs to 'origin'"), "errors aren't");
+        Assert.Equal(null, GitProgress.Parse("To github.com:a/b.git"), "nor other lines");
+    }
+
+    public static async Task ReportsProgressWhilePushing()
+    {
+        using TempRepository remote = await TempRepository.CreateAsync();
+        Assert.Success(await GitRunner.RunAsync(remote.Path, "config", "receive.denyCurrentBranch", "ignore"),
+                       "accept pushes");
+        using TempRepository local = await TempRepository.CreateAsync();
+        local.Write("a.txt", "a\n");
+        await local.CommitAllAsync("First");
+        Assert.Success(await GitRunner.RunAsync(local.Path, "remote", "add", "origin", remote.Path), "remote");
+
+        List<string> lines = new List<string>();
+        GitResult result = await local.Repository.PushAsync(line => lines.Add(line));
+        Assert.Success(result, "pushed");
+        Assert.True(lines.Any(line => GitProgress.Parse(line) != null), "progress heard: " + string.Join(" | ", lines));
+        Assert.True(!result.Error.Contains('%'), "percentages left out of the kept output: " + result.Error);
+    }
 }

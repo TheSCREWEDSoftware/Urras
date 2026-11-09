@@ -79,6 +79,7 @@ public partial class MainWindow
         SyncDetail.Text = "Working, this can take a moment";
         // Like GitHub Desktop, every action shows the arrows going round while it runs
         SyncIcon.Data = FetchArrows;
+        SyncProgress.IsIndeterminate = true;
         SyncProgress.IsVisible = true;
         _spinTimer.Start();
     }
@@ -98,23 +99,40 @@ public partial class MainWindow
         {
             case SyncKind.Pull:
             {
-                await RunGitAsync("Pulling…", repository => repository.PullAsync(), "Pulled.");
+                await RunGitAsync("Pulling…", repository => repository.PullAsync(ReportSyncProgress), "Pulled.");
                 break;
             }
             case SyncKind.Push:
             case SyncKind.Publish:
             {
                 await RunGitAsync(kind == SyncKind.Publish ? "Publishing…" : "Pushing…",
-                                  repository => repository.PushAsync(),
+                                  repository => repository.PushAsync(ReportSyncProgress),
                                   kind == SyncKind.Publish ? "Published." : "Pushed.");
                 break;
             }
             default:
             {
-                await RunGitAsync("Fetching…", repository => repository.FetchAsync(), "Fetched.");
+                await RunGitAsync("Fetching…", repository => repository.FetchAsync(false, ReportSyncProgress),
+                                  "Fetched.");
                 break;
             }
         }
+    }
+
+    // Called by Git's output reader, off the interface thread: "Writing objects 45%" and the bar filling up
+    private void ReportSyncProgress(string line)
+    {
+        if (GitProgress.Parse(line) is not { } progress)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_syncing)
+                return;
+            SyncDetail.Text = progress.ToString();
+            SyncProgress.IsIndeterminate = false;
+            SyncProgress.Value = progress.Percent;
+        });
     }
 
     // The actions the main button isn't showing right now

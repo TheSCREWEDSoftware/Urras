@@ -323,10 +323,10 @@ public sealed partial class GitRepository
     }
 
     // A background fetch is not logged when it succeeds and never opens a sign-in window
-    public Task<GitResult> FetchAsync(bool background = false)
+    public Task<GitResult> FetchAsync(bool background = false, Action<string>? progress = null)
     {
         if (!background)
-            return Run("fetch", "--all", "--prune");
+            return RunWithProgress(progress, "fetch", "--all", "--prune");
 
         return GitRunner.RunAsync(Path, new[] { "fetch", "--all", "--prune", "--quiet" }, null,
                                   CancellationToken.None, true, BackgroundEnvironment);
@@ -336,30 +336,41 @@ public sealed partial class GitRepository
     private static readonly IReadOnlyDictionary<string, string> BackgroundEnvironment =
         new Dictionary<string, string> { ["GCM_INTERACTIVE"] = "Never" };
 
-    public async Task<GitResult> PullAsync()
+    public async Task<GitResult> PullAsync(Action<string>? progress = null)
     {
         // Respect a configured pull.rebase; otherwise merge, like GitHub Desktop
         GitResult rebaseSetting = await Run("config", "--get", "pull.rebase");
         if (rebaseSetting.Success && rebaseSetting.Output.Trim().Length > 0)
-            return await Run("pull");
+            return await RunWithProgress(progress, "pull");
 
-        return await Run("pull", "--no-rebase");
+        return await RunWithProgress(progress, "pull", "--no-rebase");
     }
 
-    public async Task<GitResult> PushAsync()
+    // Git only prints progress to a terminal unless asked, so --progress goes right after the command
+    private Task<GitResult> RunWithProgress(Action<string>? progress, string command, params string[] arguments)
+    {
+        List<string> all = new List<string> { command };
+        if (progress != null)
+            all.Add("--progress");
+        all.AddRange(arguments);
+        return GitRunner.RunAsync(Path, all, null, CancellationToken.None, false, null, progress);
+    }
+
+    // progress, when given, hears each of Git's progress lines while it works
+    public async Task<GitResult> PushAsync(Action<string>? progress = null)
     {
         RepositoryStatus status = await GetStatusAsync();
         if (status.IsDetached)
             return new GitResult(-1, string.Empty, "Cannot push: no branch is checked out.");
         if (status.Upstream != null)
-            return await Run("push");
+            return await RunWithProgress(progress, "push");
 
         List<string> remotes = await GetRemotesAsync();
         if (remotes.Count == 0)
             return new GitResult(-1, string.Empty, "Cannot push: this repository has no remote.");
 
         string remote = remotes.Contains("origin") ? "origin" : remotes[0];
-        return await Run("push", "--set-upstream", remote, status.Branch!);
+        return await RunWithProgress(progress, "push", "--set-upstream", remote, status.Branch!);
     }
 
     public async Task<List<string>> GetRemotesAsync()

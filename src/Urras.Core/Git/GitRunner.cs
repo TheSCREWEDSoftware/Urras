@@ -5,6 +5,8 @@ namespace Urras.Core.Git;
 
 public static class GitRunner
 {
+    private const int PROGRESS_BUFFER = 256;
+
     // Raised for every command, possibly from a background thread; quiet commands ran in the background
     public static event Action<string, GitResult, bool>? CommandFinished;
 
@@ -16,7 +18,8 @@ public static class GitRunner
     public static async Task<GitResult> RunAsync(string workingDirectory, IEnumerable<string> arguments,
                                                  string? standardInput = null,
                                                  CancellationToken cancellationToken = default, bool quiet = false,
-                                                 IReadOnlyDictionary<string, string>? environment = null)
+                                                 IReadOnlyDictionary<string, string>? environment = null,
+                                                 Action<string>? progress = null)
     {
         List<string> argumentList = new List<string> { "-c", "core.quotepath=false", "-c", "color.ui=false" };
         foreach (string setting in ExtraSettings)
@@ -65,7 +68,8 @@ public static class GitRunner
             process.Start();
 
             Task<string> outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            Task<string> errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+            Task<string> errorTask = progress == null ? process.StandardError.ReadToEndAsync(cancellationToken)
+                                                      : ReadWithProgressAsync(process.StandardError, progress);
 
             if (standardInput != null)
             {
@@ -86,6 +90,39 @@ public static class GitRunner
 
         CommandFinished?.Invoke(commandLine, result, quiet);
         return result;
+    }
+
+    // Each progress line goes to progress as Git rewrites it; only other lines are kept, so errors stay readable
+    private static async Task<string> ReadWithProgressAsync(StreamReader reader, Action<string> progress)
+    {
+        StringBuilder kept = new StringBuilder();
+        StringBuilder line = new StringBuilder();
+        char[] buffer = new char[PROGRESS_BUFFER];
+        int read;
+        while ((read = await reader.ReadAsync(buffer.AsMemory())) > 0)
+        {
+            for (int index = 0; index < read; index++)
+            {
+                if (buffer[index] is '\r' or '\n')
+                    Flush();
+                else
+                    line.Append(buffer[index]);
+            }
+        }
+
+        Flush();
+        return kept.ToString();
+
+        void Flush()
+        {
+            if (line.Length == 0)
+                return;
+            string text = line.ToString();
+            line.Clear();
+            progress(text);
+            if (GitProgress.Parse(text) == null)
+                kept.AppendLine(text);
+        }
     }
 
     // For file contents such as images, which must not be decoded as text; null when the command fails
