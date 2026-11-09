@@ -89,6 +89,7 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _autoFetch;
     private readonly CheckBox _checkWhitespace;
     private readonly CheckBox _hideUntracked;
+    private readonly CheckBox _fullScrollBars;
 
     public OptionsWindow(AppSettings settings, AccountManager accounts, Func<Window, AccountKind, Task> addAccount,
                          string section = ACCOUNTS)
@@ -140,6 +141,8 @@ public sealed class OptionsWindow : Window
         _checkWhitespace = Check("Ask before committing whitespace problems (such as trailing spaces)",
                                  settings.CheckWhitespaceBeforeCommit);
         _hideUntracked = Check("Hide untracked files in Changes", settings.HideUntracked);
+        _fullScrollBars = Check("Always show full scroll bars, not only when the mouse is over them",
+                                settings.AlwaysShowScrollBars);
 
         _pages[ACCOUNTS] = AccountsPage();
         _pages[INTEGRATIONS] = IntegrationsPage();
@@ -326,7 +329,7 @@ public sealed class OptionsWindow : Window
         return Page(Heading("Theme"), themes,
                     Note("Urras's colours are tuned for the dark theme; the light one is still rough."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
-                    Heading("Diffs"), Label("Tab size"), _tabSize);
+                    Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars);
     }
 
     private Control PromptsPage()
@@ -433,6 +436,7 @@ public sealed class OptionsWindow : Window
         _settings.AutoFetchMinutes = FetchIntervals[Math.Max(0, _autoFetch.SelectedIndex)];
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
         _settings.HideUntracked = _hideUntracked.IsChecked == true;
+        _settings.AlwaysShowScrollBars = _fullScrollBars.IsChecked == true;
         _settings.Save();
 
         // Only what changed is written to the global Git configuration

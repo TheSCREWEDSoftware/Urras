@@ -68,6 +68,9 @@ public sealed class AppSettings
     // Markdown files show rendered, old and new side by side, instead of as a text diff
     public bool MarkdownPreview { get; set; } = true;
 
+    // Scroll bars stay full width, instead of thin until the mouse is over them
+    public bool AlwaysShowScrollBars { get; set; } = true;
+
     // Long diff lines wrap instead of scrolling sideways
     public bool WrapDiffLines { get; set; }
 

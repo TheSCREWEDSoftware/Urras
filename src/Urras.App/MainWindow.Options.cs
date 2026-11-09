@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using Urras.Core.Settings;
 
@@ -29,6 +30,12 @@ public partial class MainWindow
         await UpdateNotificationCountAsync();
     }
 
+    // Keeps every scroll bar at full width, so it can be clicked without hovering over it first
+    private static readonly Style FullScrollBars = new Style(selector => selector.OfType<ScrollViewer>())
+    {
+        Setters = { new Setter(ScrollViewer.AllowAutoHideProperty, false) }
+    };
+
     // Formats, tab size, theme and the summary counter, at startup and after Options is saved
     private void ApplyPreferences()
     {
@@ -45,6 +52,12 @@ public partial class MainWindow
                 ThemeChoice.System => ThemeVariant.Default,
                 _ => ThemeVariant.Dark
             };
+
+            Styles styles = Application.Current.Styles;
+            if (_settings.AlwaysShowScrollBars && !styles.Contains(FullScrollBars))
+                styles.Add(FullScrollBars);
+            else if (!_settings.AlwaysShowScrollBars)
+                styles.Remove(FullScrollBars);
         }
 
         SubjectCounter.IsVisible = _settings.Prompts.ShowCommitLengthWarning;

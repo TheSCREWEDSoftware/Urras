@@ -216,7 +216,7 @@ by owner (like GitHub Desktop), or by hand">
                   ToolTip.Tip="Remove the selected repository from the list, or the selected group" />
         </WrapPanel>
         <Panel>
-          <TreeView x:Name="RepositoryTree">
+          <TreeView x:Name="RepositoryTree" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <TreeView.Styles>
               <Style Selector="TreeViewItem">
                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
