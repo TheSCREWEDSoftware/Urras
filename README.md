@@ -164,6 +164,9 @@ date of each change
 dotnet run --project src/Urras.App
 ```
 
+On Windows, `start.bat` builds Urras and opens it in its own window, so closing the command prompt leaves it
+running, and `test.bat` runs every test and the standards check (`test core` or `test ui` runs just one).
+
 Or open `Urras.sln` in Visual Studio or Rider and run `Urras.App`.
 
 Builds default to Release, which is optimised and still has full debug symbols, so breakpoints and stack traces
