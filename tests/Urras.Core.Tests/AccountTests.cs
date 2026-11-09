@@ -64,6 +64,21 @@ public static class AccountTests
         Assert.True(settings.Accounts.Count == 0 && await tokens.LoadAsync(account.TokenKey) == null, "removed");
     }
 
+    public static async Task AnswersGitLoginsFromTheAccount()
+    {
+        (AccountManager manager, AppSettings _, MemoryTokenStore _, FakeGitHub _) = Create();
+        await manager.AddGitHubAsync("good-token");
+
+        Assert.Equal("FlyingArowana", await manager.AnswerGitAsync("Username for 'https://github.com': "), "login");
+        Assert.Equal("good-token", await manager.AnswerGitAsync(
+            "Password for 'https://FlyingArowana@github.com': "), "token as the password");
+        Assert.Equal(null, await manager.AnswerGitAsync("Password for 'https://someone@github.com': "),
+                     "another user is asked in a dialog");
+        Assert.Equal(null, await manager.AnswerGitAsync("Username for 'https://gitlab.com': "), "no account there");
+        Assert.Equal(null, await manager.AnswerGitAsync("Enter passphrase for key '/home/me/.ssh/id_ed25519': "),
+                     "SSH questions are not logins");
+    }
+
     public static async Task RefusesBadTokens()
     {
         (AccountManager manager, AppSettings settings, MemoryTokenStore _, FakeGitHub _) = Create();

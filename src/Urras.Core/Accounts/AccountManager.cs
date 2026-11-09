@@ -7,6 +7,8 @@ namespace Urras.Core.Accounts;
 // Adds, removes and uses accounts: settings hold who is signed in, the token store holds the tokens
 public sealed class AccountManager
 {
+    private const string GITLAB_TOKEN_LOGIN = "oauth2";
+    private const string BITBUCKET_TOKEN_LOGIN = "x-token-auth";
     // Commits asked about per refresh when looking up pictures, to stay well inside rate limits
     public const int PICTURE_LOOKUPS = 20;
 
@@ -93,6 +95,39 @@ public sealed class AccountManager
     {
         string? token = await _tokens.LoadAsync(account.TokenKey);
         return token == null ? null : Client(account.Kind, token, account.ApiUrl);
+    }
+
+    // Answers Git's HTTPS login from a signed-in account (username, then token as password); null if none fits
+    public async Task<string?> AnswerGitAsync(string prompt)
+    {
+        bool username = prompt.StartsWith("Username for '", StringComparison.Ordinal);
+        bool password = prompt.StartsWith("Password for '", StringComparison.Ordinal);
+        int open = prompt.IndexOf('\'');
+        int close = prompt.LastIndexOf('\'');
+        if ((!username && !password) || close <= open ||
+            !Uri.TryCreate(prompt[(open + 1)..close], UriKind.Absolute, out Uri? address))
+            return null;
+
+        // A password prompt names the user before the host; it must be the account's user
+        Account? account = _settings.Accounts.FirstOrDefault(item =>
+            string.Equals(item.WebHost, address.Host, StringComparison.OrdinalIgnoreCase) &&
+            (address.UserInfo.Length == 0 ||
+             string.Equals(Uri.UnescapeDataString(address.UserInfo), GitLogin(item),
+                 StringComparison.OrdinalIgnoreCase)));
+        if (account == null)
+            return null;
+        return username ? GitLogin(account) : await _tokens.LoadAsync(account.TokenKey);
+    }
+
+    // The username Git sends with a token: GitLab and Bitbucket want fixed names for OAuth tokens
+    public static string GitLogin(Account account)
+    {
+        return account.Kind switch
+        {
+            AccountKind.GitLab => GITLAB_TOKEN_LOGIN,
+            AccountKind.Bitbucket => BITBUCKET_TOKEN_LOGIN,
+            _ => account.Username
+        };
     }
 
     public async Task<GitHubClient?> GitHubAsync()

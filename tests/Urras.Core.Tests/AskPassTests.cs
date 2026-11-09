@@ -38,4 +38,41 @@ public static class AskPassTests
         Assert.Equal(AskPass.NOT_ANSWERED, AskPass.RunClient("Password: ", new StringWriter(), null, null),
                      "no Urras to ask");
     }
+
+    // The Windows script, run here with sh and a stand-in for Urras that writes its answer to the file it is given
+    public static async Task TheScriptPrintsWhatUrrasWrites()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        string folder = Path.Combine(Path.GetTempPath(), "urras-askpass-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string urras = Path.Combine(folder, "fake urras");
+            File.WriteAllText(urras, "#!/bin/sh\nprintf 'answer to %s' \"$1\" > \"$2\"\n");
+            string script = Path.Combine(folder, "askpass.sh");
+            File.WriteAllText(script, AskPass.WindowsScript(urras));
+            File.SetUnixFileMode(urras, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+
+            System.Diagnostics.ProcessStartInfo start = new System.Diagnostics.ProcessStartInfo("sh")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            };
+            start.ArgumentList.Add(script);
+            start.ArgumentList.Add("Username for 'https://github.com': ");
+            using System.Diagnostics.Process process = System.Diagnostics.Process.Start(start)!;
+            string output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            Assert.Equal(0, process.ExitCode, "passes on Urras's exit code");
+            Assert.Equal("answer to Username for 'https://github.com': ", output, "prints what Urras wrote");
+            Assert.Equal(0, Directory.GetFiles(Path.GetTempPath(), "tmp.*").Count(file =>
+                File.Exists(file) && File.ReadAllText(file).StartsWith("answer to Username")), "cleans up");
+        }
+        finally
+        {
+            TestFolders.Delete(folder);
+        }
+    }
 }

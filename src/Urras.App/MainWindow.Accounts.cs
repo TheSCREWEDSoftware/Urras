@@ -11,6 +11,14 @@ public partial class MainWindow
     private static readonly HttpClient AccountsHttp = CreateAccountsHttp();
     private AccountManager? _accounts;
 
+    // Git's questions: a signed-in account answers HTTPS logins by itself, anything else is asked in a dialog
+    public async Task<string?> AnswerGitAsync(string prompt)
+    {
+        if (_accounts != null && await _accounts.AnswerGitAsync(prompt) is { } answer)
+            return answer;
+        return await Dialogs.AskPassAsync(this, prompt);
+    }
+
     private static HttpClient CreateAccountsHttp()
     {
         return new HttpClient { Timeout = TimeSpan.FromSeconds(ACCOUNTS_TIMEOUT_SECONDS) };

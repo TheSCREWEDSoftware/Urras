@@ -22,18 +22,22 @@ public static class AskPass
     // Git or SSH started this program to ask a question: one argument, and the variables only Urras sets
     public static bool IsAskPassCall(string[] arguments)
     {
-        return arguments.Length == 1 &&
+        return arguments.Length is 1 or 2 &&
                !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable(PIPE_VARIABLE)) &&
                !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable(TOKEN_VARIABLE));
     }
 
-    // The helper's side: asks the running Urras, prints the answer for Git, and says whether there was one
-    public static int RunClient(string prompt, TextWriter output, string? pipe = null, string? token = null)
+    // The helper's side: asks the running Urras and writes the answer; report hears why when there is none
+    public static int RunClient(string prompt, TextWriter output, string? pipe = null, string? token = null,
+                                Action<string>? report = null)
     {
         pipe ??= System.Environment.GetEnvironmentVariable(PIPE_VARIABLE);
         token ??= System.Environment.GetEnvironmentVariable(TOKEN_VARIABLE);
         if (string.IsNullOrEmpty(pipe) || string.IsNullOrEmpty(token))
+        {
+            report?.Invoke("No Urras to ask: the pipe or token variable is missing.");
             return NOT_ANSWERED;
+        }
 
         try
         {
@@ -46,7 +50,10 @@ public static class AskPass
             writer.Write(prompt);
             writer.Flush();
             if (!reader.ReadBoolean())
+            {
+                report?.Invoke("Cancelled in Urras.");
                 return NOT_ANSWERED;
+            }
 
             output.Write(reader.ReadString() + "\n");
             output.Flush();
@@ -55,8 +62,23 @@ public static class AskPass
         catch (Exception exception) when (exception is IOException or TimeoutException or
                                               UnauthorizedAccessException or EndOfStreamException)
         {
+            report?.Invoke(exception.GetType().Name + ": " + exception.Message);
             return NOT_ANSWERED;
         }
+    }
+
+    // For Windows, where Git can't read a windowed program's output: Urras writes the answer to a file to print
+    public static string WindowsScript(string program)
+    {
+        string urras = program.Replace('\\', '/');
+        return "#!/bin/sh\n" +
+               "# Written by Urras: passes Git's and SSH's question to Urras and prints the answer\n" +
+               "answer=\"$(mktemp)\"\n" +
+               "\"" + urras + "\" \"$1\" \"$(cygpath -w \"$answer\" 2>/dev/null || echo \"$answer\")\"\n" +
+               "code=$?\n" +
+               "cat \"$answer\"\n" +
+               "rm -f \"$answer\"\n" +
+               "exit $code\n";
     }
 
     // Urras's side: answers questions with ask, which returns null when the user cancels

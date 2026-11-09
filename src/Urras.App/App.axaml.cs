@@ -19,8 +19,24 @@ public partial class App : Application
                                                                                 StringComparison.OrdinalIgnoreCase))
             return;
 
-        _askPass = new AskPass.Server(program, prompt => Dispatcher.UIThread.InvokeAsync(
-            () => Dialogs.AskPassAsync(desktop.MainWindow!, prompt)));
+        // Windows: Git runs a script that has Urras write the answer to a file, as it can't read a window's output
+        string helper = program;
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                helper = Path.Combine(Path.GetDirectoryName(AppSettings.DefaultPath) ?? ".", "askpass.sh");
+                Directory.CreateDirectory(Path.GetDirectoryName(helper)!);
+                File.WriteAllText(helper, AskPass.WindowsScript(program));
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                return;
+            }
+        }
+
+        _askPass = new AskPass.Server(helper, prompt => Dispatcher.UIThread.InvokeAsync(
+            () => ((MainWindow)desktop.MainWindow!).AnswerGitAsync(prompt)));
         _askPass.Use();
         desktop.Exit += (_, _) => _askPass.Dispose();
     }

@@ -11,7 +11,7 @@ internal static class Program
     {
         // Started by Git or SSH to ask a question: pass it to the running Urras, print the answer, and stop
         if (AskPass.IsAskPassCall(args))
-            return AskPass.RunClient(args[0], Console.Out);
+            return AskForGit(args);
 
         // Errors no handler caught are written down before the app closes
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -26,6 +26,37 @@ internal static class Program
         };
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
+
+    // With a second argument (on Windows, from the script Git runs), the answer goes to that file
+    private static int AskForGit(string[] args)
+    {
+        string log = Path.Combine(Path.GetDirectoryName(AppSettings.DefaultPath) ?? ".", "askpass.log");
+        void Report(string problem)
+        {
+            try
+            {
+                File.AppendAllText(log, DateTimeOffset.Now.ToString("u") + "  " + problem + Environment.NewLine);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                // Nowhere to write it down
+            }
+        }
+
+        try
+        {
+            if (args.Length == 1)
+                return AskPass.RunClient(args[0], Console.Out, report: Report);
+
+            using StreamWriter file = new StreamWriter(args[1], false, new System.Text.UTF8Encoding(false));
+            return AskPass.RunClient(args[0], file, report: Report);
+        }
+        catch (Exception exception)
+        {
+            Report("Unexpected: " + exception);
+            return AskPass.NOT_ANSWERED;
+        }
     }
 
     // Also used by the XAML previewer
