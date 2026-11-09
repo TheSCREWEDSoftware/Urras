@@ -159,8 +159,8 @@ public sealed class OptionsWindow : Window
         _assistantCommand.Text = settings.Assistant.Command;
         _pages[ASSISTANT] = AssistantPage();
         _pages[ADVANCED] = AdvancedPage();
-        foreach (string section in _pages.Keys.ToList())
-            _pages[section] = new ScrollViewer { Content = _pages[section], Padding = PagePadding };
+        foreach (string page in _pages.Keys.ToList())
+            _pages[page] = new ScrollViewer { Content = _pages[page], Padding = PagePadding };
 
         ListBox sidebar = new ListBox { ItemsSource = Sections, Width = SIDEBAR_WIDTH };
         sidebar.SelectionChanged += (_, _) =>
