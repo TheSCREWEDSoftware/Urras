@@ -78,6 +78,9 @@ public sealed class AppSettings
     // Scroll bars stay full width, instead of thin until the mouse is over them
     public bool AlwaysShowScrollBars { get; set; } = true;
 
+    // Dialogs and other windows get their own taskbar entry; off keeps Urras to one entry, its main window
+    public bool ShowWindowsInTaskbar { get; set; }
+
     // Long diff lines wrap instead of scrolling sideways
     public bool WrapDiffLines { get; set; }
 

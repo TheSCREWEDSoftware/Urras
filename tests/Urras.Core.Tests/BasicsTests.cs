@@ -136,5 +136,6 @@ public static class BasicsTests
         AppSettings settings = new AppSettings();
         Assert.True(!settings.HideUntracked, "untracked files shown by default");
         Assert.Equal(AppSettings.DEFAULT_AUTO_FETCH_MINUTES, settings.AutoFetchMinutes, "auto fetch default");
+        Assert.True(!settings.ShowWindowsInTaskbar, "one taskbar entry by default");
     }
 }

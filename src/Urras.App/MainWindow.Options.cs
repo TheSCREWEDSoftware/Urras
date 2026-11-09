@@ -42,6 +42,28 @@ public partial class MainWindow
         }
     }
 
+    // Every window but the main one stays out of the taskbar, so Urras has one entry there
+    private sealed class OneTaskbarEntryStyle : Style
+    {
+        public OneTaskbarEntryStyle() : base(selector => selector.Is<Window>().Not(other => other.OfType<MainWindow>()))
+        {
+            Setters.Add(new Setter(Window.ShowInTaskbarProperty, false));
+        }
+    }
+
+    // Adds or removes an application style, so a setting applies to every window, open or not
+    private static void UseStyle<T>(Styles styles, bool wanted) where T : Style, new()
+    {
+        bool present = styles.OfType<T>().Any();
+        if (wanted && !present)
+            styles.Add(new T());
+        else if (!wanted)
+        {
+            foreach (T style in styles.OfType<T>().ToList())
+                styles.Remove(style);
+        }
+    }
+
     // Formats, tab size, theme and the summary counter, at startup and after Options is saved
     private void ApplyPreferences()
     {
@@ -61,14 +83,8 @@ public partial class MainWindow
 
             // A style belongs to one application, so each gets its own (the interface tests start several)
             Styles styles = Application.Current.Styles;
-            bool present = styles.OfType<FullScrollBarsStyle>().Any();
-            if (_settings.AlwaysShowScrollBars && !present)
-                styles.Add(new FullScrollBarsStyle());
-            else if (!_settings.AlwaysShowScrollBars)
-            {
-                foreach (FullScrollBarsStyle style in styles.OfType<FullScrollBarsStyle>().ToList())
-                    styles.Remove(style);
-            }
+            UseStyle<FullScrollBarsStyle>(styles, _settings.AlwaysShowScrollBars);
+            UseStyle<OneTaskbarEntryStyle>(styles, !_settings.ShowWindowsInTaskbar);
         }
 
         SubjectCounter.IsVisible = _settings.Prompts.ShowCommitLengthWarning;

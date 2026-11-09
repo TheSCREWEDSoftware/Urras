@@ -98,6 +98,7 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _checkWhitespace;
     private readonly CheckBox _hideUntracked;
     private readonly CheckBox _fullScrollBars;
+    private readonly CheckBox _windowsInTaskbar;
     private readonly ComboBox _forkDefault;
 
     public OptionsWindow(AppSettings settings, AccountManager accounts, Func<Window, AccountKind, Task> addAccount,
@@ -158,6 +159,8 @@ public sealed class OptionsWindow : Window
         _forkDefault.SelectedIndex = (int)settings.DefaultForkTarget;
         _fullScrollBars = Check("Always show full scroll bars, not only when the mouse is over them",
                                 settings.AlwaysShowScrollBars);
+        _windowsInTaskbar = Check("Show each Urras window in the taskbar, not only the main one",
+                                  settings.ShowWindowsInTaskbar);
 
         _pages[ACCOUNTS] = AccountsPage();
         _pages[INTEGRATIONS] = IntegrationsPage();
@@ -384,7 +387,8 @@ public sealed class OptionsWindow : Window
         return Page(Heading("Theme"), themes,
                     Note("Urras's colours are tuned for the dark theme; the light one is still rough."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
-                    Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars);
+                    Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars,
+                    Heading("Taskbar"), _windowsInTaskbar);
     }
 
     private Control PromptsPage()
@@ -497,6 +501,7 @@ public sealed class OptionsWindow : Window
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
         _settings.HideUntracked = _hideUntracked.IsChecked == true;
         _settings.AlwaysShowScrollBars = _fullScrollBars.IsChecked == true;
+        _settings.ShowWindowsInTaskbar = _windowsInTaskbar.IsChecked == true;
         _settings.DefaultForkTarget = (ForkTarget)Math.Max(0, _forkDefault.SelectedIndex);
         _settings.Save();
 
