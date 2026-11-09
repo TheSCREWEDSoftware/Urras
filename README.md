@@ -7,6 +7,8 @@ you already have installed.
 
 **Status:** early development. First version with the basic Git workflow.
 
+![Urras: the repository list grouped by name with search, the changes and a diff](docs/screenshots/main-window.png)
+
 ## Features
 
 - Repository list: add existing folders, create new repositories, clone
@@ -54,6 +56,14 @@ you already have installed.
   by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
   finding lost commits
 - Quick Launch (Ctrl+P): open a repository, switch branch or run a command by typing a few letters
+- Search the repository list (Ctrl+F) by name, folder or group; Enter opens the first one found
+- View a repository on GitHub, GitLab, Bitbucket or Codeberg; forks ask once, like GitHub Desktop, whether they
+  contribute to the parent or are for your own purposes, and say what you can push to
+- Uncommitted changes can stay with their branch: put away when you switch, back when you return
+- Refreshes when something changes on disk, not every time the window comes back, so it stays quick with many
+  repositories
+- Settings backed up every day for a week (`%APPDATA%\Urras\backups`), and unexpected errors written to
+  `crash.log` instead of closing Urras
 - Custom commands: run builds, scripts or other tools from the menus, with the repository, branch, file or
   commit filled in
 - Statistics: contributors, when commits happen and which files change most
@@ -63,6 +73,71 @@ you already have installed.
 - AI assistant with the service of your choice (OpenAI-compatible, Anthropic or a command-line agent): commit
   messages from the staged changes, explaining commits, conflict suggestions; off by default
 - Git log panel showing every command Urras runs and its output
+
+## Screenshots
+
+<table>
+  <tr>
+    <td>
+      <img src="docs/screenshots/branch-menu.png" alt="Screenshot: branch menu"><br>
+      Branch menu: branches, merge, rebase, pull requests, tags, reflog, submodules, worktrees and more
+    </td>
+    <td>
+      <img src="docs/screenshots/repository-menu.png" alt="Screenshot: repository menu"><br>
+      A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/file-filter.png" alt="Screenshot: file filter"><br>
+      Filtering the changes by name, with syntax colours in the diff
+    </td>
+    <td>
+      <img src="docs/screenshots/markdown-preview.png" alt="Screenshot: markdown preview"><br>
+      Markdown rendered instead of shown as text (Preview)
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/import-menu.png" alt="Screenshot: import menu"><br>
+      Import: everything in a folder, GitHub Desktop's list, or clones from your accounts
+    </td>
+    <td>
+      <img src="docs/screenshots/import-dialog.png" alt="Screenshot: import dialog"><br>
+      Choosing which of the repositories found to add
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-integrations.png" alt="Screenshot: options integrations"><br>
+      Options: your editor and shell for "Open in…"
+    </td>
+    <td>
+      <img src="docs/screenshots/options-git.png" alt="Screenshot: options git"><br>
+      Options: your Git name, email (or GitHub's private address) and default branch
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-appearance.png" alt="Screenshot: options appearance"><br>
+      Options: theme, date and time formats, tab size and scroll bars
+    </td>
+    <td>
+      <img src="docs/screenshots/options-prompts.png" alt="Screenshot: options prompts"><br>
+      Options: which questions to ask, and what happens to changes when switching branch
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-advanced.png" alt="Screenshot: options advanced"><br>
+      Options: background fetch and checks before committing
+    </td>
+    <td>
+      <img src="docs/screenshots/git-log.png" alt="Screenshot: git log"><br>
+      Git log: every command Urras runs, and what Git answered
+    </td>
+  </tr>
+</table>
 
 ## Requirements
 
