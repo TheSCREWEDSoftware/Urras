@@ -88,6 +88,16 @@ dotnet publish src/Urras.App -c Release -r win-x64 --self-contained
 dotnet publish src/Urras.App -c Release -r linux-x64 --self-contained
 ```
 
+To publish a release on GitHub, push a version tag; the Release workflow tests Urras, builds the Windows and Linux
+downloads and publishes them with notes made from the changes since the last release:
+
+```
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+A tag with a hyphen, such as `v0.2.0-beta.1`, becomes a pre-release.
+
 ### Tests
 
 The Git layer (`Urras.Core`) has tests that run against real temporary repositories:

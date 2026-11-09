@@ -1,0 +1,89 @@
+name: Release
+
+# Pushing a version tag (git tag v0.2.0, then git push origin v0.2.0) tests Urras, builds ready-to-run downloads
+# for Windows and Linux, and publishes them as a GitHub release with notes made from the merged changes.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Core tests
+        run: dotnet run --project tests/Urras.Core.Tests -c Release
+
+      - name: Interface tests (Avalonia headless)
+        run: dotnet test tests/Urras.App.Tests -c Release
+
+  build:
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            runtime: win-x64
+          - os: ubuntu-latest
+            runtime: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # One self-contained file per system: nothing else to install, .NET included
+      - name: Publish
+        shell: bash
+        run: >-
+          dotnet publish src/Urras.App -c Release -r ${{ matrix.runtime }} --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${GITHUB_REF_NAME#v} -o publish
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath "Urras-$env:GITHUB_REF_NAME-${{ matrix.runtime }}.zip"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf "Urras-${GITHUB_REF_NAME}-${{ matrix.runtime }}.tar.gz" -C publish .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urras-${{ matrix.runtime }}
+          path: |
+            Urras-*.zip
+            Urras-*.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: downloads
+          merge-multiple: true
+
+      # A tag with a hyphen (v0.2.0-beta.1) is marked as a pre-release
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" downloads/* --title "Urras ${GITHUB_REF_NAME#v}" --generate-notes \
+            $prerelease
