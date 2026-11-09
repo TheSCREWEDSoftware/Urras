@@ -10,12 +10,17 @@ public static class GitRunner
 
     public static string GitExecutable { get; set; } = "git";
 
+    // Settings added to every command, as -c name=value (see CredentialSetup)
+    public static IReadOnlyList<string> ExtraSettings { get; set; } = Array.Empty<string>();
+
     public static async Task<GitResult> RunAsync(string workingDirectory, IEnumerable<string> arguments,
                                                  string? standardInput = null,
                                                  CancellationToken cancellationToken = default, bool quiet = false,
                                                  IReadOnlyDictionary<string, string>? environment = null)
     {
         List<string> argumentList = new List<string> { "-c", "core.quotepath=false", "-c", "color.ui=false" };
+        foreach (string setting in ExtraSettings)
+            argumentList.AddRange(new[] { "-c", setting });
         argumentList.AddRange(arguments);
 
         ProcessStartInfo startInfo = new ProcessStartInfo(GitExecutable)

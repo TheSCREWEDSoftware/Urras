@@ -77,4 +77,36 @@ public static class SyncTests
         Assert.True(!GitCommandKind.IsReading("git stash pop --index stash@{0}"), "popping a stash is shown");
         Assert.True(!GitCommandKind.IsReading("git"), "nothing to go on");
     }
+
+    public static async Task AddsSettingsToEveryCommand()
+    {
+        using TempRepository repository = await TempRepository.CreateAsync();
+        IReadOnlyList<string> before = GitRunner.ExtraSettings;
+        try
+        {
+            GitRunner.ExtraSettings = new[] { "urras.test=yes" };
+            GitResult result = await GitRunner.RunAsync(repository.Path, "config", "--get", "urras.test");
+            Assert.Equal("yes", result.Output.Trim(), "passed to Git as -c");
+        }
+        finally
+        {
+            GitRunner.ExtraSettings = before;
+        }
+    }
+
+    public static async Task LeavesAConfiguredCredentialHelperAlone()
+    {
+        using TempRepository repository = await TempRepository.CreateAsync();
+        Assert.Success(await GitRunner.RunAsync(repository.Path, "config", "credential.helper", "store"), "helper");
+        IReadOnlyList<string> before = GitRunner.ExtraSettings;
+        try
+        {
+            Assert.True(!await CredentialSetup.UseManagerIfNeededAsync(repository.Path), "the user's helper wins");
+            Assert.True(!GitRunner.ExtraSettings.Contains(CredentialSetup.MANAGER_SETTING), "nothing added");
+        }
+        finally
+        {
+            GitRunner.ExtraSettings = before;
+        }
+    }
 }

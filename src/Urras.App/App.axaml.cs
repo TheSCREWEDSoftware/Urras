@@ -52,6 +52,7 @@ public partial class App : Application
         {
             desktop.MainWindow = new MainWindow();
             StartAskPass(desktop);
+            _ = CredentialSetup.UseManagerIfNeededAsync(Environment.CurrentDirectory);
 
             // An error in a button or menu action is logged and shown, instead of closing the whole app
             Dispatcher.UIThread.UnhandledException += (_, e) =>
