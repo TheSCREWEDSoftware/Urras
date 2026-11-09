@@ -39,6 +39,12 @@ public static class GitRunner
 
         // Never block waiting for a terminal prompt; credential helpers still work
         startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        // Git's and SSH's questions go to Urras, but not from background work, which would ask every few minutes
+        if (!quiet && AskPass.Environment is { } askPass)
+        {
+            foreach (KeyValuePair<string, string> variable in askPass)
+                startInfo.Environment[variable.Key] = variable.Value;
+        }
         if (environment != null)
         {
             foreach (KeyValuePair<string, string> variable in environment)

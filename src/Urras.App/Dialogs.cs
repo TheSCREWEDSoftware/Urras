@@ -312,6 +312,38 @@ public static class Dialogs
     public sealed record ForkChoice(string? Parent, string Fork, Urras.Core.Git.ForkTarget Target, string Access,
                                     bool ParentByDefault = true);
 
+    // A question from Git or SSH: a username, a password or passphrase (hidden), or yes or no for a new host key
+    public static async Task<string?> AskPassAsync(Window owner, string prompt)
+    {
+        Window dialog = CreateWindow(prompt.Contains("passphrase", StringComparison.OrdinalIgnoreCase)
+                                         ? "SSH key passphrase"
+                                         : "Git is asking");
+        TextBlock question = Paragraph(prompt.Trim());
+        if (prompt.Contains("(yes/no", StringComparison.OrdinalIgnoreCase))
+        {
+            Button yes = new Button { Content = "Yes, connect", IsDefault = true };
+            Button no = new Button { Content = "No", IsCancel = true };
+            yes.Click += (_, _) => dialog.Close("yes");
+            no.Click += (_, _) => dialog.Close("no");
+            dialog.Content = Layout(question, null, yes, no);
+            return await dialog.ShowDialog<string?>(owner);
+        }
+
+        bool secret = !prompt.TrimStart().StartsWith("Username", StringComparison.OrdinalIgnoreCase);
+        TextBox answer = new TextBox { PasswordChar = secret ? '•' : default };
+        Button ok = new Button { Content = "OK", IsDefault = true };
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        ok.Click += (_, _) => dialog.Close(answer.Text ?? string.Empty);
+        cancel.Click += (_, _) => dialog.Close(null);
+        StackPanel input = new StackPanel { Spacing = 6 };
+        input.Children.Add(answer);
+        input.Children.Add(Hint("Urras passes this to Git once and doesn't keep it. A credential manager or SSH " +
+                                "agent can remember it instead."));
+        dialog.Content = Layout(question, input, ok, cancel);
+        dialog.Opened += (_, _) => answer.Focus();
+        return await dialog.ShowDialog<string?>(owner);
+    }
+
     // Asks how a fork will be used, like GitHub Desktop does; null when cancelled
     public static async Task<Urras.Core.Git.ForkTarget?> ForkTargetAsync(Window owner, ForkChoice choice)
     {

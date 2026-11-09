@@ -1,4 +1,5 @@
 using Avalonia;
+using Urras.Core.Git;
 using Urras.Core.Settings;
 
 namespace Urras.App;
@@ -6,8 +7,12 @@ namespace Urras.App;
 internal static class Program
 {
     [STAThread]
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
+        // Started by Git or SSH to ask a question: pass it to the running Urras, print the answer, and stop
+        if (AskPass.IsAskPassCall(args))
+            return AskPass.RunClient(args[0], Console.Out);
+
         // Errors no handler caught are written down before the app closes
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
@@ -20,7 +25,7 @@ internal static class Program
             e.SetObserved();
         };
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
     // Also used by the XAML previewer
