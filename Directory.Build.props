@@ -1,0 +1,15 @@
+<Project>
+
+  <!-- .NET has no RelWithDebInfo: Release is optimised and, with the settings below, still has full debug symbols,
+       so it plays that role. It is the default when no configuration is given (dotnet build, run and test);
+       pass -c Debug for an unoptimised build. -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+</Project>

@@ -77,6 +77,10 @@ dotnet run --project src/Urras.App
 
 Or open `Urras.sln` in Visual Studio or Rider and run `Urras.App`.
 
+Builds default to Release, which is optimised and still has full debug symbols, so breakpoints and stack traces
+work (.NET's equivalent of CMake's RelWithDebInfo). Use `-c Debug` for an unoptimised build. Visual Studio and Rider
+pick the configuration in their toolbar instead; choose Release there once and they remember it.
+
 To build a standalone app:
 
 ```
