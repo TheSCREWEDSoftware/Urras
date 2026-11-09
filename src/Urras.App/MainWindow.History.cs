@@ -237,10 +237,28 @@ public partial class MainWindow
                 AddMenuItem(menu, "View file at this revision", () => ViewFileAsync(target, file.Path));
             }
 
+            // The file as it is now on disk, when it still exists there
+            string fullPath = Path.Combine(_repository?.Path ?? string.Empty, file.Path);
+            if (_repository != null && File.Exists(fullPath))
+            {
+                menu.Items.Add(new Separator());
+                AddLocalFileItems(menu, fullPath);
+            }
+
             menu.Items.Add(new Separator());
-            AddMenuItem(menu, "Copy path", () => CopyAsync(file.Path));
+            AddMenuItem(menu, "Copy relative path", () => CopyAsync(file.Path));
+            if (_repository != null)
+                AddMenuItem(menu, "Copy full path", () => CopyAsync(fullPath));
+            AddViewFileOnlineItem(menu, file.Path, LastRevision(target));
         };
         return menu;
+    }
+
+    // A comparison shows as "a..b"; the file is looked at in the later one
+    private static string LastRevision(string target)
+    {
+        int range = target.LastIndexOf("..", StringComparison.Ordinal);
+        return range >= 0 ? target[(range + 2)..] : target;
     }
 
     private void AddHistoryBrowseItems(ContextMenu menu, CommitInfo commit)

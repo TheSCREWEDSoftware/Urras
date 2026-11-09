@@ -292,15 +292,15 @@ public partial class MainWindow
             AddCustomCommandItems(menu, Urras.Core.Commands.CommandScope.File, CurrentContext(file: change.Path));
             if (change.Kind != ChangeKind.Deleted)
             {
-                AddMenuItem(menu, "Open file", () => Report(SystemShell.OpenFile(fullPath)));
-                AddMenuItem(menu, "Show in file explorer", () => Report(SystemShell.ShowFile(fullPath)));
-                AddMenuItem(menu, "Open in " + EditorName,
-                            () => Report(SystemShell.OpenInEditor(_settings.Editor, fullPath)));
+                AddLocalFileItems(menu, fullPath);
                 menu.Items.Add(new Separator());
             }
 
-            AddMenuItem(menu, "Copy path", () => CopyAsync(change.Path));
+            AddMenuItem(menu, "Copy relative path", () => CopyAsync(change.Path));
             AddMenuItem(menu, "Copy full path", () => CopyAsync(fullPath));
+            // New files aren't on the website yet
+            if (change.Kind is not (ChangeKind.Untracked or ChangeKind.Added))
+                AddViewFileOnlineItem(menu, change.Path, _status?.Branch ?? "HEAD");
         };
         return menu;
     }
@@ -368,6 +368,14 @@ public partial class MainWindow
             StatusText.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
             ToolTip.SetTip(StatusText, log);
         }
+    }
+
+    // Show in file explorer, open in the editor, open with the program the system uses for the file
+    private void AddLocalFileItems(ContextMenu menu, string fullPath)
+    {
+        AddMenuItem(menu, "Show in file explorer", () => Report(SystemShell.ShowFile(fullPath)));
+        AddMenuItem(menu, "Open in " + EditorName, () => Report(SystemShell.OpenInEditor(_settings.Editor, fullPath)));
+        AddMenuItem(menu, "Open with default program", () => Report(SystemShell.OpenFile(fullPath)));
     }
 
     private Task Report(string? error)

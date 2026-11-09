@@ -222,6 +222,32 @@ public partial class MainWindow
         await Report(SystemShell.OpenUrl(url));
     }
 
+    // "View on GitHub" for a file at a branch or commit, on the repository's origin
+    private void AddViewFileOnlineItem(ContextMenu menu, string path, string revision)
+    {
+        RemoteIdentity? origin = _repository == null ? null : RemoteIdentity.Read(_repository.Path);
+        if (origin?.WebUrl is not { } site)
+            return;
+
+        string platform = PlatformNameFor(origin.Host);
+        string url = site + FilePagePath(platform, revision) + Uri.EscapeDataString(revision) + "/" +
+                     string.Join("/", path.Replace('\\', '/').Split('/').Select(Uri.EscapeDataString));
+        AddMenuItem(menu, "View on " + platform, () => Report(SystemShell.OpenUrl(url)));
+    }
+
+    // Where each platform shows a file at a revision; Gitea tells commits and branches apart in the address
+    private static string FilePagePath(string platform, string revision)
+    {
+        bool commit = revision.Length >= Hashes.SHORT_LENGTH && revision.All(Uri.IsHexDigit);
+        return platform switch
+        {
+            "GitLab" => "/-/blob/",
+            "Bitbucket" or "Bitbucket Server" => "/src/",
+            "Gitea" or "Codeberg" => commit ? "/src/commit/" : "/src/branch/",
+            _ => "/blob/"
+        };
+    }
+
     // "View owner/name on GitHub", and the other side of a fork when there is one
     private void AddViewOnlineItems(ContextMenu menu, string path)
     {
