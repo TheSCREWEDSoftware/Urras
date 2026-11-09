@@ -37,7 +37,8 @@ you already have installed.
 - History with the full diff of each commit, a commit graph with branch lanes across every branch, and badges
   for branches, remote branches and tags
 - Branches: switch, create, delete, check out remote branches
-- Fetch, pull and push, with ahead and behind counts; first push publishes the branch
+- Fetch, pull and push from one button, like GitHub Desktop's: an arrow up or down, the ahead and behind counts,
+  and when it last fetched; the first push publishes the branch
 - Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`
   and `.editorconfig`) before they are committed
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template

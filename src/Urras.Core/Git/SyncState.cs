@@ -1,0 +1,54 @@
+using Urras.Core.Settings;
+
+namespace Urras.Core.Git;
+
+public enum SyncKind
+{
+    Fetch,
+    Pull,
+    Push,
+    Publish
+}
+
+// What the main sync button offers, like GitHub Desktop's: publish, pull, push, or fetch when there's nothing else
+public sealed record SyncState(SyncKind Kind, string Title, string Detail, int Ahead, int Behind)
+{
+    private const string DEFAULT_REMOTE = "origin";
+
+    public static SyncState For(RepositoryStatus status, DateTimeOffset? lastFetched, DateTimeOffset now)
+    {
+        string remote = Remote(status.Upstream) ?? DEFAULT_REMOTE;
+        string fetched = lastFetched is { } when
+            ? "Last fetched " + RelativeTime.Describe(when, now)
+            : "Never fetched";
+
+        if (!status.IsDetached && status.Upstream == null)
+            return new SyncState(SyncKind.Publish, "Publish branch", "Publish this branch to " + remote, 0, 0);
+        if (status.Behind > 0)
+            return new SyncState(SyncKind.Pull, "Pull " + remote, fetched, status.Ahead, status.Behind);
+        if (status.Ahead > 0)
+            return new SyncState(SyncKind.Push, "Push " + remote, fetched, status.Ahead, 0);
+        return new SyncState(SyncKind.Fetch, "Fetch " + remote, fetched, 0, 0);
+    }
+
+    // The remote part of an upstream: origin for origin/main
+    public static string? Remote(string? upstream)
+    {
+        int slash = upstream?.IndexOf('/') ?? -1;
+        return slash > 0 ? upstream![..slash] : null;
+    }
+
+    // The counts beside the title: "13 ↑", "164 ↓" or both; empty when there's nothing to move
+    public string Badge
+    {
+        get
+        {
+            List<string> parts = new List<string>();
+            if (Ahead > 0)
+                parts.Add(Ahead + " ↑");
+            if (Behind > 0)
+                parts.Add(Behind + " ↓");
+            return string.Join("  ", parts);
+        }
+    }
+}

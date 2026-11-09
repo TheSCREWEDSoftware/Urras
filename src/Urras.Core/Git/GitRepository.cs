@@ -308,6 +308,20 @@ public sealed partial class GitRepository
         return Run("branch", force ? "-D" : "-d", name);
     }
 
+    // When this repository last fetched, from the time Git wrote FETCH_HEAD; null if it never has
+    public async Task<DateTimeOffset?> GetLastFetchedAsync()
+    {
+        GitResult result = await GitRunner.RunAsync(Path, new[] { "rev-parse", "--git-path", "FETCH_HEAD" }, null,
+                                                    CancellationToken.None, true);
+        if (!result.Success)
+            return null;
+
+        string file = result.Output.Trim();
+        if (!System.IO.Path.IsPathRooted(file))
+            file = System.IO.Path.Combine(Path, file);
+        return File.Exists(file) ? new DateTimeOffset(File.GetLastWriteTimeUtc(file), TimeSpan.Zero) : null;
+    }
+
     // A background fetch is not logged when it succeeds and never opens a sign-in window
     public Task<GitResult> FetchAsync(bool background = false)
     {

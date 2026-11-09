@@ -48,12 +48,7 @@ public partial class MainWindow : Window
         ImportButton.Click += (_, _) => ShowImportMenu();
         RemoveRepositoryButton.Click += async (_, _) => await RemoveSelectedAsync();
 
-        FetchButton.Click += async (_, _) => await RunGitAsync("Fetching…", repository => repository.FetchAsync(),
-                                                               "Fetched.");
-        PullButton.Click += async (_, _) => await RunGitAsync("Pulling…", repository => repository.PullAsync(),
-                                                              "Pulled.");
-        PushButton.Click += async (_, _) => await RunGitAsync("Pushing…", repository => repository.PushAsync(),
-                                                              "Pushed.");
+        InitializeSync();
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
         InitializeBranchPicker();
@@ -150,7 +145,8 @@ public partial class MainWindow : Window
             Task<List<BranchInfo>> branchesTask = _repository.GetBranchesAsync();
             Task<List<CommitInfo>> historyTask = _repository.GetHistoryAsync(
                 filter: _historyFilter, allBranches: _settings.HistoryAllBranches);
-            await Task.WhenAll(statusTask, branchesTask, historyTask);
+            Task<DateTimeOffset?> fetchedTask = _repository.GetLastFetchedAsync();
+            await Task.WhenAll(statusTask, branchesTask, historyTask, fetchedTask);
             RepositoryStatus status = statusTask.Result;
             List<BranchInfo> branches = branchesTask.Result;
             List<CommitInfo> history = historyTask.Result;
@@ -185,9 +181,7 @@ public partial class MainWindow : Window
                 _branches = ordered;
                 BranchButtonText.Text = status.IsDetached ? "(detached HEAD)" : status.Branch ?? "No branch";
 
-                PullButton.Content = status.Behind > 0 ? $"Pull ({status.Behind})" : "Pull";
-                PushButton.Content = status.Ahead > 0 ? $"Push ({status.Ahead})" :
-                                     status.Upstream == null && !status.IsDetached ? "Publish" : "Push";
+                ShowSync(status, fetchedTask.Result);
 
                 if (historyChanged)
                 {
@@ -240,8 +234,7 @@ public partial class MainWindow : Window
         ShowCommitDiff(null, string.Empty);
         UnstagedHeader.Text = "Changes";
         StagedHeader.Text = "Staged";
-        PullButton.Content = "Pull";
-        PushButton.Content = "Push";
+        ShowSync(null, null);
         _suppressSelection = false;
         UpdateHints();
         UpdateButtons();
@@ -690,7 +683,7 @@ public partial class MainWindow : Window
         bool ready = _repository != null && !_busy;
         foreach (Control control in new Control[]
                  {
-                     FetchButton, PullButton, PushButton, RefreshButton, BranchButton, BranchMenuButton,
+                     SyncButton, SyncMenuButton, RefreshButton, BranchButton, BranchMenuButton,
                      StashMenuButton, StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton,
                      DiscardButton, CommitButton
                  })
