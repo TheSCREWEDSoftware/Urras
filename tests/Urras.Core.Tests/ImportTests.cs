@@ -26,7 +26,7 @@ public static class ImportTests
         }
         finally
         {
-            Directory.Delete(root, true);
+            TestFolders.Delete(root);
         }
     }
 
@@ -53,8 +53,8 @@ public static class ImportTests
         }
         finally
         {
-            Directory.Delete(appData, true);
-            Directory.Delete(repository, true);
+            TestFolders.Delete(appData);
+            TestFolders.Delete(repository);
         }
     }
 }

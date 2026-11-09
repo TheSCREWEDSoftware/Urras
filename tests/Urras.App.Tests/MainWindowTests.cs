@@ -11,11 +11,19 @@ public sealed class MainWindowTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "urras-ui-" + Guid.NewGuid().ToString("N"));
 
+    // Git's object files are read-only, which Windows won't delete until that is cleared
     public void Dispose()
     {
-        foreach (string file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories))
-            File.SetAttributes(file, FileAttributes.Normal);
-        Directory.Delete(_root, true);
+        try
+        {
+            foreach (string file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories))
+                File.SetAttributes(file, FileAttributes.Normal);
+            Directory.Delete(_root, true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Left for the system to clean up
+        }
     }
 
     // Two unrelated repositories share a name, and one has a clone, so grouping by name has work to do

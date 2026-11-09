@@ -30,7 +30,7 @@ public static class SettingsTests
         }
         finally
         {
-            Directory.Delete(Path.GetDirectoryName(path)!, true);
+            TestFolders.Delete(Path.GetDirectoryName(path)!);
         }
     }
 

@@ -30,6 +30,7 @@ public static class TestCatalog
     // Runs one test; failures come out as the exception the test threw
     public static async Task RunAsync(MethodInfo method)
     {
+        TestEnvironment.Prepare();
         try
         {
             object? result = method.Invoke(null, null);

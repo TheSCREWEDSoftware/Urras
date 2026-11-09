@@ -20,7 +20,7 @@ public static class SafetyTests
         GitResult clone = await GitRepository.CloneAsync("--upload-pack=touch pwned", Path.Combine(parent, "x"));
         Assert.True(!clone.Success && !File.Exists(Path.Combine(parent, "pwned")), "clone address refused");
         if (Directory.Exists(parent))
-            Directory.Delete(parent, true);
+            TestFolders.Delete(parent);
     }
 
     // Owner and repository names from a platform become exactly one folder level

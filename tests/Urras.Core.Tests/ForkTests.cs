@@ -147,7 +147,7 @@ public static class BranchChangesTests
         }
         finally
         {
-            Directory.Delete(Path.GetDirectoryName(path)!, true);
+            TestFolders.Delete(Path.GetDirectoryName(path)!);
         }
     }
 }

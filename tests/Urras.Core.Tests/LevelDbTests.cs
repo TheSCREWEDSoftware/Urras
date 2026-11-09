@@ -64,7 +64,7 @@ public static class LevelDbTests
         }
         finally
         {
-            Directory.Delete(appData, true);
+            TestFolders.Delete(appData);
         }
     }
 

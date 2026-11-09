@@ -48,7 +48,7 @@ public static class ModuleTests
         finally
         {
             if (Directory.Exists(folder))
-                Directory.Delete(folder, true);
+                TestFolders.Delete(folder);
         }
     }
 

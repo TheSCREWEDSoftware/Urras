@@ -211,7 +211,7 @@ public static class PlatformTests
         finally
         {
             if (Directory.Exists(clonePath))
-                Directory.Delete(clonePath, true);
+                TestFolders.Delete(clonePath);
         }
     }
 }

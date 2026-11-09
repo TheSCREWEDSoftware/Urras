@@ -23,6 +23,15 @@ public static class TestApp
     public static AppBuilder BuildAvaloniaApp()
     {
         Environment.SetEnvironmentVariable(AppSettings.FOLDER_VARIABLE, SettingsFolder);
+
+        // Git uses its own settings here, so the machine's (core.autocrlf on Windows, for one) can't change results
+        Directory.CreateDirectory(SettingsFolder);
+        string gitConfig = Path.Combine(SettingsFolder, "gitconfig");
+        File.WriteAllText(gitConfig, "[user]\n\tname = Urras Test\n\temail = test@example.com\n" +
+                                     "[init]\n\tdefaultBranch = main\n[commit]\n\tgpgsign = false\n" +
+                                     "[core]\n\tautocrlf = false\n");
+        Environment.SetEnvironmentVariable("GIT_CONFIG_GLOBAL", gitConfig);
+        Environment.SetEnvironmentVariable("GIT_CONFIG_NOSYSTEM", "1");
         return AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions());
     }
 }
