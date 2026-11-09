@@ -52,7 +52,15 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            // A run that didn't close normally is reported once the window is up
+            DateTime? crashedRun = RunMarker.Start();
+            desktop.Exit += (_, _) => RunMarker.Stop();
+            MainWindow window = new MainWindow();
+            desktop.MainWindow = window;
+            if (crashedRun is { } started)
+                window.Opened += (_, _) => Dispatcher.UIThread.Post(
+                    () => window.ShowLastRunEnded(RunMarker.CrashLogWrittenSince(started)),
+                    DispatcherPriority.Background);
             StartAskPass(desktop);
             _ = CredentialSetup.UseManagerIfNeededAsync(Environment.CurrentDirectory);
             // Theme files from older builds get the colours this one added
