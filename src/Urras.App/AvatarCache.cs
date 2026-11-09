@@ -7,10 +7,11 @@ namespace Urras.App;
 // Profile pictures, downloaded once and kept on disk so History doesn't fetch them again
 public static class AvatarCache
 {
+    // Fields start in the order written, so the timeout comes before the client that uses it
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan MaxAge = TimeSpan.FromDays(7);
     private static readonly HttpClient Http = CreateClient();
     private static readonly Dictionary<string, Task<Bitmap?>> Loading = new Dictionary<string, Task<Bitmap?>>();
-    private static readonly TimeSpan MaxAge = TimeSpan.FromDays(7);
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
     private static string Folder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Urras", "avatars");
