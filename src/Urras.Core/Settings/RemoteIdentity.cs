@@ -15,9 +15,28 @@ public sealed record RemoteIdentity(string Owner, string Name, string Host)
     public static Dictionary<string, RemoteIdentity> ReadAll(string repository)
     {
         Dictionary<string, RemoteIdentity> remotes = new Dictionary<string, RemoteIdentity>(StringComparer.Ordinal);
+        foreach ((string remote, string address) in ReadUrls(repository))
+        {
+            if (FromUrl(address) is { } identity)
+                remotes[remote] = identity;
+        }
+
+        return remotes;
+    }
+
+    // The origin's address as written, to clone it again if the folder goes missing; null without an origin
+    public static string? OriginUrl(string repository)
+    {
+        return ReadUrls(repository).TryGetValue(ORIGIN, out string? address) ? address : null;
+    }
+
+    // Every remote's first address by remote name
+    private static Dictionary<string, string> ReadUrls(string repository)
+    {
+        Dictionary<string, string> urls = new Dictionary<string, string>(StringComparer.Ordinal);
         string? config = ConfigFile(repository);
         if (config == null)
-            return remotes;
+            return urls;
 
         string? remote = null;
         try
@@ -28,16 +47,16 @@ public sealed record RemoteIdentity(string Owner, string Name, string Host)
                 if (line.StartsWith('['))
                     remote = RemoteSection(line);
                 else if (remote != null && line.StartsWith("url", StringComparison.Ordinal) && line.Contains('=') &&
-                         !remotes.ContainsKey(remote) && FromUrl(line[(line.IndexOf('=') + 1)..].Trim()) is { } url)
-                    remotes[remote] = url;
+                         !urls.ContainsKey(remote))
+                    urls[remote] = line[(line.IndexOf('=') + 1)..].Trim();
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return remotes;
+            return urls;
         }
 
-        return remotes;
+        return urls;
     }
 
     // "upstream" for [remote "upstream"]; null for other sections

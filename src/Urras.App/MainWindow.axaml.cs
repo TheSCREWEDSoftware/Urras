@@ -47,6 +47,8 @@ public partial class MainWindow : Window
 
         InitializeSync();
         InitializeFileMenu();
+        InitializeMissingPanel();
+        InitializeWorktreeSwitcher();
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
         InitializeBranchPicker();
@@ -131,9 +133,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!Directory.Exists(_repository.Path))
+        if (ShowIfMissing(_repository.Path))
         {
-            ShowEmptyState();
             SetStatus(_repository.Path + " no longer exists.", true);
             return;
         }
@@ -183,6 +184,7 @@ public partial class MainWindow : Window
                     .Concat(branches.Where(branch => branch.IsRemote)).ToList();
                 _branches = ordered;
                 BranchButtonText.Text = status.IsDetached ? "(detached HEAD)" : status.Branch ?? "No branch";
+                UpdateWorktreeButton();
 
                 ShowSync(status, fetchedTask.Result);
 
@@ -233,6 +235,7 @@ public partial class MainWindow : Window
         HistoryList.ItemsSource = null;
         _branches = new List<BranchInfo>();
         BranchButtonText.Text = "No branch";
+        UpdateWorktreeButton();
         ShowChangesDiff(null, string.Empty);
         ShowCommitDiff(null, string.Empty);
         UnstagedHeader.Text = "Changes";
@@ -706,7 +709,7 @@ public partial class MainWindow : Window
         bool ready = _repository != null && !_busy;
         foreach (Control control in new Control[]
                  {
-                     SyncButton, SyncMenuButton, RefreshButton, BranchButton, BranchMenuButton,
+                     SyncButton, SyncMenuButton, RefreshButton, WorktreeButton, BranchButton, BranchMenuButton,
                      StashMenuButton, StageAllButton, UnstageAllButton, StageSelectedButton, UnstageSelectedButton,
                      DiscardButton, CommitButton
                  })

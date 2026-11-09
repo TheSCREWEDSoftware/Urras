@@ -200,6 +200,8 @@ public partial class MainWindow
         UpdateViewOnlineButton();
         ResetListSignatures();
         WatchRepository(path);
+        if (ShowIfMissing(path))
+            return;
         await RefreshAsync();
         if (path != null)
             await UpdateForkSafelyAsync(path, true);
@@ -258,6 +260,8 @@ public partial class MainWindow
         RepositorySummary summary = await RepositorySummary.LoadAsync(path);
         string key = RepositoryLayout.Normalize(path);
         _summaries[key] = summary;
+        if (summary.State != RepositoryState.Missing && RemoteIdentity.OriginUrl(path) is { } origin)
+            _settings.CloneAddresses[key] = origin;
         if (summary.State != RepositoryState.Missing && !_settings.RootCommits.ContainsKey(key))
         {
             List<string> roots = await new GitRepository(path).GetRootCommitsAsync();

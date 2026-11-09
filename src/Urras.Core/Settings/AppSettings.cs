@@ -78,6 +78,9 @@ public sealed class AppSettings
     // Scroll bars stay full width, instead of thin until the mouse is over them
     public bool AlwaysShowScrollBars { get; set; } = true;
 
+    // Each repository's origin address by folder, so a repository whose folder went missing can be cloned again
+    public Dictionary<string, string> CloneAddresses { get; set; } = new Dictionary<string, string>();
+
     // Dialogs and other windows get their own taskbar entry; off keeps Urras to one entry, its main window
     public bool ShowWindowsInTaskbar { get; set; }
 
@@ -237,10 +240,41 @@ public sealed class AppSettings
         // Another repository may be cloned into the same folder later, with a different history
         foreach (string key in RootCommits.Keys.Where(key => PathsEqual(key, path)).ToList())
             RootCommits.Remove(key);
+        foreach (string key in CloneAddresses.Keys.Where(key => PathsEqual(key, path)).ToList())
+            CloneAddresses.Remove(key);
         if (ManualLayout != null)
             RepositoryLayout.RemoveRepository(ManualLayout, path);
         if (LastRepository != null && PathsEqual(LastRepository, path))
             LastRepository = null;
+    }
+
+    // A repository found somewhere else: the list, the manual layout and the last opened point at the new folder
+    public void MoveRepository(string from, string to)
+    {
+        Repositories = Moved(Repositories, from, to);
+        Repositories.Sort(StringComparer.OrdinalIgnoreCase);
+        PinnedRepositories = Moved(PinnedRepositories, from, to);
+        if (ManualLayout != null)
+            RepositoryLayout.MoveRepository(ManualLayout, from, to);
+        if (LastRepository != null && PathsEqual(LastRepository, from))
+            LastRepository = to;
+        foreach (string key in RootCommits.Keys.Where(key => PathsEqual(key, from)).ToList())
+            RootCommits.Remove(key);
+        foreach (string key in CloneAddresses.Keys.Where(key => PathsEqual(key, from)).ToList())
+            CloneAddresses.Remove(key);
+    }
+
+    // The list with one folder swapped for another, each folder once
+    private static List<string> Moved(List<string> paths, string from, string to)
+    {
+        List<string> moved = new List<string>();
+        foreach (string path in paths.Select(path => PathsEqual(path, from) ? to : path))
+        {
+            if (!moved.Any(existing => PathsEqual(existing, path)))
+                moved.Add(path);
+        }
+
+        return moved;
     }
 
     private static bool PathsEqual(string first, string second)

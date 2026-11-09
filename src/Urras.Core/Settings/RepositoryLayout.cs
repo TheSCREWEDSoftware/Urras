@@ -570,6 +570,23 @@ public static class RepositoryLayout
         RemoveWhere(root, repository => PathComparer.Equals(Normalize(repository), Normalize(path)));
     }
 
+    public static void MoveRepository(LayoutGroup group, string from, string to)
+    {
+        foreach (LayoutItem item in group.Items)
+        {
+            if (item.Repository != null && PathComparer.Equals(Normalize(item.Repository), Normalize(from)))
+                item.Repository = to;
+            else if (item.Group != null)
+                MoveRepository(item.Group, from, to);
+        }
+    }
+
+    // Two spellings of one folder, such as with a trailing slash, or in another letter case on Windows
+    public static bool SamePath(string first, string second)
+    {
+        return PathComparer.Equals(Normalize(first), Normalize(second));
+    }
+
     public static StringComparer PathComparer =>
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
