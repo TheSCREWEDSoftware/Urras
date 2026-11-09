@@ -38,6 +38,11 @@ public sealed class OptionsWindow : Window
     private readonly Func<Window, AccountKind, Task> _addAccount;
     private readonly ContentControl _page = new ContentControl();
     // Space around each page, inside its scroll area (the scroll area's own padding cut off the end of long lines)
+    private const double BADGE_RADIUS = 4;
+    private const double BADGE_PADDING_X = 6;
+    private const double BADGE_PADDING_Y = 1;
+    private const double BADGE_FONT_SIZE = 11;
+
     private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
 
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
@@ -234,6 +239,35 @@ public sealed class OptionsWindow : Window
                          "fork's own choice, in its Repository settings, always comes first."));
     }
 
+    // A coloured label with the platform's name, so accounts on different sites are told apart at a glance
+    private static Border PlatformBadge(Account account)
+    {
+        AccountKind kind = account.Kind;
+        Color colour = kind switch
+        {
+            AccountKind.GitHub or AccountKind.GitHubEnterprise => Color.Parse("#3D444D"),
+            AccountKind.GitLab => Color.Parse("#C2410C"),
+            AccountKind.Gitea => Color.Parse("#4D7C0F"),
+            _ => Color.Parse("#1D4ED8")
+        };
+        return new Border
+        {
+            Background = new SolidColorBrush(colour),
+            CornerRadius = new CornerRadius(BADGE_RADIUS),
+            Padding = new Thickness(BADGE_PADDING_X, BADGE_PADDING_Y),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                // Codeberg runs Forgejo, a kind of Gitea, but is better known by its own name
+                Text = kind == AccountKind.Gitea && account.WebHost == "codeberg.org" ? "Codeberg"
+                                                                                       : Account.PlatformName(kind),
+                FontSize = BADGE_FONT_SIZE,
+                FontWeight = FontWeight.SemiBold,
+                Foreground = Brushes.White
+            }
+        };
+    }
+
     private void ShowAccounts()
     {
         _accountList.Children.Clear();
@@ -250,12 +284,16 @@ public sealed class OptionsWindow : Window
             };
 
             StackPanel names = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            names.Children.Add(new TextBlock
+            StackPanel title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            title.Children.Add(PlatformBadge(account));
+            title.Children.Add(new TextBlock
             {
                 Text = account.Name ?? account.Username,
-                FontWeight = FontWeight.SemiBold
+                FontWeight = FontWeight.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
             });
-            names.Children.Add(new TextBlock { Text = "@" + account.Username + "  ·  " + account.Host,
+            names.Children.Add(title);
+            names.Children.Add(new TextBlock { Text = "@" + account.Username + "  ·  " + account.WebHost,
                                                Foreground = MutedBrush });
             DockPanel row = new DockPanel();
             AvatarView avatar = new AvatarView
