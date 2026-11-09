@@ -66,7 +66,7 @@ public static class AccountTests
 
     public static async Task AnswersGitLoginsFromTheAccount()
     {
-        (AccountManager manager, AppSettings _, MemoryTokenStore _, FakeGitHub _) = Create();
+        (AccountManager manager, AppSettings settings, MemoryTokenStore tokens, FakeGitHub _) = Create();
         await manager.AddGitHubAsync("good-token");
 
         Assert.Equal("FlyingArowana", await manager.AnswerGitAsync("Username for 'https://github.com': "), "login");
@@ -77,6 +77,15 @@ public static class AccountTests
         Assert.Equal(null, await manager.AnswerGitAsync("Username for 'https://gitlab.com': "), "no account there");
         Assert.Equal(null, await manager.AnswerGitAsync("Enter passphrase for key '/home/me/.ssh/id_ed25519': "),
                      "SSH questions are not logins");
+
+        // Bitbucket app passwords are kept as username:app-password and given to Git as the two halves
+        Account bitbucket = new Account { Kind = AccountKind.Bitbucket, ApiUrl = BitbucketClient.BITBUCKET_API,
+                                          Username = "ryan" };
+        settings.Accounts.Add(bitbucket);
+        await tokens.SaveAsync(bitbucket.TokenKey, "ryan-b:app-secret");
+        Assert.Equal("ryan-b", await manager.AnswerGitAsync("Username for 'https://bitbucket.org': "), "its user");
+        Assert.Equal("app-secret", await manager.AnswerGitAsync("Password for 'https://ryan-b@bitbucket.org': "),
+                     "its app password");
     }
 
     public static async Task RefusesBadTokens()

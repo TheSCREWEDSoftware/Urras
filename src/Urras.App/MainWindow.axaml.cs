@@ -16,7 +16,6 @@ public partial class MainWindow : Window
     private const int MAX_LOG_CHARACTERS = 200000;
     private const string GITHUB_APP_PAGE = "https://github.com/settings/connections/applications/";
 
-    // Read-only commands run on every refresh; only log them when they fail
     private static IBrush ErrorBrush => ThemeBrushes.Error;
     private static IBrush NormalBrush => ThemeBrushes.Text;
 

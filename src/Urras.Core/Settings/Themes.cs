@@ -112,6 +112,9 @@ public sealed class Theme
     public const string DARK = "Dark";
     public const string LIGHT = "Light";
 
+    // Bright pink for a key no build knows, so it stands out instead of hiding
+    private const string UNKNOWN_COLOUR = "#FF00FF";
+
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
     public string Name { get; set; } = DARK;
@@ -137,7 +140,7 @@ public sealed class Theme
         if (Colours.TryGetValue(key, out string? value) && ThemeColours.IsColour(value))
             return value;
         ThemeColour? known = ThemeColours.All.FirstOrDefault(colour => colour.Key == key);
-        return known == null ? "#FF00FF" : Base == ThemeBase.Light ? known.Light : known.Dark;
+        return known == null ? UNKNOWN_COLOUR : Base == ThemeBase.Light ? known.Light : known.Dark;
     }
 
     // Keys this build knows that the theme doesn't have yet get the base's default; true when any were added

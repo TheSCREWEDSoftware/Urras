@@ -171,15 +171,26 @@ public sealed class AccountManager
             !Uri.TryCreate(prompt[(open + 1)..close], UriKind.Absolute, out Uri? address))
             return null;
 
-        // A password prompt names the user before the host; it must be the account's user
-        Account? account = _settings.Accounts.FirstOrDefault(item =>
-            string.Equals(item.WebHost, address.Host, StringComparison.OrdinalIgnoreCase) &&
-            (address.UserInfo.Length == 0 ||
-             string.Equals(Uri.UnescapeDataString(address.UserInfo), GitLogin(item),
-                 StringComparison.OrdinalIgnoreCase)));
-        if (account == null)
-            return null;
-        return username ? GitLogin(account) : await TokenAsync(account);
+        // A password prompt names the user before the host; it must be the login given for that account
+        string named = Uri.UnescapeDataString(address.UserInfo);
+        foreach (Account account in _settings.Accounts.Where(item => string.Equals(item.WebHost, address.Host,
+                                                                                   StringComparison.OrdinalIgnoreCase)))
+        {
+            (string login, string? secret) = GitCredentials(account, await TokenAsync(account));
+            if (named.Length == 0 || string.Equals(named, login, StringComparison.OrdinalIgnoreCase))
+                return username ? login : secret;
+        }
+
+        return null;
+    }
+
+    // Login and password for Git: a Bitbucket app password is kept as username:app-password, other tokens alone
+    private static (string Login, string? Secret) GitCredentials(Account account, string? token)
+    {
+        int colon = token?.IndexOf(':') ?? -1;
+        if (account.Kind is AccountKind.Bitbucket or AccountKind.BitbucketServer && colon > 0)
+            return (token![..colon], token[(colon + 1)..]);
+        return (GitLogin(account), token);
     }
 
     // The username Git sends with a token: GitLab and Bitbucket want fixed names for OAuth tokens
