@@ -26,6 +26,9 @@ public sealed class Account
     public string? Email { get; set; }
     public string? AvatarUrl { get; set; }
 
+    // When the token stops working, for tokens that expire (GitLab's); a refresh token renews it before then
+    public DateTimeOffset? TokenExpiresAt { get; set; }
+
     [JsonIgnore]
     public string TokenKey => "Urras:" + Kind + ":" + new Uri(ApiUrl).Host + ":" + Username;
 

@@ -53,4 +53,66 @@ public static class DeviceSignInTests
         Assert.True(DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.example.com", http, "x") != null,
                     "a self-managed GitLab with your own app id");
     }
+
+    // GitLab: renews tokens at /oauth/token and says who is signed in at /api/v4/user
+    private sealed class FakeGitLab : HttpMessageHandler
+    {
+        public int Renewals { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+                                                                     CancellationToken cancellationToken)
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            string body = "{}";
+            if (path == "/oauth/token")
+            {
+                string form = await request.Content!.ReadAsStringAsync(cancellationToken);
+                Renewals++;
+                body = form.Contains("refresh_token=old-refresh") && form.Contains("client_id=lab-app")
+                    ? "{\"access_token\":\"new-token\",\"refresh_token\":\"new-refresh\",\"expires_in\":7200}"
+                    : "{\"error\":\"invalid_grant\"}";
+            }
+            else if (path == "/api/v4/user")
+            {
+                body = "{\"id\":5,\"username\":\"ryan\",\"name\":\"Ryan\"}";
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
+        }
+    }
+
+    public static async Task RenewsGitLabTokensBeforeTheyExpire()
+    {
+        string settingsFile = Path.Combine(Path.GetTempPath(), "urras-renew-" + Guid.NewGuid() + ".json");
+        Urras.Core.Settings.AppSettings settings = Urras.Core.Settings.AppSettings.Load(settingsFile);
+        settings.GitLabClientId = "lab-app";
+        MemoryTokenStore tokens = new MemoryTokenStore();
+        FakeGitLab fake = new FakeGitLab();
+        AccountManager manager = new AccountManager(settings, tokens, new HttpClient(fake));
+        try
+        {
+            Account account = await manager.AddAsync(AccountKind.GitLab, "old-token", "https://gitlab.com/api/v4",
+                                                     "old-refresh", DateTimeOffset.UtcNow.AddHours(2));
+            Assert.Equal("old-token", await manager.TokenAsync(account), "still good: not renewed");
+            Assert.Equal(0, fake.Renewals, "nothing asked");
+
+            account.TokenExpiresAt = DateTimeOffset.UtcNow.AddMinutes(1);
+            Assert.Equal("new-token", await manager.TokenAsync(account), "about to expire: renewed");
+            Assert.True(account.TokenExpiresAt > DateTimeOffset.UtcNow.AddHours(1), "new expiry kept");
+            Assert.Equal("new-token", await manager.AnswerGitAsync("Password for 'https://oauth2@gitlab.com': "),
+                         "Git gets the renewed token");
+
+            // The kept refresh token is the new one; a refused renewal leaves the token as it was
+            account.TokenExpiresAt = DateTimeOffset.UtcNow;
+            Assert.Equal("new-token", await manager.TokenAsync(account), "refused: the old token is kept");
+            Assert.Equal(2, fake.Renewals, "asked once more, with the new refresh token");
+        }
+        finally
+        {
+            File.Delete(settingsFile);
+        }
+    }
 }

@@ -13,8 +13,8 @@ Urras asks for a personal access token instead.
    Settings > Developer settings, so people see the organization's name when they sign in).
 2. Application name: `Urras`. Homepage URL: the Urras repository page or its GitHub Pages site. Redirect URI: the
    same address (the device flow doesn't use it, but GitHub asks for one); leave **Allow wildcard matching** off.
-3. Tick **Enable Device Flow**. Leave **Expire user access tokens** off: Urras keeps the token it is given and
-   doesn't renew it, so a token that expires would sign you out every eight hours.
+3. Tick **Enable Device Flow**. **Expire user access tokens** can stay off; if it's on, Urras renews the token
+   with the refresh token GitHub gives it, before it runs out.
    Then register the application (on older forms, tick Enable Device Flow on the page that follows and save).
 4. Copy the **Client ID**. It isn't a secret: no client secret is needed or used.
 5. Either paste it in Urras under Options > Accounts > GitHub client id, or set `GITHUB_CLIENT_ID` in
@@ -24,9 +24,8 @@ For GitHub Enterprise Server, register the app on that server the same way and p
 
 ## GitLab
 
-GitLab's access tokens expire after two hours and must be renewed with a refresh token, which Urras doesn't do yet,
-so GitLab sign-in through the browser would sign you out every two hours. Until it does, use a personal access
-token for GitLab.
+GitLab's access tokens expire after two hours. Urras keeps the refresh token GitLab gives it and renews the
+access token a few minutes before it runs out, so you stay signed in.
 
 1. Open GitLab, select your avatar > Edit profile, then in the left sidebar **Access > Applications** (Access opens
    into a submenu), and Add new application. On your own server, Admin > Applications works too.

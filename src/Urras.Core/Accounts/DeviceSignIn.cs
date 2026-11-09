@@ -6,6 +6,9 @@ namespace Urras.Core.Accounts;
 public sealed record DeviceCode(string DeviceCodeValue, string UserCode, string VerificationUrl, int IntervalSeconds,
                                 DateTimeOffset ExpiresAt);
 
+// A token from the browser sign-in; GitLab's expire, so they come with a refresh token and an expiry time
+public sealed record OAuthGrant(string AccessToken, string? RefreshToken, DateTimeOffset? ExpiresAt);
+
 // OAuth device flow (RFC 8628): the user approves a code in the browser and Urras receives a token
 public sealed class DeviceSignIn
 {
@@ -17,6 +20,7 @@ public sealed class DeviceSignIn
     public const string GITLAB_SCOPES = "api read_user";
 
     private const string GRANT = "urn:ietf:params:oauth:grant-type:device_code";
+    private const string REFRESH_GRANT = "refresh_token";
     private const int SLOW_DOWN_SECONDS = 5;
 
     private readonly HttpClient _http;
@@ -80,6 +84,25 @@ public sealed class DeviceSignIn
     // Waits until the user approves in the browser; throws PlatformException when denied or expired
     public async Task<string> WaitForTokenAsync(DeviceCode code, CancellationToken cancellation)
     {
+        return (await WaitForGrantAsync(code, cancellation)).AccessToken;
+    }
+
+    // A new token from a refresh token, before the old one expires; throws PlatformException when refused
+    public async Task<OAuthGrant> RefreshAsync(string refreshToken)
+    {
+        using JsonDocument answer = await PostAsync(_tokenUrl, new Dictionary<string, string>
+        {
+            ["client_id"] = _clientId,
+            ["grant_type"] = REFRESH_GRANT,
+            ["refresh_token"] = refreshToken
+        });
+        return Grant(answer.RootElement) ?? throw new PlatformException(Error(answer.RootElement) ??
+                                                                        "The sign-in couldn't be renewed.");
+    }
+
+    // The token with its refresh token and expiry, when the platform gives them
+    public async Task<OAuthGrant> WaitForGrantAsync(DeviceCode code, CancellationToken cancellation)
+    {
         int interval = code.IntervalSeconds;
         while (DateTimeOffset.UtcNow < code.ExpiresAt)
         {
@@ -91,8 +114,8 @@ public sealed class DeviceSignIn
                 ["grant_type"] = GRANT
             });
             JsonElement root = answer.RootElement;
-            if (Text(root, "access_token") is { Length: > 0 } token)
-                return token;
+            if (Grant(root) is { } grant)
+                return grant;
 
             switch (Text(root, "error"))
             {
@@ -131,6 +154,17 @@ public sealed class DeviceSignIn
         {
             throw new PlatformException("Couldn't reach " + new Uri(url).Host + ": " + exception.Message);
         }
+    }
+
+    private static OAuthGrant? Grant(JsonElement root)
+    {
+        if (Text(root, "access_token") is not { Length: > 0 } token)
+            return null;
+        DateTimeOffset? expires = root.TryGetProperty("expires_in", out JsonElement life) &&
+                                  life.ValueKind == JsonValueKind.Number
+            ? DateTimeOffset.UtcNow.AddSeconds(life.GetInt32())
+            : null;
+        return new OAuthGrant(token, Text(root, "refresh_token"), expires);
     }
 
     private static string? Error(JsonElement root)

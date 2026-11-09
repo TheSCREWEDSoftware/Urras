@@ -67,12 +67,15 @@ public sealed class DeviceSignInWindow : Window
     // Returned when the user prefers pasting a token
     public const string TOKEN_INSTEAD = "\u0000token";
 
+    // The token with its refresh token and expiry, once signed in
+    public OAuthGrant? Grant { get; private set; }
+
     private async Task WaitAsync(DeviceSignIn flow, DeviceCode code)
     {
         try
         {
-            string token = await flow.WaitForTokenAsync(code, _cancel.Token);
-            Close(token);
+            Grant = await flow.WaitForGrantAsync(code, _cancel.Token);
+            Close(Grant.AccessToken);
         }
         catch (PlatformException exception)
         {

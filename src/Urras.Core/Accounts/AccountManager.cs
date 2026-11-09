@@ -8,6 +8,14 @@ namespace Urras.Core.Accounts;
 public sealed class AccountManager
 {
     private const string GITLAB_TOKEN_LOGIN = "oauth2";
+    private const string REFRESH_SUFFIX = ":refresh";
+    private const string GITLAB_API_SUFFIX = "/api/v4";
+
+    // Tokens are renewed a little before they expire, so one never runs out in the middle of a push
+    private static readonly TimeSpan RenewEarly = TimeSpan.FromMinutes(5);
+
+    // One renewal at a time: GitLab replaces the refresh token each time, so two at once would clash
+    private readonly SemaphoreSlim _renewing = new SemaphoreSlim(1, 1);
     private const string BITBUCKET_TOKEN_LOGIN = "x-token-auth";
     // Commits asked about per refresh when looking up pictures, to stay well inside rate limits
     public const int PICTURE_LOOKUPS = 20;
@@ -40,7 +48,9 @@ public sealed class AccountManager
                         api);
     }
 
-    public async Task<Account> AddAsync(AccountKind kind, string token, string api)
+    // refreshToken and expiresAt come with tokens that expire, from the browser sign-in
+    public async Task<Account> AddAsync(AccountKind kind, string token, string api, string? refreshToken = null,
+                                        DateTimeOffset? expiresAt = null)
     {
         if (_tokens.Unavailable is { } reason)
             throw new PlatformException(reason);
@@ -49,6 +59,10 @@ public sealed class AccountManager
         Account account = await PlatformClient.SafelyAsync(client.GetAccountAsync);
         if (!await _tokens.SaveAsync(account.TokenKey, token.Trim()))
             throw new PlatformException("Couldn't save the token in the system's credential store.");
+        if (refreshToken != null && await _tokens.SaveAsync(account.TokenKey + REFRESH_SUFFIX, refreshToken))
+            account.TokenExpiresAt = expiresAt;
+        else
+            await _tokens.DeleteAsync(account.TokenKey + REFRESH_SUFFIX);
 
         _settings.Accounts.RemoveAll(existing => existing.TokenKey == account.TokenKey);
         _settings.Accounts.Add(account);
@@ -75,6 +89,7 @@ public sealed class AccountManager
     public async Task RemoveAsync(Account account)
     {
         await _tokens.DeleteAsync(account.TokenKey);
+        await _tokens.DeleteAsync(account.TokenKey + REFRESH_SUFFIX);
         _settings.Accounts.RemoveAll(existing => existing.TokenKey == account.TokenKey);
         _settings.Save();
     }
@@ -93,8 +108,56 @@ public sealed class AccountManager
 
     public async Task<PlatformClient?> ClientAsync(Account account)
     {
-        string? token = await _tokens.LoadAsync(account.TokenKey);
+        string? token = await TokenAsync(account);
         return token == null ? null : Client(account.Kind, token, account.ApiUrl);
+    }
+
+    // The account's token, renewed first when it expires soon and a refresh token is kept
+    public async Task<string?> TokenAsync(Account account)
+    {
+        if (!ExpiresSoon(account))
+            return await _tokens.LoadAsync(account.TokenKey);
+
+        await _renewing.WaitAsync();
+        try
+        {
+            // Another call may have renewed it while this one waited
+            if (ExpiresSoon(account) && await _tokens.LoadAsync(account.TokenKey + REFRESH_SUFFIX) is { } refresh &&
+                RenewalFlow(account) is { } flow)
+            {
+                OAuthGrant grant = await flow.RefreshAsync(refresh);
+                await _tokens.SaveAsync(account.TokenKey, grant.AccessToken);
+                if (grant.RefreshToken != null)
+                    await _tokens.SaveAsync(account.TokenKey + REFRESH_SUFFIX, grant.RefreshToken);
+                account.TokenExpiresAt = grant.ExpiresAt;
+                _settings.Save();
+            }
+        }
+        catch (PlatformException)
+        {
+            // Kept as it is; the platform will refuse it, and signing in again fixes that
+        }
+        finally
+        {
+            _renewing.Release();
+        }
+
+        return await _tokens.LoadAsync(account.TokenKey);
+    }
+
+    private static bool ExpiresSoon(Account account)
+    {
+        return account.TokenExpiresAt is { } expires && DateTimeOffset.UtcNow >= expires - RenewEarly;
+    }
+
+    // The same app that signed in renews the token: GitLab's site is its API address without /api/v4
+    private DeviceSignIn? RenewalFlow(Account account)
+    {
+        string site = account.ApiUrl.EndsWith(GITLAB_API_SUFFIX, StringComparison.OrdinalIgnoreCase)
+            ? account.ApiUrl[..^GITLAB_API_SUFFIX.Length]
+            : "https://" + account.WebHost;
+        string appId = account.Kind == AccountKind.GitLab ? _settings.GitLabClientId : _settings.GitHubClientId;
+        return DeviceSignIn.For(account.Kind, site, _http, appId);
     }
 
     // Answers Git's HTTPS login from a signed-in account (username, then token as password); null if none fits
@@ -116,7 +179,7 @@ public sealed class AccountManager
                  StringComparison.OrdinalIgnoreCase)));
         if (account == null)
             return null;
-        return username ? GitLogin(account) : await _tokens.LoadAsync(account.TokenKey);
+        return username ? GitLogin(account) : await TokenAsync(account);
     }
 
     // The username Git sends with a token: GitLab and Bitbucket want fixed names for OAuth tokens

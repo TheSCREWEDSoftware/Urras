@@ -61,7 +61,8 @@ public partial class MainWindow
                 return;
         }
 
-        string? token = await SignInThroughBrowserAsync(owner, kind, name, server ?? string.Empty);
+        (string? token, OAuthGrant? grant) = await SignInThroughBrowserAsync(owner, kind, name,
+                                                                             server ?? string.Empty);
         if (token == DeviceSignInWindow.TOKEN_INSTEAD)
             token = await AskForTokenAsync(owner, kind, name, server);
         if (token == null)
@@ -69,7 +70,11 @@ public partial class MainWindow
 
         try
         {
-            Account account = await _accounts.AddAsync(kind, token, Account.ApiFor(kind, server));
+            // A pasted token has no refresh token; one from the browser may, if it expires
+            bool fromBrowser = grant != null && grant.AccessToken == token;
+            Account account = await _accounts.AddAsync(kind, token, Account.ApiFor(kind, server),
+                                                       fromBrowser ? grant!.RefreshToken : null,
+                                                       fromBrowser ? grant!.ExpiresAt : null);
             SetStatus("Signed in to " + name + " as @" + account.Username + ".", false);
         }
         catch (PlatformException exception)
@@ -80,22 +85,25 @@ public partial class MainWindow
     }
 
     // The browser flow when the platform supports it and an app id is set; TOKEN_INSTEAD otherwise
-    private async Task<string?> SignInThroughBrowserAsync(Window owner, AccountKind kind, string name, string server)
+    private async Task<(string? Token, OAuthGrant? Grant)> SignInThroughBrowserAsync(Window owner, AccountKind kind,
+                                                                                      string name, string server)
     {
         string? appId = kind is AccountKind.GitLab ? _settings.GitLabClientId : _settings.GitHubClientId;
         DeviceSignIn? flow = DeviceSignIn.For(kind, server, AccountsHttp, appId);
         if (flow == null)
-            return DeviceSignInWindow.TOKEN_INSTEAD;
+            return (DeviceSignInWindow.TOKEN_INSTEAD, null);
 
         try
         {
             DeviceCode code = await flow.StartAsync();
-            return await new DeviceSignInWindow(name, flow, code).ShowDialog<string?>(owner);
+            DeviceSignInWindow window = new DeviceSignInWindow(name, flow, code);
+            string? token = await window.ShowDialog<string?>(owner);
+            return (token, window.Grant);
         }
         catch (PlatformException exception)
         {
             SetStatus("Browser sign-in isn't available (" + exception.Message + "); paste a token instead.", true);
-            return DeviceSignInWindow.TOKEN_INSTEAD;
+            return (DeviceSignInWindow.TOKEN_INSTEAD, null);
         }
     }
 
