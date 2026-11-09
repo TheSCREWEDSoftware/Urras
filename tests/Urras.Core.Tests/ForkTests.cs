@@ -177,3 +177,40 @@ public static class SettingsFolderTests
         }
     }
 }
+
+public static class SettingsSafetyTests
+{
+    // The tests' own settings folder is in use, so no test can write over the real settings again
+    public static void TestsNeverTouchTheRealSettings()
+    {
+        string real = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                   Urras.Core.Settings.AppSettings.APP_FOLDER_NAME);
+        Assert.True(!Urras.Core.Settings.AppSettings.DefaultPath.StartsWith(real, StringComparison.OrdinalIgnoreCase),
+                    "settings in a test folder, not " + real);
+    }
+
+    public static void KeepsDailyBackupsAndSetsBrokenFilesAside()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "urras-backups-" + Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(folder, "settings.json");
+        try
+        {
+            Urras.Core.Settings.AppSettings first = new Urras.Core.Settings.AppSettings();
+            first.Repositories.Add("/repos/one");
+            first.Save(path);
+            new Urras.Core.Settings.AppSettings().Save(path);
+
+            string[] backups = Directory.GetFiles(Urras.Core.Settings.AppSettings.BackupFolder(path));
+            Assert.Equal(1, backups.Length, "one backup a day");
+            Assert.True(File.ReadAllText(backups[0]).Contains("/repos/one"), "the day's first state is kept");
+
+            File.WriteAllText(path, "{ broken");
+            Assert.Equal(0, Urras.Core.Settings.AppSettings.Load(path).Repositories.Count, "defaults");
+            Assert.True(Directory.GetFiles(folder, "settings.json.broken-*").Length == 1, "broken file set aside");
+        }
+        finally
+        {
+            TestFolders.Delete(folder);
+        }
+    }
+}

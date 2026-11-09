@@ -143,13 +143,61 @@ public sealed class AppSettings
         }
         catch (JsonException)
         {
-            // A broken settings file shouldn't stop the app from starting
+            // A broken file doesn't stop Urras starting, and is set aside rather than saved over
+            SetAside(path);
         }
         catch (IOException)
         {
         }
 
         return new AppSettings();
+    }
+
+    public const string BACKUP_FOLDER = "backups";
+    public const int BACKUP_DAYS = 7;
+
+    // The settings as they were at the start of each day, for the last seven days, so a bad save can be undone
+    public static string BackupFolder(string? path = null)
+    {
+        return Path.Combine(Path.GetDirectoryName(path ?? DefaultPath) ?? ".", BACKUP_FOLDER);
+    }
+
+    private static void BackUp(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        try
+        {
+            string folder = BackupFolder(path);
+            Directory.CreateDirectory(folder);
+            string name = Path.GetFileNameWithoutExtension(path);
+            string today = Path.Combine(folder, name + "-" + DateTime.Now.ToString("yyyy-MM-dd",
+                                            System.Globalization.CultureInfo.InvariantCulture) + ".json");
+            if (!File.Exists(today))
+                File.Copy(path, today);
+
+            foreach (string old in Directory.GetFiles(folder, name + "-*.json").OrderByDescending(file => file)
+                                            .Skip(BACKUP_DAYS))
+                File.Delete(old);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // A missing backup is no reason to lose the save itself
+        }
+    }
+
+    private static void SetAside(string path)
+    {
+        try
+        {
+            File.Move(path, path + ".broken-" + DateTime.Now.ToString("yyyyMMdd-HHmmss",
+                                                                    System.Globalization.CultureInfo.InvariantCulture));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Still readable by hand where it is
+        }
     }
 
     public void Save(string? path = null)
@@ -159,7 +207,11 @@ public sealed class AppSettings
         if (folder != null)
             Directory.CreateDirectory(folder);
 
-        File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions));
+        BackUp(path);
+        // Written beside the file and then moved over it, so a crash halfway can't leave half a file
+        string temporary = path + ".tmp";
+        File.WriteAllText(temporary, JsonSerializer.Serialize(this, JsonOptions));
+        File.Move(temporary, path, true);
     }
 
     public bool AddRepository(string path)

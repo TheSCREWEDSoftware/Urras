@@ -95,7 +95,7 @@ public static class TestFolders
     }
 }
 
-// Tests run Git with their own settings, so the machine's (core.autocrlf on Windows, for one) can't change results
+// Tests use their own Urras and Git settings: never the real ones, and the machine's can't change results
 public static class TestEnvironment
 {
     private static readonly Lazy<string> GlobalConfig = new Lazy<string>(Create);
@@ -114,6 +114,9 @@ public static class TestEnvironment
                                   "[init]\n\tdefaultBranch = main\n[commit]\n\tgpgsign = false\n" +
                                   "[core]\n\tautocrlf = false\n");
         Environment.SetEnvironmentVariable("GIT_CONFIG_GLOBAL", config);
+        // Anything that saves Urras's settings (adding an account does) writes here, not to the real file
+        Environment.SetEnvironmentVariable(Urras.Core.Settings.AppSettings.FOLDER_VARIABLE,
+                                           Path.Combine(folder, "settings"));
         Environment.SetEnvironmentVariable("GIT_CONFIG_NOSYSTEM", "1");
         return config;
     }
