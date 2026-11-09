@@ -35,6 +35,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Always in the taskbar, whatever styles say about other windows, so it can't get lost behind them
+        Classes.Add(MAIN_CLASS);
+        ShowInTaskbar = true;
         StartupLog.Step("Window layout loaded");
 
         _settings = AppSettings.Load();

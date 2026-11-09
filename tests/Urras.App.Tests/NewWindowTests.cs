@@ -107,6 +107,24 @@ public sealed class NewWindowTests
         owner.Close();
     }
 
+    // With one taskbar entry chosen, the main window keeps it and the other windows stay out of the taskbar
+    [AvaloniaFact]
+    public void MainWindowStaysInTheTaskbar()
+    {
+        AppSettings settings = new AppSettings { ShowWindowsInTaskbar = false };
+        settings.Save();
+        MainWindow window = new MainWindow();
+        window.Show();
+        Ui.Pump();
+        Window dialog = new Window();
+        dialog.Show(window);
+        Ui.Pump();
+        Assert.True(window.ShowInTaskbar);
+        Assert.False(dialog.ShowInTaskbar);
+        dialog.Close();
+        window.Close();
+    }
+
     // Closing Options after changing something asks first; Discard closes it without saving
     [AvaloniaFact]
     public void OptionsAsksBeforeLosingChanges()

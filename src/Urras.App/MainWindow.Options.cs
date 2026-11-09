@@ -42,14 +42,16 @@ public partial class MainWindow
         }
     }
 
-    // Every window but the main one stays out of the taskbar, so Urras has one entry there
+    // Every window but the main one stays out of the taskbar; styles see all windows as Window, so a class marks it
     private sealed class OneTaskbarEntryStyle : Style
     {
-        public OneTaskbarEntryStyle() : base(selector => selector.Is<Window>().Not(other => other.OfType<MainWindow>()))
+        public OneTaskbarEntryStyle() : base(selector => selector.Is<Window>().Not(other => other.Class(MAIN_CLASS)))
         {
             Setters.Add(new Setter(Window.ShowInTaskbarProperty, false));
         }
     }
+
+    private const string MAIN_CLASS = "main-window";
 
     // Adds or removes an application style, so a setting applies to every window, open or not
     private static void UseStyle<T>(Styles styles, bool wanted) where T : Style, new()
