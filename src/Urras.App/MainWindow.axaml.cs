@@ -35,8 +35,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        StartupLog.Step("Window layout loaded");
 
         _settings = AppSettings.Load();
+        StartupLog.Step("Settings read");
         GitRunner.CommandFinished += OnGitCommandFinished;
 
         AddRepositoryButton.Click += async (_, _) => await AddRepositoryAsync();
@@ -97,6 +99,7 @@ public partial class MainWindow : Window
         InitializeAssistant();
         InitializeRepositoryTree();
         UpdateButtons();
+        StartupLog.Step("Main window set up");
     }
 
     // Refresh

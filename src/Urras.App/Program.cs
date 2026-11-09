@@ -13,6 +13,7 @@ internal static class Program
         if (AskPass.IsAskPassCall(args))
             return AskForGit(args);
 
+        StartupLog.Begin();
         // Errors no handler caught are written down before the app closes
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
@@ -25,7 +26,10 @@ internal static class Program
             e.SetObserved();
         };
 
-        return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        StartupLog.Step("Starting the interface");
+        int code = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        StartupLog.Step("Closed with code " + code);
+        return code;
     }
 
     // With a second argument (on Windows, from the script Git runs), the answer goes to that file

@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
@@ -41,6 +42,41 @@ public partial class App : Application
         desktop.Exit += (_, _) => _askPass.Dispose();
     }
 
+    private const int WATCH_SECONDS = 30;
+    private const int WATCH_INTERVAL_MS = 2000;
+    private const int WATCH_ANSWER_MS = 1500;
+
+    // Where the window is and how big, to tell a window that's off-screen or minimised from one never shown
+    private static string DescribeWindow(Window window)
+    {
+        string screens = string.Join("; ", window.Screens.All.Select(screen => screen.Bounds.ToString()));
+        return "position " + window.Position + ", size " + window.Bounds.Size + ", state " + window.WindowState +
+               ", visible " + window.IsVisible + ", screens " + screens;
+    }
+
+    // Checks for the first half minute that the interface still answers, so a hang shows in startup.log
+    private static void StartWatchdog()
+    {
+        Thread watchdog = new Thread(() =>
+        {
+            for (int waited = 0; waited < WATCH_SECONDS * 1000; waited += WATCH_INTERVAL_MS)
+            {
+                Thread.Sleep(WATCH_INTERVAL_MS);
+                TaskCompletionSource answered = new TaskCompletionSource();
+                Dispatcher.UIThread.Post(() => answered.TrySetResult());
+                if (!answered.Task.Wait(WATCH_ANSWER_MS))
+                    StartupLog.Step("The interface isn't answering");
+            }
+
+            StartupLog.Step("The interface answered for the first " + WATCH_SECONDS + " seconds");
+        })
+        {
+            IsBackground = true,
+            Name = "Startup watchdog"
+        };
+        watchdog.Start();
+    }
+
     // A crash .NET couldn't log is looked up in Windows' own records and added to crash.log first
     private static async Task ReportCrashedRunAsync(MainWindow window, DateTime started)
     {
@@ -64,8 +100,12 @@ public partial class App : Application
             // A run that didn't close normally is reported once the window is up
             DateTime? crashedRun = RunMarker.Start();
             desktop.Exit += (_, _) => RunMarker.Stop();
+            StartupLog.Step("Making the main window");
             MainWindow window = new MainWindow();
             desktop.MainWindow = window;
+            StartupLog.Step("Main window made");
+            window.Opened += (_, _) => StartupLog.Step("Main window opened: " + DescribeWindow(window));
+            StartWatchdog();
             if (crashedRun is { } started)
                 window.Opened += async (_, _) => await ReportCrashedRunAsync(window, started);
             StartAskPass(desktop);
