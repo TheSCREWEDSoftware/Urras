@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -20,7 +21,7 @@ public sealed class ConflictWindow : Window
     private static readonly IBrush ResultBrush = Brush("#1A57AB5A");
     private static readonly IBrush UnresolvedBrush = Brush("#26E5534B");
     private static readonly IBrush MutedBrush = Brush("#8B949E");
-    private static readonly IBrush FrameBrush = Brush("#33FFFFFF");
+    private static IBrush FrameBrush => ThemeBrushes.Divider;
 
     private readonly ConflictFile _file;
     private readonly Func<ConflictBlock, Task<string?>>? _suggest;

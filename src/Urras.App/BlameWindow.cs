@@ -4,6 +4,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -13,7 +14,8 @@ public sealed class BlameWindow : Window
     private const double WINDOW_WIDTH = 1100;
     private const double WINDOW_HEIGHT = 720;
 
-    private static readonly IBrush ShadedBrush = new SolidColorBrush(Color.Parse("#0FFFFFFF"));
+    // Every other commit's lines are shaded, visible in dark and light themes alike
+    private static IBrush ShadedBrush => ThemeBrushes.Get(ThemeColours.DIFF_EMPTY_SIDE);
     private static IBrush MutedBrush => ThemeBrushes.MutedText;
     private static readonly FontFamily MonoFont =
         new FontFamily("Cascadia Mono,Consolas,DejaVu Sans Mono,Liberation Mono,monospace");

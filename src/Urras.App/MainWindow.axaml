@@ -29,7 +29,7 @@
       <Setter Property="Padding" Value="8,0" />
     </Style>
     <Style Selector="Border.refBadge">
-      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Padding" Value="5,0" />
       <Setter Property="Margin" Value="0,0,5,0" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -37,9 +37,10 @@
       <Setter Property="BorderBrush" Value="#E8B931" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
+    <!-- Label text in theme colours: pale on dark themes, deep on light ones -->
     <Style Selector="Border.refBadge TextBlock">
       <Setter Property="FontSize" Value="11" />
-      <Setter Property="Foreground" Value="#E8B931" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.Warning}" />
     </Style>
     <Style Selector="Border.refBadge.head">
       <Setter Property="Background" Value="#E8B931" />
@@ -53,21 +54,21 @@
       <Setter Property="BorderBrush" Value="#539BF5" />
     </Style>
     <Style Selector="Border.refBadge.remote TextBlock">
-      <Setter Property="Foreground" Value="#9CC4FA" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.Attention}" />
     </Style>
     <Style Selector="Border.refBadge.tag">
       <Setter Property="Background" Value="#3357AB5A" />
       <Setter Property="BorderBrush" Value="#57AB5A" />
     </Style>
     <Style Selector="Border.refBadge.tag TextBlock">
-      <Setter Property="Foreground" Value="#8DDB8C" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.Added}" />
     </Style>
     <Style Selector="Border.refBadge.stash">
       <Setter Property="Background" Value="#33B083F0" />
       <Setter Property="BorderBrush" Value="#B083F0" />
     </Style>
     <Style Selector="Border.refBadge.stash TextBlock">
-      <Setter Property="Foreground" Value="#D2B8F7" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.Accent}" />
     </Style>
     <Style Selector="Border.unpushed">
       <Setter Property="CornerRadius" Value="9" />

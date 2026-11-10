@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -19,7 +20,6 @@ public sealed class GraphView : Control
         Brush("#F0883E"), Brush("#39C5CF"), Brush("#E275AD")
     };
 
-    private static readonly IBrush MergeFill = Brush("#1E1E1E");
 
     public static readonly StyledProperty<GraphRow?> RowProperty =
         AvaloniaProperty.Register<GraphView, GraphRow?>(nameof(Row));
@@ -81,7 +81,9 @@ public sealed class GraphView : Control
         Point centre = new Point(X(row.Lane), height / 2);
         IBrush brush = LaneBrush(row.Lane);
         if (row.IsMerge)
-            context.DrawEllipse(MergeFill, new Pen(brush, LINE_THICKNESS), centre, DOT_RADIUS, DOT_RADIUS);
+            // Hollow merge dots show the panel behind them, in dark and light themes alike
+            context.DrawEllipse(ThemeBrushes.Get(ThemeColours.SURFACE), new Pen(brush, LINE_THICKNESS), centre,
+                                DOT_RADIUS, DOT_RADIUS);
         else
             context.DrawEllipse(brush, null, centre, DOT_RADIUS, DOT_RADIUS);
     }

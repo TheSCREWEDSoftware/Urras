@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -14,7 +15,8 @@ public sealed class ImageDiffView : UserControl
 
     private static IBrush OldBrush => ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.DIFF_REMOVED_TEXT);
     private static IBrush NewBrush => ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.DIFF_ADDED_TEXT);
-    private static readonly IBrush FrameBrush = new SolidColorBrush(Color.Parse("#14FFFFFF"));
+    // The diff's empty-side shade frames images in dark and light themes alike
+    private static IBrush FrameBrush => ThemeBrushes.Get(ThemeColours.DIFF_EMPTY_SIDE);
 
     private enum Mode
     {

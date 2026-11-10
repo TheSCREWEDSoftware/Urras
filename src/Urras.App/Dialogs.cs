@@ -2,13 +2,18 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
 // Small modal dialogs built in code, since Avalonia has no built-in message box
 public static class Dialogs
 {
-    private const double DIALOG_WIDTH = 460;
+    private const double DIALOG_WIDTH = 480;
+    // Room around a dialog's text and between its parts, and around the footer's buttons
+    private const double BODY_MARGIN = 20;
+    private const double BODY_SPACING = 14;
+    private const double FOOTER_VERTICAL = 12;
     private const double CHANGE_LIST_HEIGHT = 220;
 
     public enum UnsavedChoice
@@ -43,12 +48,11 @@ public static class Dialogs
         buttons.Children.Add(discard);
         buttons.Children.Add(keep);
 
-        StackPanel root = new StackPanel { Margin = new Thickness(16), Spacing = 12 };
-        root.Children.Add(Paragraph("You've unsaved changes. Do you want to save them, or discard them before " +
+        StackPanel body = new StackPanel { Margin = new Thickness(BODY_MARGIN), Spacing = BODY_SPACING };
+        body.Children.Add(Paragraph("You've unsaved changes. Do you want to save them, or discard them before " +
                                     "leaving?"));
-        root.Children.Add(new ScrollViewer { Content = list, MaxHeight = CHANGE_LIST_HEIGHT });
-        root.Children.Add(buttons);
-        dialog.Content = root;
+        body.Children.Add(new ScrollViewer { Content = list, MaxHeight = CHANGE_LIST_HEIGHT });
+        dialog.Content = Framed(body, buttons);
         return await dialog.ShowDialog<UnsavedChoice>(owner);
     }
 
@@ -266,7 +270,7 @@ public static class Dialogs
         Button unused = new Button { IsVisible = false };
         close.Click += (_, _) => dialog.Close(null);
 
-        dialog.Content = Layout(new TextBlock(), content, close, unused);
+        dialog.Content = Layout(new TextBlock { IsVisible = false }, content, close, unused);
         await dialog.ShowDialog<object?>(owner);
     }
 
@@ -579,6 +583,7 @@ public static class Dialogs
         return new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
     }
 
+    // Dialogs sit on the panel colour, like the main window's Changes and History
     private static Window CreateWindow(string title)
     {
         return new Window
@@ -588,10 +593,12 @@ public static class Dialogs
             SizeToContent = SizeToContent.Height,
             CanResize = false,
             ShowInTaskbar = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Background = ThemeBrushes.Get(ThemeColours.SURFACE)
         };
     }
 
+    // The message and any input, then the buttons; the first button is the main one, in the accent colour
     private static Control Layout(Control message, Control? input, Button primary, Button secondary)
     {
         StackPanel buttons = new StackPanel
@@ -600,14 +607,33 @@ public static class Dialogs
             HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 8
         };
+        if (!primary.Classes.Contains("accent"))
+            primary.Classes.Add("accent");
         buttons.Children.Add(primary);
         buttons.Children.Add(secondary);
 
-        StackPanel root = new StackPanel { Margin = new Thickness(16), Spacing = 12 };
-        root.Children.Add(message);
+        StackPanel body = new StackPanel { Margin = new Thickness(BODY_MARGIN), Spacing = BODY_SPACING };
+        body.Children.Add(message);
         if (input != null)
-            root.Children.Add(input);
-        root.Children.Add(buttons);
+            body.Children.Add(input);
+        return Framed(body, buttons);
+    }
+
+    // The body above a footer strip in the window background colour, holding the buttons
+    private static Control Framed(Control body, Control buttons)
+    {
+        DockPanel root = new DockPanel();
+        Border footer = new Border
+        {
+            Background = ThemeBrushes.Get(ThemeColours.BACKGROUND),
+            BorderBrush = ThemeBrushes.Get(ThemeColours.BORDER),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(BODY_MARGIN, FOOTER_VERTICAL),
+            Child = buttons
+        };
+        DockPanel.SetDock(footer, Dock.Bottom);
+        root.Children.Add(footer);
+        root.Children.Add(body);
         return root;
     }
 }

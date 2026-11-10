@@ -46,6 +46,7 @@ public sealed class PublishRepositoryWindow : Window
         SizeToContent = SizeToContent.Height;
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Background = ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.SURFACE);
         _name.Text = folderName;
         _account.ItemsSource = choices.Select(choice => choice.Account).ToList();
         _account.SelectedIndex = 0;
@@ -67,7 +68,7 @@ public sealed class PublishRepositoryWindow : Window
         buttons.Children.Add(_publish);
         buttons.Children.Add(cancel);
 
-        StackPanel root = new StackPanel { Margin = new Thickness(16), Spacing = 6 };
+        StackPanel root = new StackPanel { Margin = new Thickness(20), Spacing = 6 };
         TextBlock accountLabel = Label("Account");
         accountLabel.IsVisible = _account.IsVisible;
         foreach (Control control in new Control[]
