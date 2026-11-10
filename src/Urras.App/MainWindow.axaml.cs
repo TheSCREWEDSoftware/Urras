@@ -13,6 +13,8 @@ namespace Urras.App;
 
 public partial class MainWindow : Window
 {
+    // Narrower than this, History marks unpushed commits with an arrow
+    private const double NARROW_HISTORY_WIDTH = 900;
     private const int MAX_LOG_CHARACTERS = 200000;
     private const string GITHUB_APP_PAGE = "https://github.com/settings/connections/applications/";
 
@@ -36,6 +38,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitializeTitleBar();
+        // A narrow history marks unpushed commits with an arrow instead of "Not pushed", leaving room for summaries
+        HistoryList.SizeChanged += (_, size) => HistoryList.Classes.Set("narrow",
+                                                                        size.NewSize.Width < NARROW_HISTORY_WIDTH);
         // Always in the taskbar, whatever styles say about other windows, so it can't get lost behind them
         Classes.Add(MAIN_CLASS);
         ShowInTaskbar = true;

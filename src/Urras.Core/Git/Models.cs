@@ -105,7 +105,7 @@ public sealed class CommitInfo
 
     public string DateText => Urras.Core.Settings.DisplayFormats.DateAndTime(Date);
 
-    // On the current branch but on no remote yet, shown with an up-arrow like GitHub Desktop
+    // On the current branch but on no remote yet, marked "Not pushed" in History
     public bool IsUnpushed { get; set; }
 
     // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
