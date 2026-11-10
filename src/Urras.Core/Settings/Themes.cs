@@ -52,12 +52,12 @@ public static class ThemeColours
 
     public static readonly IReadOnlyList<ThemeColour> All = new List<ThemeColour>
     {
-        new ThemeColour(BACKGROUND, "Window, title bar and repository list", "#0E1014", "#F2F3F5"),
-        new ThemeColour(SURFACE, "The panel with changes, history and diffs", "#16191E", "#FFFFFF"),
-        new ThemeColour(RAISED, "Buttons, boxes, menus and tooltips", "#1F232A", "#FFFFFF"),
-        new ThemeColour(HOVER, "Under the pointer", "#282D35", "#ECEEF1"),
-        new ThemeColour(PRESSED, "Pressed buttons", "#31373F", "#E1E4E8"),
-        new ThemeColour(BORDER, "Edges of buttons, boxes and panels", "#2A2F37", "#D6DAE0"),
+        new ThemeColour(BACKGROUND, "Window, title bar and repository list", "#14161B", "#F2F3F5"),
+        new ThemeColour(SURFACE, "The panel with changes, history and diffs", "#1B1E24", "#FFFFFF"),
+        new ThemeColour(RAISED, "Buttons, boxes, menus and tooltips", "#252930", "#FFFFFF"),
+        new ThemeColour(HOVER, "Under the pointer", "#2E333B", "#ECEEF1"),
+        new ThemeColour(PRESSED, "Pressed buttons", "#383E47", "#E1E4E8"),
+        new ThemeColour(BORDER, "Edges of buttons, boxes and panels", "#30353D", "#D6DAE0"),
         new ThemeColour(ACCENT_TEXT, "Text on accent-coloured buttons", "#FFFFFF", "#FFFFFF"),
         new ThemeColour(TEXT, "Text", "#E6EDF3", "#1F2328"),
         new ThemeColour(MUTED_TEXT, "Dimmed text: hints, dates, details", "#8B949E", "#59636E"),
@@ -139,7 +139,8 @@ public sealed class Theme
     public Dictionary<string, string> Colours { get; set; } = new Dictionary<string, string>();
 
     [JsonIgnore]
-    public bool IsBuiltIn => Name is DARK or LIGHT;
+    // Dark, Light and the ready-made themes, which aren't files
+    public bool IsBuiltIn => Name is DARK or LIGHT || ThemePresets.IsPreset(Name);
 
     public static Theme BuiltIn(ThemeBase themeBase)
     {

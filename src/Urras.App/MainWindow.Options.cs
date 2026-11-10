@@ -83,7 +83,8 @@ public partial class MainWindow
                 _ => ThemeVariant.Dark
             };
             Urras.Core.Settings.Theme theme = ChooseTheme(Application.Current);
-            if (!theme.IsBuiltIn)
+            // A chosen theme (ready-made or a file) brings its own dark or light base
+            if (theme.Name is not (Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT))
                 Application.Current.RequestedThemeVariant = theme.Base == ThemeBase.Light ? ThemeVariant.Light
                                                                                           : ThemeVariant.Dark;
             ThemeBrushes.Use(theme, Application.Current.Resources);
@@ -98,11 +99,12 @@ public partial class MainWindow
         HideUntrackedBox.IsChecked = _settings.HideUntracked;
     }
 
-    // The chosen custom theme, or the built-in colours for the dark or light look in use
+    // The chosen ready-made or custom theme, or the built-in colours for the dark or light look in use
     private Urras.Core.Settings.Theme ChooseTheme(Application application)
     {
-        if (_settings.CustomTheme is { Length: > 0 } name && ThemeStore.Default.Find(name) is { } custom)
-            return custom;
+        if (_settings.CustomTheme is { Length: > 0 } name &&
+            (ThemePresets.Find(name) ?? ThemeStore.Default.Find(name)) is { } chosen)
+            return chosen;
         bool light = application.ActualThemeVariant == ThemeVariant.Light;
         return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);
     }

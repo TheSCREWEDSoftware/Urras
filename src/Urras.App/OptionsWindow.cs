@@ -507,9 +507,11 @@ public sealed class OptionsWindow : Window
         themeButtons.Children.Add(folder);
 
         return Page(Heading("Theme"), themes, Label("Colours"), _colours, themeButtons,
-                    Note("A custom theme sets every colour of Urras on top of a dark or light base, and its base " +
-                         "wins over the choice above. Themes are files in the themes folder, to share or edit; " +
-                         "colours added by newer versions of Urras are written into them automatically."),
+                    Note("Colours offers ready-made themes in GitHub, GitLab, SourceGit and Fork's colours, and " +
+                         "your own; editing a ready-made one makes a copy. A theme sets every colour of Urras on " +
+                         "top of a dark or light base, and its base wins over the choice above. Your themes are " +
+                         "files in the themes folder, to share or edit; colours added by newer versions of Urras " +
+                         "are written into them automatically."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars,
                     Heading("Taskbar"), _windowsInTaskbar);
@@ -583,7 +585,8 @@ public sealed class OptionsWindow : Window
     // Built-in colours first, then each theme file, with the given one chosen
     private void ListColours(string? chosen)
     {
-        List<string> names = _themeStore.LoadAll().Select(theme => theme.Name).ToList();
+        // Ready-made themes first, then the theme files
+        List<string> names = ThemePresets.Names.Concat(_themeStore.LoadAll().Select(theme => theme.Name)).ToList();
         _colours.ItemsSource = names.Prepend(BUILT_IN_COLOURS).ToList();
         int index = chosen == null ? -1 : names.FindIndex(name => string.Equals(name, chosen,
                                                                                 StringComparison.OrdinalIgnoreCase));
@@ -597,15 +600,16 @@ public sealed class OptionsWindow : Window
         if (name == null)
             return;
         if (name is Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT ||
-            _themeStore.Find(name) != null)
+            ThemePresets.IsPreset(name) || _themeStore.Find(name) != null)
         {
             await Dialogs.ShowTextAsync(this, "New theme", "There's already a theme called " + name + ".");
             return;
         }
 
+        // A copy of the colours chosen below, or else of the built-in dark or light ones
         bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
-        Urras.Core.Settings.Theme theme = Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light
-                                                                                   : ThemeBase.Dark).Copy(name);
+        Urras.Core.Settings.Theme theme = (SelectedTheme() ?? Urras.Core.Settings.Theme.BuiltIn(
+                                               light ? ThemeBase.Light : ThemeBase.Dark)).Copy(name);
         try
         {
             _themeStore.Save(theme);
@@ -622,10 +626,39 @@ public sealed class OptionsWindow : Window
 
     private async Task EditThemeAsync()
     {
-        if (_colours.SelectedIndex <= 0 || _colours.SelectedItem is not string name ||
-            _themeStore.Find(name) is not { } theme)
+        if (_colours.SelectedIndex <= 0 || _colours.SelectedItem is not string name)
             return;
-        await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+
+        // A ready-made theme stays as it is; editing it makes a copy to change
+        if (ThemePresets.Find(name) is { } preset)
+        {
+            string copyName = name + " (mine)";
+            for (int number = 2; _themeStore.Find(copyName) != null; number++)
+                copyName = name + " (mine " + number + ")";
+            try
+            {
+                _themeStore.Save(preset.Copy(copyName));
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                await Dialogs.ShowTextAsync(this, "Edit theme", "Couldn't save the copy: " + exception.Message);
+                return;
+            }
+
+            ListColours(copyName);
+            name = copyName;
+        }
+
+        if (_themeStore.Find(name) is { } theme)
+            await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+    }
+
+    // The theme picked under Colours, ready-made or a file; null for the built-in colours
+    private Urras.Core.Settings.Theme? SelectedTheme()
+    {
+        return _colours.SelectedIndex > 0 && _colours.SelectedItem is string name
+            ? ThemePresets.Find(name) ?? _themeStore.Find(name)
+            : null;
     }
 
     // Saving
