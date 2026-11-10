@@ -44,12 +44,16 @@ public static class RunMarker
         }
     }
 
-    // Called when Urras closes normally
+    // Called when Urras closes normally; a second Urras closing leaves the first one's marker alone
     public static void Stop(string? path = null)
     {
+        path ??= DefaultPath;
         try
         {
-            File.Delete(path ?? DefaultPath);
+            if (File.Exists(path) && File.ReadAllText(path).Trim() !=
+                Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                return;
+            File.Delete(path);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

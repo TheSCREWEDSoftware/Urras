@@ -368,20 +368,21 @@ public partial class MainWindow
         }
     }
 
-    // The last run ended without closing normally: say so, and where its error is if it left one
-    public void ShowLastRunEnded(bool logged)
+    // The last run ended without closing normally: a dialog, since the first refresh replaces any status text
+    public async Task ShowLastRunEndedAsync(bool logged)
     {
-        string folder = Path.GetDirectoryName(CrashLog.DefaultPath) ?? string.Empty;
-        SetStatus(logged
-                      ? "Urras closed unexpectedly last time. Click here to open crash.log's folder."
-                      : "Urras closed unexpectedly last time without logging an error. Windows' Event Viewer may " +
-                        "have it under Windows Logs > Application.", true);
+        const string TITLE = "Urras closed unexpectedly";
         if (!logged)
+        {
+            await Dialogs.ShowTextAsync(this, TITLE, "Urras closed unexpectedly last time and left no error. " +
+                                                     "Windows' Event Viewer may have it under Windows Logs > " +
+                                                     "Application.");
             return;
+        }
 
-        _statusFolder = folder;
-        StatusText.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
-        ToolTip.SetTip(StatusText, CrashLog.DefaultPath);
+        if (await Dialogs.ConfirmAsync(this, TITLE, "Urras closed unexpectedly last time. What happened is in " +
+                                                    CrashLog.DefaultPath + ".", "Open its folder"))
+            await Report(SystemShell.OpenFolder(Path.GetDirectoryName(CrashLog.DefaultPath) ?? string.Empty));
     }
 
     // Show in file explorer, open in the editor, open with the program the system uses for the file

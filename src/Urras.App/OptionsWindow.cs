@@ -79,6 +79,9 @@ public sealed class OptionsWindow : Window
     private readonly ThemeStore _themeStore = ThemeStore.Default;
     private const string BUILT_IN_COLOURS = "Built-in colours";
     private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
+    // The listed themes by name, read once per listing rather than once per row drawn
+    private Dictionary<string, Urras.Core.Settings.Theme> _listedThemes =
+        new Dictionary<string, Urras.Core.Settings.Theme>(StringComparer.OrdinalIgnoreCase);
 
     // Prompts
     private readonly CheckBox _confirmRemoveRepository;
@@ -603,7 +606,12 @@ public sealed class OptionsWindow : Window
     private void ListColours(string? chosen)
     {
         // Ready-made themes first, then the theme files
-        List<string> names = ThemePresets.Names.Concat(_themeStore.LoadAll().Select(theme => theme.Name)).ToList();
+        List<Urras.Core.Settings.Theme> listed = ThemePresets.Names.Select(name => ThemePresets.Find(name)!)
+                                                             .Concat(_themeStore.LoadAll()).ToList();
+        _listedThemes = new Dictionary<string, Urras.Core.Settings.Theme>(StringComparer.OrdinalIgnoreCase);
+        foreach (Urras.Core.Settings.Theme theme in listed)
+            _listedThemes.TryAdd(theme.Name, theme);
+        List<string> names = listed.Select(theme => theme.Name).ToList();
         _colours.ItemsSource = names.Prepend(BUILT_IN_COLOURS).ToList();
         int index = chosen == null ? -1 : names.FindIndex(name => string.Equals(name, chosen,
                                                                                 StringComparison.OrdinalIgnoreCase));
@@ -666,14 +674,18 @@ public sealed class OptionsWindow : Window
             name = copyName;
         }
 
-        if (_themeStore.Find(name) is { } theme)
-            await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+        if (_themeStore.Find(name) is not { } theme)
+            return;
+        await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+        // The edited colours show in the list and the preview straight away
+        ListColours(name);
+        ShowPreview();
     }
 
     // A theme by its name in the list; the built-in entry follows the dark or light choice above
     private Urras.Core.Settings.Theme ThemeNamed(string name)
     {
-        if (name != BUILT_IN_COLOURS && (ThemePresets.Find(name) ?? _themeStore.Find(name)) is { } theme)
+        if (name != BUILT_IN_COLOURS && _listedThemes.TryGetValue(name, out Urras.Core.Settings.Theme? theme))
             return theme;
         bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
         return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);

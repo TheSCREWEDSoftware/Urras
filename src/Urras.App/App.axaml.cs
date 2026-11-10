@@ -83,7 +83,7 @@ public partial class App : Application
         bool logged = RunMarker.CrashLogWrittenSince(started);
         if (!logged && await WindowsCrashReport.CollectAsync(started) is { } report)
             logged = CrashLog.WriteText(report, "Urras closed without logging an error; Windows recorded this") != null;
-        window.ShowLastRunEnded(logged);
+        await window.ShowLastRunEndedAsync(logged);
     }
 
     public override void Initialize()

@@ -20,6 +20,11 @@ public static class RunMarkerTests
 
             RunMarker.Stop(marker);
             Assert.True(RunMarker.Start(marker) == null, "closed normally");
+
+            // Another Urras took the marker over: this one closing leaves it for that one
+            File.WriteAllText(marker, "1");
+            RunMarker.Stop(marker);
+            Assert.True(File.Exists(marker), "the other run's marker stays");
         }
         finally
         {
