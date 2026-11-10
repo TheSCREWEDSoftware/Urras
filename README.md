@@ -41,6 +41,8 @@ you already have installed.
   and when it last fetched; the first push publishes the branch
 - Publish repository: a repository with no remote is made on GitHub, GitLab or Gitea (under your account or an
   organization, private or public), added as origin and pushed
+- Force push after a rewrite: when a pushed branch's commits were rewritten (authors fixed, amended, rebased), Sync
+  offers to replace the remote's old copies instead of pulling them back in; force pushes use --force-with-lease
 - Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`
   and `.editorconfig`) before they are committed
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template

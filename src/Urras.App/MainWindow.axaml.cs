@@ -204,6 +204,8 @@ public partial class MainWindow : Window
                 BranchButtonText.Text = status.IsDetached ? "(detached HEAD)" : status.Branch ?? "No branch";
                 UpdateWorktreeButton();
 
+                // Only a branch that's both ahead and behind can have been rewritten, so the check is rarely run
+                _rewritten = status is { Ahead: > 0, Behind: > 0 } && await _repository.IsRewriteOfUpstreamAsync();
                 ShowSync(status, fetchedTask.Result);
 
                 if (historyChanged)

@@ -8,7 +8,8 @@ public enum SyncKind
     Pull,
     Push,
     Publish,
-    PublishRepository
+    PublishRepository,
+    ForcePush
 }
 
 // What the main sync button offers, like GitHub Desktop's: publish, pull, push, or fetch when there's nothing else
@@ -16,9 +17,9 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
 {
     private const string DEFAULT_REMOTE = "origin";
 
-    // hasRemote false: there's nowhere to push yet, so the button offers to make the repository online
+    // No remote offers Publish repository; a rewritten branch offers to replace the remote's old copies, not pull them
     public static SyncState For(RepositoryStatus status, DateTimeOffset? lastFetched, DateTimeOffset now,
-                                bool hasRemote = true)
+                                bool hasRemote = true, bool rewritten = false)
     {
         if (!hasRemote)
             return new SyncState(SyncKind.PublishRepository, "Publish repository",
@@ -31,6 +32,9 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
 
         if (!status.IsDetached && status.Upstream == null)
             return new SyncState(SyncKind.Publish, "Publish branch", "Publish this branch to " + remote, 0, 0);
+        if (rewritten && status.Ahead > 0 && status.Behind > 0)
+            return new SyncState(SyncKind.ForcePush, "Force push " + remote, "Replace the remote's old copies",
+                                 status.Ahead, status.Behind);
         if (status.Behind > 0)
             return new SyncState(SyncKind.Pull, "Pull " + remote, fetched, status.Ahead, status.Behind);
         if (status.Ahead > 0)

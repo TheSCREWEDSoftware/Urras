@@ -369,12 +369,16 @@ public sealed partial class GitRepository
         return GitRunner.RunAsync(Path, all, null, CancellationToken.None, false, null, progress);
     }
 
-    // progress, when given, hears each of Git's progress lines while it works
-    public async Task<GitResult> PushAsync(Action<string>? progress = null)
+    // progress hears Git's progress lines; force replaces the remote branch if it's still as last fetched
+    public async Task<GitResult> PushAsync(Action<string>? progress = null, bool force = false)
     {
         RepositoryStatus status = await GetStatusAsync();
         if (status.IsDetached)
             return new GitResult(-1, string.Empty, "Cannot push: no branch is checked out.");
+        if (force && status.Upstream == null)
+            return new GitResult(-1, string.Empty, "Cannot force push: this branch isn't published yet.");
+        if (force)
+            return await RunWithProgress(progress, "push", "--force-with-lease");
         if (status.Upstream != null)
             return await RunWithProgress(progress, "push");
 
@@ -385,6 +389,23 @@ public sealed partial class GitRepository
 
         string remote = remotes.Contains("origin") ? "origin" : remotes[0];
         return await RunWithProgress(progress, "push", "--set-upstream", remote, status.Branch!);
+    }
+
+    // Diverged, but every remote-only commit is the same change as one here: rewritten after pushing (authors fixed)
+    public async Task<bool> IsRewriteOfUpstreamAsync()
+    {
+        RepositoryStatus status = await GetStatusAsync();
+        if (status.Upstream == null || status.Ahead == 0 || status.Behind == 0)
+            return false;
+
+        GitResult result = await Run("rev-list", "--left-right", "--cherry-mark", "@{upstream}...HEAD");
+        if (!result.Success)
+            return false;
+
+        // '<' marks a commit only the remote has with no copy here: real work that a force push would lose
+        string[] lines = result.Output.Split('\n',
+                                             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return lines.Length > 0 && !lines.Any(line => line.StartsWith('<'));
     }
 
     public async Task<List<string>> GetRemotesAsync()

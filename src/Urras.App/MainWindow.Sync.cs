@@ -36,6 +36,8 @@ public partial class MainWindow
     private bool _syncing;
     // Without a remote the button offers Publish repository instead
     private bool _hasRemote = true;
+    // Ahead and behind only because the branch's commits were rewritten: Sync offers to force push
+    private bool _rewritten;
     private SyncState? _sync;
     private DateTimeOffset? _lastFetched;
 
@@ -59,6 +61,8 @@ public partial class MainWindow
             await PublishRepositoryAsync();
             return;
         }
+        if (kind == SyncKind.ForcePush && !await ConfirmForcePushAsync())
+            return;
 
         StartSyncAnimation(kind);
         try
@@ -81,6 +85,7 @@ public partial class MainWindow
             SyncKind.Pull => "Pulling " + remote + "…",
             SyncKind.Push => "Pushing to " + remote + "…",
             SyncKind.Publish => "Publishing to " + remote + "…",
+            SyncKind.ForcePush => "Force pushing to " + remote + "…",
             _ => "Fetching " + remote + "…"
         };
         SyncDetail.Text = "Working, this can take a moment";
@@ -115,6 +120,12 @@ public partial class MainWindow
                 await RunGitAsync(kind == SyncKind.Publish ? "Publishing…" : "Pushing…",
                                   repository => repository.PushAsync(ReportSyncProgress),
                                   kind == SyncKind.Publish ? "Published." : "Pushed.");
+                break;
+            }
+            case SyncKind.ForcePush:
+            {
+                await RunGitAsync("Force pushing…", repository => repository.PushAsync(ReportSyncProgress, true),
+                                  "Pushed; the remote now has your rewritten commits.");
                 break;
             }
             default:
@@ -163,7 +174,26 @@ public partial class MainWindow
         if (shown != SyncKind.Push && shown != SyncKind.Publish)
             AddMenuItem(menu, publish ? "Publish branch" : "Push " + remote,
                         () => RunSyncAsync(publish ? SyncKind.Publish : SyncKind.Push));
+        // A diverged branch can always replace the remote's, after a warning
+        if (shown != SyncKind.ForcePush && _status is { Ahead: > 0, Behind: > 0 })
+            AddMenuItem(menu, "Force push " + remote + "…", () => RunSyncAsync(SyncKind.ForcePush));
         menu.Open(SyncMenuButton);
+    }
+
+    // Always confirmed; the warning is stronger when the remote has commits that aren't copies of these
+    private async Task<bool> ConfirmForcePushAsync()
+    {
+        string upstream = _status?.Upstream ?? "the remote branch";
+        int theirs = _status?.Behind ?? 0;
+        int mine = _status?.Ahead ?? 0;
+        string message = _rewritten
+            ? "Replace " + upstream + "'s " + theirs + " commit(s) with your " + mine + "?\n\nEach of the " +
+              "remote's commits is the same change as one of yours, with only the author, date or message " +
+              "different, so no work is lost. Anyone who already pulled the old commits will need to reset to " +
+              "the new ones."
+            : "Replace " + upstream + " with your branch?\n\n" + theirs + " commit(s) on the remote aren't " +
+              "in your branch and will be lost from it. Pull first unless you're sure you want them gone.";
+        return await Dialogs.ConfirmAsync(this, "Force push", message, "Force push");
     }
 
     private void ShowSync(RepositoryStatus? status, DateTimeOffset? lastFetched)
@@ -184,7 +214,7 @@ public partial class MainWindow
             return;
         }
 
-        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote);
+        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote, _rewritten);
         BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
         BranchCounts.Text = SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;
@@ -192,7 +222,7 @@ public partial class MainWindow
         SyncIcon.Data = _sync.Kind switch
         {
             SyncKind.Pull => DownArrow,
-            SyncKind.Push or SyncKind.Publish or SyncKind.PublishRepository => UpArrow,
+            SyncKind.Push or SyncKind.Publish or SyncKind.PublishRepository or SyncKind.ForcePush => UpArrow,
             _ => FetchArrows
         };
         SyncBadgeText.Text = _sync.Badge;
@@ -203,6 +233,8 @@ public partial class MainWindow
             SyncKind.Push => "Send your commits to the remote",
             SyncKind.Publish => "Publish this branch so others can see it",
             SyncKind.PublishRepository => "Make this repository on GitHub, GitLab or Gitea and push it there",
+            SyncKind.ForcePush => "Your commits were rewritten after pushing; replace the remote's old copies " +
+                                  "instead of pulling them back",
             _ => "Fetch the latest changes from the remote"
         });
     }
