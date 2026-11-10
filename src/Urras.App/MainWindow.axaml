@@ -69,6 +69,20 @@
     <Style Selector="Border.refBadge.stash TextBlock">
       <Setter Property="Foreground" Value="#D2B8F7" />
     </Style>
+    <Style Selector="Border.unpushed">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource Urras.Badge}" />
+    </Style>
+    <Style Selector="Border.unpushed TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
     <Style Selector="ListBox.diff ListBoxItem">
       <Setter Property="Padding" Value="0" />
       <Setter Property="MinHeight" Value="0" />
@@ -520,12 +534,13 @@ Esc clears it" />
               <TextBox x:Name="SearchBox" Watermark="Search the history, then press Enter" />
             </DockPanel>
             <!-- Column titles; the padding matches the list items below so the columns line up -->
-            <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="#1AFFFFFF">
-              <Grid ColumnDefinitions="*,170,80,130">
+            <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="{DynamicResource Urras.Raised}"
+                    CornerRadius="6">
+              <Grid ColumnDefinitions="*,28,170,80,130">
                 <TextBlock Grid.Column="0" Classes="columnHeader" Text="Graph and summary" />
-                <TextBlock Grid.Column="1" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
-                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
-                <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="3" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="4" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
               </Grid>
             </Border>
             <TextBlock x:Name="HistoryHint" Grid.Row="2" Classes="hint" Text="No commits yet" ZIndex="1" />
@@ -533,7 +548,7 @@ Esc clears it" />
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,170,80,130" Height="24">
+                  <Grid ColumnDefinitions="*,28,170,80,130" Height="24">
                     <DockPanel Grid.Column="0">
                       <local:GraphView DockPanel.Dock="Left" Row="{Binding Graph}" Margin="0,0,4,0" />
                       <ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding RefBadges}"
@@ -556,17 +571,22 @@ Esc clears it" />
                       <local:CommitSubjectBlock Parts="{Binding SubjectParts}" TextTrimming="CharacterEllipsis"
                                                 VerticalAlignment="Center" />
                     </DockPanel>
-                    <DockPanel Grid.Column="1" Margin="8,0,0,0">
+                    <!-- Like GitHub Desktop: an up-arrow on each commit a push would send -->
+                    <Border Grid.Column="1" Classes="unpushed" IsVisible="{Binding IsUnpushed}"
+                            ToolTip.Tip="Not pushed yet">
+                      <TextBlock Text="↑" />
+                    </Border>
+                    <DockPanel Grid.Column="2" Margin="8,0,0,0">
                       <local:AvatarView DockPanel.Dock="Left" Email="{Binding Email}" PersonName="{Binding Author}"
                                         Margin="0,0,6,0" VerticalAlignment="Center" Tag="author" Classes="link" />
                       <TextBlock Text="{Binding Author}" TextTrimming="CharacterEllipsis" Opacity="0.7"
                                  VerticalAlignment="Center" Tag="author" Classes="link"
                                  ToolTip.Tip="Open their profile, or this commit when the profile isn't known" />
                     </DockPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono link" Opacity="0.7"
+                    <TextBlock Grid.Column="3" Text="{Binding ShortHash}" Classes="mono link" Opacity="0.7"
                                Margin="8,0,0,0" VerticalAlignment="Center" Tag="commit"
                                ToolTip.Tip="Open this commit on the website" />
-                    <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
+                    <TextBlock Grid.Column="4" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
                                VerticalAlignment="Center" />
                   </Grid>
                 </DataTemplate>

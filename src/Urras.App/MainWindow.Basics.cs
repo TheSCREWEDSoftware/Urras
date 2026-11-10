@@ -152,7 +152,7 @@ public partial class MainWindow
     private static string HistorySignature(IEnumerable<CommitInfo> history)
     {
         return string.Join("\n", history.Select(commit => commit.Hash + "\t" + commit.Refs + "\t" +
-                                                          commit.Stash?.Reference));
+                                                          commit.Stash?.Reference + "\t" + commit.IsUnpushed));
     }
 
     private void UpdateHints()

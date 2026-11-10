@@ -157,11 +157,15 @@ public partial class MainWindow : Window
                 filter: _historyFilter, allBranches: _settings.HistoryAllBranches);
             Task<DateTimeOffset?> fetchedTask = _repository.GetLastFetchedAsync();
             Task<List<string>> remotesTask = _repository.GetRemotesAsync();
-            await Task.WhenAll(statusTask, branchesTask, historyTask, fetchedTask, remotesTask);
+            Task<HashSet<string>> unpushedTask = _repository.GetUnpushedAsync();
+            await Task.WhenAll(statusTask, branchesTask, historyTask, fetchedTask, remotesTask, unpushedTask);
             _hasRemote = remotesTask.Result.Count > 0;
             RepositoryStatus status = statusTask.Result;
             List<BranchInfo> branches = branchesTask.Result;
             List<CommitInfo> history = historyTask.Result;
+            // Without a remote every commit is unpushed, so the arrows would only be noise
+            foreach (CommitInfo commit in history)
+                commit.IsUnpushed = _hasRemote && unpushedTask.Result.Contains(commit.Hash);
 
             // An unchanged history keeps its list, so the scroll position and selection stay put
             string historySignature = (_historyFilter == null ? "all\n" : "search\n") + HistorySignature(history);

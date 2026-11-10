@@ -248,6 +248,19 @@ public sealed partial class GitRepository
         return null;
     }
 
+    // Commits of the current branch that no remote branch has yet: the ones a push would send
+    public async Task<HashSet<string>> GetUnpushedAsync(int limit = DEFAULT_HISTORY_LIMIT)
+    {
+        if (await IsUnbornAsync())
+            return new HashSet<string>();
+
+        GitResult result = await Run("rev-list", "-n", limit.ToString(), "HEAD", "--not", "--remotes");
+        return result.Success
+            ? result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>();
+    }
+
     // allBranches adds every local and remote branch and tag, as the commit graph shows them
     public async Task<List<CommitInfo>> GetHistoryAsync(int limit = DEFAULT_HISTORY_LIMIT, HistoryFilter? filter = null,
                                                         bool allBranches = false)
