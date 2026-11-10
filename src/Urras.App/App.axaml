@@ -2,11 +2,44 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Urras.App.App"
              RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <!-- Windows 11's own font, then Windows 10's, then common open fonts elsewhere -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI, Noto Sans</FontFamily>
+  </Application.Resources>
   <Application.Styles>
     <FluentTheme />
-    <!-- Every window and dialog carries the Urras icon -->
+    <!-- Every window and dialog carries the Urras icon, the theme's background and the app font -->
     <Style Selector=":is(Window)">
       <Setter Property="Icon" Value="/Assets/urras.ico" />
+      <Setter Property="Background" Value="{DynamicResource Urras.Background}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    </Style>
+    <!-- The main area sits on a raised, rounded panel above the window background -->
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource Urras.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Urras.Border}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <!-- Quiet buttons: no fill or edge until the pointer is over them -->
+    <Style Selector="Button.subtle, ToggleButton.subtle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <!-- Lists and trees show the panel behind them, with rounded rows -->
+    <Style Selector="ListBox, TreeView">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem, TreeViewItem">
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="GridSplitter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBlock.windowTitle">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource Urras.MutedText}" />
     </Style>
   </Application.Styles>
 </Application>

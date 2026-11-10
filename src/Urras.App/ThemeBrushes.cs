@@ -43,6 +43,7 @@ public static class ThemeBrushes
 
         foreach ((string key, IBrush brush) in _brushes)
             resources[RESOURCE_PREFIX + key] = brush;
+        ControlLook.Apply(theme, resources);
     }
 
     public static IBrush Get(string key)

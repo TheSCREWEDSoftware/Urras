@@ -34,6 +34,7 @@ public partial class MainWindow
         CloneAgainButton.IsVisible = address != null;
         ShowEmptyState();
         RepositoryTitle.Text = name + " (missing)";
+        ShowWindowTitle(name);
         return true;
     }
 

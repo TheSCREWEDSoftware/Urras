@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializeTitleBar();
         // Always in the taskbar, whatever styles say about other windows, so it can't get lost behind them
         Classes.Add(MAIN_CLASS);
         ShowInTaskbar = true;
@@ -184,6 +185,7 @@ public partial class MainWindow : Window
             try
             {
                 RepositoryTitle.Text = status.IsDetached ? _repository.Name + " (detached HEAD)" : _repository.Name;
+                ShowWindowTitle(_repository.Name);
                 ToolTip.SetTip(RepositoryTitle, _repository.Path);
                 ShowFileLists();
 
@@ -236,6 +238,7 @@ public partial class MainWindow : Window
         ClearCommitFiles();
         OperationBanner.IsVisible = false;
         RepositoryTitle.Text = "No repository";
+        ShowWindowTitle(null);
         ToolTip.SetTip(RepositoryTitle, null);
         UnstagedList.ItemsSource = null;
         StagedList.ItemsSource = null;

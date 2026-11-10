@@ -10,6 +10,13 @@ public sealed record ThemeColour(string Key, string Description, string Dark, st
 // Every colour a theme can set; a new build adds keys here and theme files get them on the next start
 public static class ThemeColours
 {
+    public const string BACKGROUND = "Background";
+    public const string SURFACE = "Surface";
+    public const string RAISED = "Raised";
+    public const string HOVER = "Hover";
+    public const string PRESSED = "Pressed";
+    public const string BORDER = "Border";
+    public const string ACCENT_TEXT = "AccentText";
     public const string TEXT = "Text";
     public const string MUTED_TEXT = "MutedText";
     public const string ERROR = "Error";
@@ -45,6 +52,13 @@ public static class ThemeColours
 
     public static readonly IReadOnlyList<ThemeColour> All = new List<ThemeColour>
     {
+        new ThemeColour(BACKGROUND, "Window, title bar and repository list", "#0E1014", "#F2F3F5"),
+        new ThemeColour(SURFACE, "The panel with changes, history and diffs", "#16191E", "#FFFFFF"),
+        new ThemeColour(RAISED, "Buttons, boxes, menus and tooltips", "#1F232A", "#FFFFFF"),
+        new ThemeColour(HOVER, "Under the pointer", "#282D35", "#ECEEF1"),
+        new ThemeColour(PRESSED, "Pressed buttons", "#31373F", "#E1E4E8"),
+        new ThemeColour(BORDER, "Edges of buttons, boxes and panels", "#2A2F37", "#D6DAE0"),
+        new ThemeColour(ACCENT_TEXT, "Text on accent-coloured buttons", "#FFFFFF", "#FFFFFF"),
         new ThemeColour(TEXT, "Text", "#E6EDF3", "#1F2328"),
         new ThemeColour(MUTED_TEXT, "Dimmed text: hints, dates, details", "#8B949E", "#59636E"),
         new ThemeColour(ERROR, "Errors and missing repositories", "#FF7B72", "#CF222E"),
@@ -52,7 +66,7 @@ public static class ThemeColours
         new ThemeColour(WARNING, "Warnings, local-only branches, conflicts", "#E3B341", "#9A6700"),
         new ThemeColour(ADDED, "Added, in statistics", "#57AB5A", "#1A7F37"),
         new ThemeColour(REMOVED, "Removed, in statistics", "#E5534B", "#CF222E"),
-        new ThemeColour(ACCENT, "Bisect banner", "#B083F0", "#8250DF"),
+        new ThemeColour(ACCENT, "Accent: selection, main buttons, checkboxes, bisect banner", "#8B7CF6", "#6E56CF"),
         new ThemeColour(INFO, "Bars in statistics", "#539BF5", "#0969DA"),
         new ThemeColour(DIVIDER, "Lines between areas", "#33FFFFFF", "#33000000"),
         new ThemeColour(BADGE, "Count badges", "#33FFFFFF", "#1A000000"),
