@@ -543,11 +543,11 @@ Esc clears it" />
             <!-- Column titles; the padding matches the list items below so the columns line up -->
             <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="{DynamicResource Urras.Raised}"
                     CornerRadius="6">
-              <Grid ColumnDefinitions="*,Auto,170,80,130">
+              <Grid ColumnDefinitions="*,170,80,130">
                 <TextBlock Grid.Column="0" Classes="columnHeader" Text="Graph and summary" />
-                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
-                <TextBlock Grid.Column="3" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
-                <TextBlock Grid.Column="4" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="1" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="2" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
+                <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
               </Grid>
             </Border>
             <TextBlock x:Name="HistoryHint" Grid.Row="2" Classes="hint" Text="No commits yet" ZIndex="1" />
@@ -555,7 +555,7 @@ Esc clears it" />
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,Auto,170,80,130" Height="24">
+                  <Grid ColumnDefinitions="*,170,80,130" Height="24">
                     <DockPanel Grid.Column="0">
                       <local:GraphView DockPanel.Dock="Left" Row="{Binding Graph}" Margin="0,0,4,0" />
                       <ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding RefBadges}"
@@ -575,28 +575,29 @@ Esc clears it" />
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
+                      <!-- Like GitHub Desktop, each commit a push would send is marked; an arrow when narrow.
+                           Inside the summary's panel, so the summary trims to make room for it -->
+                      <Border DockPanel.Dock="Right" Classes="unpushed" IsVisible="{Binding IsUnpushed}"
+                              ToolTip.Tip="Not pushed: on this branch but not on the remote yet; Push sends it">
+                        <Panel>
+                          <TextBlock Classes="wide" Text="Not pushed" />
+                          <TextBlock Classes="narrow" Text="↑" />
+                        </Panel>
+                      </Border>
                       <local:CommitSubjectBlock Parts="{Binding SubjectParts}" TextTrimming="CharacterEllipsis"
                                                 VerticalAlignment="Center" />
                     </DockPanel>
-                    <!-- Like GitHub Desktop, each commit a push would send is marked; an arrow when narrow -->
-                    <Border Grid.Column="1" Classes="unpushed" IsVisible="{Binding IsUnpushed}"
-                            ToolTip.Tip="Not pushed: on this branch but not on the remote yet; Push sends it">
-                      <Panel>
-                        <TextBlock Classes="wide" Text="Not pushed" />
-                        <TextBlock Classes="narrow" Text="↑" />
-                      </Panel>
-                    </Border>
-                    <DockPanel Grid.Column="2" Margin="8,0,0,0">
+                    <DockPanel Grid.Column="1" Margin="8,0,0,0">
                       <local:AvatarView DockPanel.Dock="Left" Email="{Binding Email}" PersonName="{Binding Author}"
                                         Margin="0,0,6,0" VerticalAlignment="Center" Tag="author" Classes="link" />
                       <TextBlock Text="{Binding Author}" TextTrimming="CharacterEllipsis" Opacity="0.7"
                                  VerticalAlignment="Center" Tag="author" Classes="link"
                                  ToolTip.Tip="Open their profile, or this commit when the profile isn't known" />
                     </DockPanel>
-                    <TextBlock Grid.Column="3" Text="{Binding ShortHash}" Classes="mono link" Opacity="0.7"
+                    <TextBlock Grid.Column="2" Text="{Binding ShortHash}" Classes="mono link" Opacity="0.7"
                                Margin="8,0,0,0" VerticalAlignment="Center" Tag="commit"
                                ToolTip.Tip="Open this commit on the website" />
-                    <TextBlock Grid.Column="4" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
+                    <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
                                VerticalAlignment="Center" />
                   </Grid>
                 </DataTemplate>
