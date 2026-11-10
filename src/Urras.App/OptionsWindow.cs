@@ -78,6 +78,7 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _colours = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ThemeStore _themeStore = ThemeStore.Default;
     private const string BUILT_IN_COLOURS = "Built-in colours";
+    private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
 
     // Prompts
     private readonly CheckBox _confirmRemoveRepository;
@@ -488,7 +489,23 @@ public sealed class OptionsWindow : Window
         foreach (RadioButton theme in _themes)
             themes.Children.Add(theme);
 
+        // Each theme in the list shows its colours, and the picture below shows the chosen one
+        _colours.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((name, _) =>
+        {
+            StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            if (name != null)
+            {
+                row.Children.Add(ThemePreview.Swatches(ThemeNamed(name)));
+                row.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center });
+            }
+
+            return row;
+        });
         ListColours(_settings.CustomTheme);
+        _colours.SelectionChanged += (_, _) => ShowPreview();
+        foreach (RadioButton look in _themes)
+            look.IsCheckedChanged += (_, _) => ShowPreview();
+        ShowPreview();
         Button create = new Button { Content = "New theme…" };
         Button edit = new Button { Content = "Edit…" };
         Button folder = new Button { Content = "Open themes folder" };
@@ -506,7 +523,7 @@ public sealed class OptionsWindow : Window
         themeButtons.Children.Add(edit);
         themeButtons.Children.Add(folder);
 
-        return Page(Heading("Theme"), themes, Label("Colours"), _colours, themeButtons,
+        return Page(Heading("Theme"), themes, Label("Colours"), _colours, _preview, themeButtons,
                     Note("Colours offers ready-made themes in GitHub, GitLab, SourceGit and Fork's colours, and " +
                          "your own; editing a ready-made one makes a copy. A theme sets every colour of Urras on " +
                          "top of a dark or light base, and its base wins over the choice above. Your themes are " +
@@ -651,6 +668,20 @@ public sealed class OptionsWindow : Window
 
         if (_themeStore.Find(name) is { } theme)
             await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
+    }
+
+    // A theme by its name in the list; the built-in entry follows the dark or light choice above
+    private Urras.Core.Settings.Theme ThemeNamed(string name)
+    {
+        if (name != BUILT_IN_COLOURS && (ThemePresets.Find(name) ?? _themeStore.Find(name)) is { } theme)
+            return theme;
+        bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
+        return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);
+    }
+
+    private void ShowPreview()
+    {
+        _preview.Show(ThemeNamed(_colours.SelectedItem as string ?? BUILT_IN_COLOURS));
     }
 
     // The theme picked under Colours, ready-made or a file; null for the built-in colours
