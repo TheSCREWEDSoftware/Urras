@@ -7,7 +7,7 @@ you already have installed.
 
 **Status:** early development. First version with the basic Git workflow.
 
-![Urras: the repository list grouped by name with search, the changes and a diff](docs/screenshots/main-window.png)
+![Urras: grouped repositories with search, the history graph and a diff](docs/screenshots/main-window.png)
 
 ## Features
 
@@ -112,7 +112,7 @@ date of each change
   <tr>
     <td>
       <img src="docs/screenshots/import-menu.png" alt="Screenshot: import menu"><br>
-      Import: everything in a folder, GitHub Desktop's list, or clones from your accounts
+      Import: everything in a folder, GitHub Desktop's list and fork choices, or clones from your accounts
     </td>
     <td>
       <img src="docs/screenshots/import-dialog.png" alt="Screenshot: import dialog"><br>
@@ -132,7 +132,7 @@ date of each change
   <tr>
     <td>
       <img src="docs/screenshots/options-appearance.png" alt="Screenshot: options appearance"><br>
-      Options: theme, date and time formats, tab size and scroll bars
+      Options: ready-made themes (GitHub, GitLab, SourceGit, Fork) with their colours, and your own
     </td>
     <td>
       <img src="docs/screenshots/options-prompts.png" alt="Screenshot: options prompts"><br>
