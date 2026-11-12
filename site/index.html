@@ -67,6 +67,11 @@
       display: block;
     }
     figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
+    figure.wide img { aspect-ratio: auto; }
+
+    .twin { display: flex; gap: 18px; align-items: center; }
+    .twin img { width: 72px; height: 72px; flex: none; }
+    .twin p { margin: 4px 0 0; color: var(--muted); }
 
     a { color: var(--accent); }
     footer { margin-top: 56px; color: var(--muted); font-size: 0.9rem; text-align: center; }
@@ -75,7 +80,7 @@
 <body>
 <main>
   <header>
-    <img src="urras.png" alt="Urras icon: shards of ice in a blizzard">
+    <img src="urras.png" alt="Urras icon: three shards of ice">
     <h1>Urras</h1>
     <p class="tagline">A fast, native Git client for Windows and Linux. Free and open source.</p>
     <div class="buttons">
@@ -86,7 +91,7 @@
   </header>
 
   <a href="screenshots/main-window.png"><img class="hero" src="screenshots/main-window.png"
-       alt="Urras: the repository list grouped by name with search, the changes and a diff"></a>
+       alt="Urras: the repository list, the history graph with branches, and a commit's diff"></a>
 
   <h2>What it does</h2>
   <div class="cards">
@@ -116,38 +121,89 @@
         pictures, co-authors by @username, and forks that know where changes go.</p>
     </div>
     <div class="card">
+      <h3>Make it yours</h3>
+      <p>Twelve ready-made themes, from GitHub, GitLab, SourceGit and Fork's colours to Frost, Fel, Horde and
+        Alliance. Edit any of them (Restore defaults brings the original back), and pick the font and text size
+        for every theme or just one.</p>
+    </div>
+    <div class="card">
       <h3>Quick and careful</h3>
       <p>Native, not a web page in a window. Refreshes when something changes, asks before anything that can
         lose work, and keeps a daily backup of its settings.</p>
     </div>
+    <div class="card">
+      <h3>Stays out of the way</h3>
+      <p>One window however often you start it, an optional check for new versions, close to the system tray if
+        you like, and an AI assistant for commit messages only if you choose one.</p>
+    </div>
   </div>
+
+  <h2>History at a glance</h2>
+  <figure class="wide">
+    <a href="screenshots/history-graph.png"><img src="screenshots/history-graph.png" loading="lazy"
+       alt="The history graph: a lane per branch, branch labels in their lane's colour, and commits not pushed yet"></a>
+    <figcaption>A lane per branch, labels in their lane's colour with the remote beside pushed branches, and
+      commits that aren't pushed yet</figcaption>
+  </figure>
 
   <h2>Screenshots</h2>
   <div class="gallery">
     <figure>
-      <a href="screenshots/branch-menu.png"><img src="screenshots/branch-menu.png" alt="The Branch menu" loading="lazy"></a>
+      <a href="screenshots/changes.png"><img src="screenshots/changes.png" loading="lazy"
+           alt="Changes"></a>
+      <figcaption>The changes, a diff with word-level colours, and the commit message</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/theme-editor.png"><img src="screenshots/theme-editor.png" loading="lazy"
+           alt="The theme editor"></a>
+      <figcaption>Editing a theme, ready-made ones included</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/options-appearance.png"><img src="screenshots/options-appearance.png" loading="lazy"
+           alt="Options: appearance"></a>
+      <figcaption>Themes, and the text size and font for every theme or just one</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/branch-menu.png"><img src="screenshots/branch-menu.png" loading="lazy"
+           alt="The Branch menu"></a>
       <figcaption>Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/repository-menu.png"><img src="screenshots/repository-menu.png" alt="A repository's menu" loading="lazy"></a>
+      <a href="screenshots/repository-menu.png"><img src="screenshots/repository-menu.png" loading="lazy"
+           alt="A repository's menu"></a>
       <figcaption>Open a repository elsewhere, view it on GitHub, fetch, pull, pin and group</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/markdown-preview.png"><img src="screenshots/markdown-preview.png" alt="A Markdown file rendered" loading="lazy"></a>
+      <a href="screenshots/markdown-preview.png"><img src="screenshots/markdown-preview.png" loading="lazy"
+           alt="A Markdown file rendered"></a>
       <figcaption>Markdown rendered instead of shown as text</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/file-filter.png"><img src="screenshots/file-filter.png" alt="Filtering the changes" loading="lazy"></a>
-      <figcaption>Filtering the changes, with syntax colours in the diff</figcaption>
+      <a href="screenshots/file-filter.png"><img src="screenshots/file-filter.png" loading="lazy"
+           alt="Filtering the changes"></a>
+      <figcaption>Filtering the changes by name</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/import-dialog.png"><img src="screenshots/import-dialog.png" alt="Choosing repositories to add" loading="lazy"></a>
+      <a href="screenshots/options-accounts.png"><img src="screenshots/options-accounts.png" loading="lazy"
+           alt="Options: accounts"></a>
+      <figcaption>Sign in to GitHub, GitLab, Gitea or Bitbucket</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/import-dialog.png"><img src="screenshots/import-dialog.png" loading="lazy"
+           alt="Choosing repositories to add"></a>
       <figcaption>Adding many repositories at once</figcaption>
     </figure>
-    <figure>
-      <a href="screenshots/options-prompts.png"><img src="screenshots/options-prompts.png" alt="Options: prompts" loading="lazy"></a>
-      <figcaption>Which questions to ask, and what happens to changes when switching branch</figcaption>
-    </figure>
+  </div>
+
+  <h2>Its twin: Anarres</h2>
+  <div class="card twin">
+    <img src="https://raw.githubusercontent.com/TheSCREWEDSoftware/Anarres/main/src/Anarres.App/Assets/anarres.png"
+         alt="Anarres icon: three purple lightning bolts" onerror="this.style.display='none'">
+    <div>
+      <h3><a href="https://thescrewedsoftware.github.io/Anarres/">Anarres</a></h3>
+      <p>A spell and DBC editor for AzerothCore (World of Warcraft 3.3.5a), with the same look, themes and theme
+        files as Urras.</p>
+    </div>
   </div>
 
   <footer>
