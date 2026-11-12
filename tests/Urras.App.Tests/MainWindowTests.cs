@@ -27,7 +27,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     // Two unrelated repositories share a name, and one has a clone, so grouping by name has work to do
-    private MainWindow OpenWindow()
+    private MainWindow OpenWindow(Action<AppSettings>? configure = null)
     {
         string first = Ui.Repository(Path.Combine(_root, "a"), "wiki");
         string second = Ui.Repository(Path.Combine(_root, "b"), "wiki");
@@ -38,6 +38,7 @@ public sealed class MainWindowTests : IDisposable
         foreach (string path in new[] { first, second, clone })
             settings.AddRepository(path);
         settings.LastRepository = clone;
+        configure?.Invoke(settings);
         settings.Save();
 
         MainWindow window = new MainWindow();
@@ -134,5 +135,56 @@ public sealed class MainWindowTests : IDisposable
         options.Close(false);
         Ui.Pump();
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void CloseButtonExitsByDefault()
+    {
+        MainWindow window = OpenWindow();
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Close();
+        Ui.Pump();
+        Assert.True(closed);
+    }
+
+    [AvaloniaFact]
+    public void CloseButtonCanHideToTheTray()
+    {
+        MainWindow window = OpenWindow(settings => settings.CloseButton = CloseAction.Tray);
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Close();
+        Ui.Pump();
+        Assert.False(closed);
+        Assert.False(window.IsVisible);
+
+        window.BringForward();
+        Assert.True(window.IsVisible);
+        window.FindControl<MenuItem>("ExitItem")!.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Ui.Pump();
+        Assert.True(closed);
+    }
+
+    [AvaloniaFact]
+    public void AsksBeforeExitingWhenChosen()
+    {
+        MainWindow window = OpenWindow(settings => settings.ConfirmBeforeExit = true);
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Close();
+        Ui.Pump(() => window.OwnedWindows.Count > 0);
+        Assert.False(closed);
+
+        // Cancel keeps Urras open
+        ((Window)window.OwnedWindows[^1]).Close(false);
+        Ui.Pump();
+        Assert.False(closed);
+
+        window.Close();
+        Ui.Pump(() => window.OwnedWindows.Count > 0);
+        ((Window)window.OwnedWindows[^1]).Close(true);
+        Ui.Pump(() => closed);
+        Assert.True(closed);
     }
 }
