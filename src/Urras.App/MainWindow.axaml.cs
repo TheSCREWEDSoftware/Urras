@@ -203,7 +203,11 @@ public partial class MainWindow : Window
                 history = _history;
             // A search leaves gaps between commits, so the graph is only drawn for the full history
             else if (_historyFilter == null)
+            {
                 CommitGraph.Assign(history);
+                GraphView.LaneWidth = GraphView.LaneWidthFor(history.Select(commit => commit.Graph?.Width ?? 0)
+                                                                    .DefaultIfEmpty(0).Max());
+            }
             _historySignature = historySignature;
             await ApplyLineEndingWarningsAsync(status);
             await UpdateOperationBannerAsync(status);

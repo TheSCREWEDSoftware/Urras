@@ -89,12 +89,18 @@ public static class GraphTests
         List<RefBadge> badges = RefBadge.Parse("HEAD -> refs/heads/main, tag: refs/tags/v0.1.0, " +
                                                "refs/remotes/origin/main, refs/remotes/origin/HEAD, " +
                                                "refs/heads/feature/graph");
-        Assert.Equal(4, badges.Count, "origin/HEAD is left out");
-        Assert.Equal(new RefBadge("main", RefKind.Head), badges[0], "checked-out branch");
+        Assert.Equal(3, badges.Count, "origin/HEAD is left out, and origin/main joins main");
+        Assert.Equal(new RefBadge("main", RefKind.Head) { Remote = "origin" }, badges[0], "checked-out branch");
         Assert.Equal("main", badges[0].Text, "the badge style marks the current branch");
         Assert.Equal(new RefBadge("v0.1.0", RefKind.Tag), badges[1], "tag");
-        Assert.Equal(new RefBadge("origin/main", RefKind.Remote), badges[2], "remote branch");
-        Assert.Equal(new RefBadge("feature/graph", RefKind.Local), badges[3], "local branch with a slash");
+        Assert.Equal(new RefBadge("feature/graph", RefKind.Local), badges[2], "local branch with a slash");
+
+        // Only "<remote>/<the same name>" joins; a remote branch alone, or one ending the same way, stays apart
+        List<RefBadge> split = RefBadge.Parse("refs/heads/split/scripts, refs/remotes/origin/split/scripts, " +
+                                              "refs/heads/scripts, refs/remotes/fork/other");
+        Assert.Equal("split/scripts:origin,scripts:,fork/other:",
+                     string.Join(",", split.Select(badge => badge.Name + ":" + badge.Remote)),
+                     "split/scripts joined with origin; scripts doesn't take origin/split/scripts");
         Assert.Equal(new RefBadge("HEAD (detached)", RefKind.Head), RefBadge.Parse("HEAD")[0], "detached");
         Assert.Equal(0, RefBadge.Parse("").Count, "no refs");
     }

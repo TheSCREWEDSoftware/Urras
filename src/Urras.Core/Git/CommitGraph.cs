@@ -84,6 +84,9 @@ public static class CommitGraph
                 lanes.RemoveAt(lanes.Count - 1);
 
             commit.Graph = BuildRow(commit, top, lanes, lane, parentLanes);
+            // Badges take the colour of their commit's lane
+            foreach (RefBadge badge in commit.RefBadges)
+                badge.Lane = commit.Graph.Lane;
         }
     }
 

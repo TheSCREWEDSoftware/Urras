@@ -67,6 +67,18 @@
       <Setter Property="Background" Value="#33B083F0" />
       <Setter Property="BorderBrush" Value="#B083F0" />
     </Style>
+    <!-- Branch badges take their commit's lane colour, so it's clear which line they belong to -->
+    <Style Selector="Border.refBadge.lane">
+      <Setter Property="BorderBrush" Value="{Binding Lane, Converter={x:Static local:GraphConverters.LaneBrush}}" />
+      <Setter Property="Background" Value="{Binding Lane, Converter={x:Static local:GraphConverters.LaneTint}}" />
+    </Style>
+    <Style Selector="Border.refBadge.lane TextBlock">
+      <Setter Property="Foreground" Value="{Binding Lane, Converter={x:Static local:GraphConverters.LaneBrush}}" />
+    </Style>
+    <Style Selector="Border.refBadge TextBlock.remoteName">
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="FontSize" Value="10" />
+    </Style>
     <Style Selector="Border.refBadge.stash TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource Urras.Accent}" />
     </Style>
@@ -574,7 +586,16 @@ Esc clears it" />
                 <DataTemplate>
                   <Grid ColumnDefinitions="*,170,80,130" Height="24">
                     <DockPanel Grid.Column="0">
-                      <local:GraphView DockPanel.Dock="Left" Row="{Binding Graph}" Margin="0,0,4,0" />
+                      <!-- The graph, with the author's picture inside each commit's ring -->
+                      <Panel DockPanel.Dock="Left" Margin="0,0,4,0">
+                        <local:GraphView Row="{Binding Graph}" />
+                        <local:AvatarView Email="{Binding Email}" PersonName="{Binding Author}"
+                                          IsVisible="{Binding Graph, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                          Margin="{Binding Graph,
+                                                   Converter={x:Static local:GraphConverters.AvatarMargin}}"
+                                          IsHitTestVisible="False" />
+                      </Panel>
                       <ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding RefBadges}"
                                     IsVisible="{Binding HasRefs}" VerticalAlignment="Center">
                         <ItemsControl.ItemsPanel>
@@ -586,8 +607,13 @@ Esc clears it" />
                           <DataTemplate>
                             <Border Classes="refBadge" Classes.head="{Binding IsHead}"
                                     Classes.remote="{Binding IsRemote}" Classes.tag="{Binding IsTag}"
-                                    Classes.stash="{Binding IsStash}">
-                              <TextBlock Text="{Binding Text}" />
+                                    Classes.stash="{Binding IsStash}" Classes.lane="{Binding IsBranch}">
+                              <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="{Binding Text}" />
+                                <!-- The remote branch is on the same commit -->
+                                <TextBlock Classes="remoteName" Text="{Binding Remote}" IsVisible="{Binding HasRemote}"
+                                           ToolTip.Tip="The remote's branch of the same name is here too" />
+                              </StackPanel>
                             </Border>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>

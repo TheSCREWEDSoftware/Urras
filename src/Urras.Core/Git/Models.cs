@@ -181,6 +181,14 @@ public sealed record RefBadge(string Name, RefKind Kind)
     public bool IsStash => Kind == RefKind.Stash;
     public string Text => Name;
 
+    // A local branch whose remote branch is on the same commit shows as one badge, with the remote's name
+    public string? Remote { get; init; }
+    public bool HasRemote => Remote != null;
+    public bool IsBranch => Kind is RefKind.Local or RefKind.Remote;
+
+    // The graph lane of the commit, so the badge takes its colour; set when the graph is laid out
+    public int Lane { get; set; }
+
     // %D with --decorate=full, so local branches like feature/x are told apart from remote ones
     public static List<RefBadge> Parse(string refs)
     {
@@ -204,7 +212,49 @@ public sealed record RefBadge(string Name, RefKind Kind)
                 badges.Add(new RefBadge(Short(part), RefKind.Local));
         }
 
-        return badges;
+        return Merged(badges);
+    }
+
+    // "split/x" and "origin/split/x" on one commit become one "split/x" badge marked with origin
+    private static List<RefBadge> Merged(List<RefBadge> badges)
+    {
+        HashSet<RefBadge> absorbed = new HashSet<RefBadge>();
+        List<RefBadge> merged = new List<RefBadge>();
+        foreach (RefBadge badge in badges)
+        {
+            if (badge.Kind is not (RefKind.Local or RefKind.Head) ||
+                badge.Name.StartsWith("HEAD", StringComparison.Ordinal))
+                continue;
+
+            RefBadge? remote = badges.FirstOrDefault(other => other.Kind == RefKind.Remote &&
+                                                              !absorbed.Contains(other) &&
+                                                              RemoteOf(other.Name, badge.Name) != null);
+            if (remote != null)
+                absorbed.Add(remote);
+        }
+
+        foreach (RefBadge badge in badges)
+        {
+            if (absorbed.Contains(badge))
+                continue;
+
+            string? remote = badge.Kind is RefKind.Local or RefKind.Head
+                ? absorbed.Select(other => RemoteOf(other.Name, badge.Name)).FirstOrDefault(name => name != null)
+                : null;
+            merged.Add(remote == null ? badge : badge with { Remote = remote });
+        }
+
+        return merged;
+    }
+
+    // "origin" when remoteBranch is exactly "origin/<branch>", the remote's name being one segment; otherwise null
+    private static string? RemoteOf(string remoteBranch, string branch)
+    {
+        int slash = remoteBranch.IndexOf('/');
+        return slash > 0 && remoteBranch.Length == slash + 1 + branch.Length &&
+               remoteBranch.EndsWith(branch, StringComparison.Ordinal)
+            ? remoteBranch[..slash]
+            : null;
     }
 
     private static string Short(string name)
