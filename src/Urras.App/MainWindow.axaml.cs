@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitializeTitleBar();
+        InitializeUpdates();
         ShowMoreHistoryButton.Click += async (_, _) =>
         {
             _historyLimit += GitRepository.DEFAULT_HISTORY_LIMIT;
@@ -829,6 +830,11 @@ public partial class MainWindow : Window
         {
             e.Handled = true;
             _ = RefreshAsync();
+        }
+        else if (e.Key == Key.F1)
+        {
+            e.Handled = true;
+            _ = Dialogs.ShortcutsAsync(this);
         }
         else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) &&
                  !e.KeyModifiers.HasFlag(KeyModifiers.Shift))

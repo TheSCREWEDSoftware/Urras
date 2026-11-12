@@ -6,6 +6,10 @@ public static class GlobalConfig
     public const string USER_NAME = "user.name";
     public const string USER_EMAIL = "user.email";
     public const string DEFAULT_BRANCH = "init.defaultBranch";
+    // Commit signing: on or off, "ssh" or "openpgp", and the key (an SSH public key file or a GPG key id)
+    public const string SIGN_COMMITS = "commit.gpgsign";
+    public const string SIGNING_FORMAT = "gpg.format";
+    public const string SIGNING_KEY = "user.signingkey";
 
     // git config --unset exits with 5 when the key wasn't set, which is what was asked for
     private const int NOT_SET_EXIT_CODE = 5;

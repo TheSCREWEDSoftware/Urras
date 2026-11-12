@@ -324,6 +324,57 @@ public static class Dialogs
         return sentence;
     }
 
+    // Every keyboard shortcut, from Help > Keyboard shortcuts or F1
+    private static readonly (string Keys, string Action)[] Shortcuts =
+    {
+        ("F1", "This list"),
+        ("F5", "Refresh"),
+        ("Ctrl+F", "Search the repository list (Esc clears it)"),
+        ("Ctrl+P", "Quick Launch: open a repository, switch branch or run a command"),
+        ("Ctrl+B", "Switch branch"),
+        ("Ctrl+N", "New repository"),
+        ("Ctrl+O", "Add a local repository"),
+        ("Ctrl+Shift+O", "Clone a repository"),
+        ("Ctrl+,", "Options"),
+        ("Ctrl+Enter", "Commit, from the summary or description"),
+        ("Ctrl+click", "Select two commits in History to compare them"),
+        ("Enter", "Search the history, from its search box"),
+        ("Alt+F4", "Close Urras")
+    };
+
+    public static async Task ShortcutsAsync(Window owner)
+    {
+        Window dialog = CreateWindow("Keyboard shortcuts");
+        Grid table = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+        for (int row = 0; row < Shortcuts.Length; row++)
+        {
+            table.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            TextBlock keys = new TextBlock
+            {
+                Text = Shortcuts[row].Keys,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 3, 16, 3)
+            };
+            TextBlock action = new TextBlock
+            {
+                Text = Shortcuts[row].Action,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 3)
+            };
+            Grid.SetRow(keys, row);
+            Grid.SetRow(action, row);
+            Grid.SetColumn(action, 1);
+            table.Children.Add(keys);
+            table.Children.Add(action);
+        }
+
+        Button close = new Button { Content = "Close", IsDefault = true, IsCancel = true };
+        Button unused = new Button { IsVisible = false };
+        close.Click += (_, _) => dialog.Close(null);
+        dialog.Content = Layout(new TextBlock { IsVisible = false }, table, close, unused);
+        await dialog.ShowDialog<object?>(owner);
+    }
+
     // A failed Git command, like GitHub Desktop's error window; true when the Git log should open
     public static Task<bool> GitErrorAsync(Window owner, string message)
     {

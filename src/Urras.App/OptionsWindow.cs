@@ -66,6 +66,19 @@ public sealed class OptionsWindow : Window
     private readonly TextBox _userName = new TextBox();
     private readonly TextBox _userEmail = new TextBox();
     private readonly TextBox _defaultBranch = new TextBox { Watermark = "main" };
+    // Commit signing: off, with an SSH key, or with a GPG key
+    private static readonly string[] SigningChoices = { "Off", "With an SSH key", "With a GPG key" };
+    private readonly ComboBox _signing = new ComboBox
+    {
+        ItemsSource = SigningChoices,
+        SelectedIndex = 0,
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    private readonly TextBox _signingKey = new TextBox { Watermark = "~/.ssh/id_ed25519.pub, or a GPG key id" };
+    private string? _loadedSigning;
+    private string? _loadedFormat;
+    private string? _loadedKey;
+    private readonly CheckBox _checkUpdates;
     private string? _loadedName;
     private string? _loadedEmail;
     private string? _loadedBranch;
@@ -165,6 +178,7 @@ public sealed class OptionsWindow : Window
         _checkWhitespace = Check("Ask before committing whitespace problems (such as trailing spaces)",
                                  settings.CheckWhitespaceBeforeCommit);
         _hideUntracked = Check("Hide untracked files in Changes", settings.HideUntracked);
+        _checkUpdates = Check("Check GitHub for a new version of Urras once a day", settings.CheckForUpdates);
         _forkDefault = Combo(new List<string>
         {
             "Ask for each fork", "Contribute to the parent project", "Use forks for my own purposes"
@@ -298,6 +312,7 @@ public sealed class OptionsWindow : Window
                                                                                              : "a new key");
         _tracker.Track(ADVANCED, "Background fetch", () => Selected(_autoFetch));
         _tracker.Track(ADVANCED, "Whitespace check", () => OnOff(_checkWhitespace));
+        _tracker.Track(ADVANCED, "Update check", () => OnOff(_checkUpdates));
         _tracker.Track(ADVANCED, "Hide untracked files", () => OnOff(_hideUntracked));
     }
 
@@ -485,6 +500,10 @@ public sealed class OptionsWindow : Window
 
         return Page(Heading("Author"), Label("Name"), _userName, Label("Email"), _userEmail, useNoreply,
                     Heading("Default branch for new repositories"), _defaultBranch,
+                    Heading("Sign commits"), _signing, Label("Key"), _signingKey,
+                    Note("Signed commits show as Verified on GitHub once the key is added to your account as a " +
+                         "signing key. For SSH (Git 2.34 or newer), give the public key file; for GPG, the key's " +
+                         "id."),
                     Note("These go in your global Git configuration, so other Git tools use them too."));
     }
 
@@ -592,7 +611,8 @@ public sealed class OptionsWindow : Window
 
     private Control AdvancedPage()
     {
-        return Page(Heading("Background fetch"), _autoFetch,
+        return Page(Heading("Updates"), _checkUpdates,
+                    Heading("Background fetch"), _autoFetch,
                     Note("Fetches every repository in the list now and then, so ahead and behind counts stay " +
                          "current."),
                     Heading("Changes"), _checkWhitespace, _hideUntracked,
@@ -717,6 +737,14 @@ public sealed class OptionsWindow : Window
         _userName.Text = _loadedName;
         _userEmail.Text = _loadedEmail;
         _defaultBranch.Text = _loadedBranch;
+        _loadedSigning = await GlobalConfig.GetAsync(GlobalConfig.SIGN_COMMITS);
+        _loadedFormat = await GlobalConfig.GetAsync(GlobalConfig.SIGNING_FORMAT);
+        _loadedKey = await GlobalConfig.GetAsync(GlobalConfig.SIGNING_KEY);
+        bool signing = string.Equals(_loadedSigning, "true", StringComparison.OrdinalIgnoreCase);
+        _signing.SelectedIndex = !signing ? 0 : _loadedFormat == "ssh" ? 1 : 2;
+        _signingKey.Text = _loadedKey;
+        _tracker.Track(GIT, "Sign commits", () => Selected(_signing));
+        _tracker.Track(GIT, "Signing key", () => Text(_signingKey));
         _tracker.Track(GIT, "Name", () => Text(_userName));
         _tracker.Track(GIT, "Email", () => Text(_userEmail));
         _tracker.Track(GIT, "Default branch", () => Text(_defaultBranch));
@@ -758,6 +786,7 @@ public sealed class OptionsWindow : Window
         _settings.AutoFetchMinutes = FetchIntervals[Math.Max(0, _autoFetch.SelectedIndex)];
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
         _settings.HideUntracked = _hideUntracked.IsChecked == true;
+        _settings.CheckForUpdates = _checkUpdates.IsChecked == true;
         _settings.AlwaysShowScrollBars = _fullScrollBars.IsChecked == true;
         _settings.ShowWindowsInTaskbar = _windowsInTaskbar.IsChecked == true;
         _settings.DefaultForkTarget = (ForkTarget)Math.Max(0, _forkDefault.SelectedIndex);
@@ -767,6 +796,14 @@ public sealed class OptionsWindow : Window
         await SaveGlobalAsync(GlobalConfig.USER_NAME, _loadedName, _userName.Text);
         await SaveGlobalAsync(GlobalConfig.USER_EMAIL, _loadedEmail, _userEmail.Text);
         await SaveGlobalAsync(GlobalConfig.DEFAULT_BRANCH, _loadedBranch, _defaultBranch.Text);
+        // Off leaves signing unset unless it was on before; the key stays for turning it back on
+        bool sign = _signing.SelectedIndex > 0;
+        string? signSetting = sign ? "true" : _loadedSigning == null ? null : "false";
+        await SaveGlobalAsync(GlobalConfig.SIGN_COMMITS, _loadedSigning, signSetting);
+        if (sign)
+            await SaveGlobalAsync(GlobalConfig.SIGNING_FORMAT, _loadedFormat,
+                                  _signing.SelectedIndex == 1 ? "ssh" : "openpgp");
+        await SaveGlobalAsync(GlobalConfig.SIGNING_KEY, _loadedKey, _signingKey.Text);
         _closeAllowed = true;
         Close(true);
     }

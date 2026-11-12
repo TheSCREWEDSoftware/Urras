@@ -174,12 +174,14 @@
 
     <!-- Urras's own title bar on Windows (File menu and title; Windows draws the buttons on the right), a menu row
          elsewhere; the empty parts drag the window. The shortcuts are handled in OnPreviewKeyDown -->
-    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto" MinHeight="32">
+    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" MinHeight="32">
       <Image x:Name="TitleIcon" Grid.Column="0" Source="/Assets/urras.png" Width="16" Height="16"
              Margin="12,0,4,0" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="False" />
       <TextBlock x:Name="WindowTitle" Grid.Column="2" Classes="windowTitle" Text="Urras" IsVisible="False"
                  HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
-      <Button x:Name="NotificationsButton" Grid.Column="3" Content="Notifications" Classes="subtle"
+      <Button x:Name="UpdateButton" Grid.Column="3" Classes="accent" Padding="10,3" Margin="0,0,6,0"
+              VerticalAlignment="Center" IsVisible="False" />
+      <Button x:Name="NotificationsButton" Grid.Column="4" Content="Notifications" Classes="subtle"
               Padding="10,4" VerticalAlignment="Center" IsVisible="False" />
       <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent">
         <MenuItem Header="_File">
@@ -199,6 +201,9 @@
           <MenuItem x:Name="LogToggle" Header="_Git log" ToggleType="CheckBox" />
         </MenuItem>
         <MenuItem Header="_Help">
+          <MenuItem x:Name="ShortcutsItem" Header="_Keyboard shortcuts" InputGesture="F1" />
+          <MenuItem x:Name="UpdatesItem" Header="Check for _updates…" />
+          <Separator />
           <MenuItem x:Name="AboutButton" Header="_About Urras" />
         </MenuItem>
       </Menu>
@@ -212,7 +217,8 @@
           <Button x:Name="ViewOnlineButton" Content="View online" IsVisible="False" Classes="subtle" />
           <!-- Like GitHub Desktop: one button for what's needed now, the rest in the menu beside it -->
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="SyncButton" MinWidth="220" MaxWidth="300" HorizontalContentAlignment="Stretch"
+            <Button x:Name="SyncButton" AutomationProperties.Name="Fetch, pull or push"
+                    MinWidth="220" MaxWidth="300" HorizontalContentAlignment="Stretch"
                     CornerRadius="8,0,0,8">
               <DockPanel>
                 <!-- Runs while Git works, so a long push or pull doesn't look stuck -->
@@ -235,7 +241,8 @@
                 </StackPanel>
               </DockPanel>
             </Button>
-            <Button x:Name="SyncMenuButton" Content="▾" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+            <Button x:Name="SyncMenuButton" AutomationProperties.Name="More fetch, pull and push actions"
+                    Content="▾" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                     CornerRadius="0,8,8,0" Margin="1,0,0,0" ToolTip.Tip="Fetch, pull or push" />
           </StackPanel>
           <Button x:Name="RefreshButton" Content="Refresh" ToolTip.Tip="Refresh (F5)" Classes="subtle" />
@@ -245,7 +252,8 @@
           <!-- Fixed width, matching the repository panel, so the branch box doesn't move with the name -->
           <TextBlock x:Name="RepositoryTitle" Text="No repository" FontSize="16" FontWeight="SemiBold"
                      VerticalAlignment="Center" Width="286" TextTrimming="CharacterEllipsis" />
-          <Button x:Name="WorktreeButton" MinWidth="170" MaxWidth="260" HorizontalContentAlignment="Stretch"
+          <Button x:Name="WorktreeButton" AutomationProperties.Name="Current worktree"
+                    MinWidth="170" MaxWidth="260" HorizontalContentAlignment="Stretch"
                   CornerRadius="8"
                   IsVisible="False" ToolTip.Tip="Switch to another worktree of this repository, or make one">
             <DockPanel>
@@ -256,7 +264,8 @@
               </StackPanel>
             </DockPanel>
           </Button>
-          <Button x:Name="BranchButton" MinWidth="240" MaxWidth="320" HorizontalContentAlignment="Stretch"
+          <Button x:Name="BranchButton" AutomationProperties.Name="Current branch"
+                    MinWidth="240" MaxWidth="320" HorizontalContentAlignment="Stretch"
                   CornerRadius="8"
                   ToolTip.Tip="Switch branch, see pull requests, or merge (Ctrl+B)">
             <DockPanel>

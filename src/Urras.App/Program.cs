@@ -13,6 +13,10 @@ internal static class Program
         if (AskPass.IsAskPassCall(args))
             return AskForGit(args);
 
+        // Urras is already open: bring it forward instead of opening a second one
+        if (SingleInstance.HandOver())
+            return 0;
+
         StartupLog.Begin();
         // Errors no handler caught are written down before the app closes
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>

@@ -104,6 +104,9 @@ public partial class App : Application
             MainWindow window = new MainWindow();
             desktop.MainWindow = window;
             StartupLog.Step("Main window made");
+            // Later starts hand over to this one, which comes forward
+            SingleInstance instance = SingleInstance.Listen(() => Dispatcher.UIThread.Post(window.BringForward));
+            desktop.Exit += (_, _) => instance.Dispose();
             window.Opened += (_, _) => StartupLog.Step("Main window opened: " + DescribeWindow(window));
             StartWatchdog();
             if (crashedRun is { } started)

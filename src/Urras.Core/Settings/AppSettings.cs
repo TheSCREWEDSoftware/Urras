@@ -124,6 +124,10 @@ public sealed class AppSettings
     // History lists every branch, remote branch and tag, with the commit graph beside it
     public bool HistoryAllBranches { get; set; } = true;
 
+    // Asks GitHub once a day whether a newer Urras is out
+    public bool CheckForUpdates { get; set; } = true;
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+
     // Untracked files are left out of the change list and of Stage all
     public bool HideUntracked { get; set; }
 

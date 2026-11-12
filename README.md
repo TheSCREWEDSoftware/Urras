@@ -213,6 +213,11 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - AI assistant with the service of your choice (OpenAI-compatible, Anthropic or a command-line agent): commit
   messages from the staged changes, explaining commits, conflict suggestions; off by default
 - Git log panel showing every command Urras runs and its output
+- Failed commands open a window with Git's error, like GitHub Desktop (can be turned off)
+- Commit signing with an SSH or GPG key (Options > Git), for GitHub's Verified badge
+- A daily check for a new Urras on GitHub, offered from the title bar; Help > Check for updates asks at once
+- Keyboard shortcuts listed under Help (F1); starting Urras again brings the open one forward
+- Discarded files are copied first and kept for a week, since Git can't undo a discard
 - Themes: built-in Dark and Light, and your own colours in shareable theme files that newer versions keep up to
   date ([docs/themes.md](docs/themes.md))
 
