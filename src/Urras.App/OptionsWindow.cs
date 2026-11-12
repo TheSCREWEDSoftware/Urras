@@ -205,6 +205,8 @@ public sealed class OptionsWindow : Window
         _checkUpdates = Check("Check GitHub for a new version of Urras once a day", settings.CheckForUpdates);
         _closeButton = Combo(new List<string> { "Exit Urras completely", "Minimise Urras to the system tray" }, null);
         _closeButton.SelectedIndex = (int)settings.CloseButton;
+        // Only Windows and macOS always have a notification area to come back from
+        _closeButton.IsEnabled = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
         _confirmExit = Check("Ask before exiting Urras", settings.ConfirmBeforeExit);
         _forkDefault = Combo(new List<string>
         {

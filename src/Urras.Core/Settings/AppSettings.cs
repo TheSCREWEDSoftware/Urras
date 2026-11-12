@@ -108,9 +108,16 @@ public sealed class AppSettings
     public double FontSize { get; set; } = DEFAULT_FONT_SIZE;
     public string FontFamily { get; set; } = string.Empty;
 
-    // Per theme (by its name under Colours), a text size or font that replaces the ones above, as in Anarres
-    public Dictionary<string, ThemeText> ThemeText { get; set; } =
+    private Dictionary<string, ThemeText> _themeText =
         new Dictionary<string, ThemeText>(StringComparer.OrdinalIgnoreCase);
+
+    // Per theme (by its name under Colours, any case even after loading), a size or font replacing the ones above
+    public Dictionary<string, ThemeText> ThemeText
+    {
+        get => _themeText;
+        set => _themeText = new Dictionary<string, ThemeText>(value ?? new Dictionary<string, ThemeText>(),
+                                                              StringComparer.OrdinalIgnoreCase);
+    }
 
     // The theme's name under Colours, the key for its own text
     [JsonIgnore]
@@ -118,13 +125,13 @@ public sealed class AppSettings
 
     public double FontSizeFor(string theme)
     {
-        double size = ThemeText.TryGetValue(theme, out ThemeText? text) && text.FontSize is { } own ? own : FontSize;
+        double size = ThemeText.TryGetValue(theme, out ThemeText? text) && text?.FontSize is { } own ? own : FontSize;
         return Math.Clamp(size, FontSizes[0], FontSizes[^1]);
     }
 
     public string FontFamilyFor(string theme)
     {
-        return ThemeText.TryGetValue(theme, out ThemeText? text) && !string.IsNullOrEmpty(text.FontFamily)
+        return ThemeText.TryGetValue(theme, out ThemeText? text) && !string.IsNullOrEmpty(text?.FontFamily)
                    ? text.FontFamily
                    : FontFamily ?? string.Empty;
     }

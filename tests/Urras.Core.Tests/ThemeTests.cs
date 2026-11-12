@@ -71,6 +71,17 @@ public static class ThemeTests
         Assert.Equal("Inter", settings.FontFamilyFor("Fel"), "Fel follows the font for every theme");
         Assert.Equal(14.0, settings.FontSizeFor("Frost"), "other themes follow the size for every theme");
         Assert.Equal(AppSettings.BUILT_IN_COLOURS, settings.ThemeKey, "no theme chosen is the built-in colours");
+
+        string file = Path.Combine(Path.GetTempPath(), "urras-text-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            settings.Save(file);
+            Assert.Equal(16.0, AppSettings.Load(file).FontSizeFor("FEL"), "any case after loading too");
+        }
+        finally
+        {
+            File.Delete(file);
+        }
     }
 
     // Ready-made themes and the built-in colours are edited in place, and Restore defaults brings them back

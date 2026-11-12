@@ -151,6 +151,8 @@ public sealed class MainWindowTests : IDisposable
     [AvaloniaFact]
     public void CloseButtonCanHideToTheTray()
     {
+        // The headless tests run on Linux too, where the tray is otherwise left off
+        MainWindow.TrayWorks = true;
         MainWindow window = OpenWindow(settings => settings.CloseButton = CloseAction.Tray);
         bool closed = false;
         window.Closed += (_, _) => closed = true;

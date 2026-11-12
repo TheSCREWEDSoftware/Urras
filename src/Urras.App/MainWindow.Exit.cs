@@ -31,7 +31,7 @@ public partial class MainWindow
         if (_exiting || e.CloseReason is WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown)
             return;
 
-        if (_settings.CloseButton == CloseAction.Tray)
+        if (_settings.CloseButton == CloseAction.Tray && TrayWorks)
         {
             e.Cancel = true;
             HideToTray();
@@ -46,6 +46,9 @@ public partial class MainWindow
         _exiting = true;
         Close();
     }
+
+    // Linux desktops without a notification area would leave a hidden window there was no way back to
+    internal static bool TrayWorks { get; set; } = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
 
     private async Task<bool> ConfirmExitAsync()
     {
