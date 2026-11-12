@@ -579,9 +579,9 @@ Esc clears it" />
                       <!-- Like GitHub Desktop, each commit a push would send is marked; an arrow when narrow.
                            Inside the summary's panel, so the summary trims to make room for it -->
                       <Border DockPanel.Dock="Right" Classes="unpushed" IsVisible="{Binding IsUnpushed}"
-                              ToolTip.Tip="Not pushed: on this branch but not on the remote yet; Push sends it">
+                              ToolTip.Tip="{Binding UnpushedTip}">
                         <Panel>
-                          <TextBlock Classes="wide" Text="Not pushed" />
+                          <TextBlock Classes="wide" Text="{Binding UnpushedText}" />
                           <TextBlock Classes="narrow" Text="↑" />
                         </Panel>
                       </Border>

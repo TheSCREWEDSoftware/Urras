@@ -25,4 +25,16 @@ public static class UnpushedTests
         Assert.Equal(1, unpushed.Count, "only the new one");
         Assert.True(unpushed.Contains(history[0].Hash), "the newest commit");
     }
+
+    public static void SaysLocalOnlyWithoutARemote()
+    {
+        CommitInfo commit = new CommitInfo("abc", "abc", "Ryan", "ryan@example.com", DateTimeOffset.Now, "First")
+        {
+            IsUnpushed = true
+        };
+        Assert.Equal("Not pushed", commit.UnpushedText, "a remote exists");
+        commit.IsLocalOnly = true;
+        Assert.Equal("Local only", commit.UnpushedText, "no remote at all");
+        Assert.True(commit.UnpushedTip.Contains("Publish repository"), "says how to put it online");
+    }
 }

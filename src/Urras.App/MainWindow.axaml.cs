@@ -168,9 +168,12 @@ public partial class MainWindow : Window
             RepositoryStatus status = statusTask.Result;
             List<BranchInfo> branches = branchesTask.Result;
             List<CommitInfo> history = historyTask.Result;
-            // Without a remote every commit is unpushed, so the arrows would only be noise
+            // Without a remote the current branch's commits are marked "Local only" instead of "Not pushed"
             foreach (CommitInfo commit in history)
-                commit.IsUnpushed = _hasRemote && unpushedTask.Result.Contains(commit.Hash);
+            {
+                commit.IsUnpushed = unpushedTask.Result.Contains(commit.Hash);
+                commit.IsLocalOnly = !_hasRemote;
+            }
 
             // An unchanged history keeps its list, so the scroll position and selection stay put
             string historySignature = (_historyFilter == null ? "all\n" : "search\n") + HistorySignature(history);

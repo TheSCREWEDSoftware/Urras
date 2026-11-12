@@ -108,6 +108,15 @@ public sealed class CommitInfo
     // On the current branch but on no remote yet, marked "Not pushed" in History
     public bool IsUnpushed { get; set; }
 
+    // The repository has no remote at all, so the mark says "Local only" instead
+    public bool IsLocalOnly { get; set; }
+
+    public string UnpushedText => IsLocalOnly ? "Local only" : "Not pushed";
+
+    public string UnpushedTip => IsLocalOnly
+        ? "Local only: this repository has no remote yet; Publish repository puts it online"
+        : "Not pushed: on this branch but not on the remote yet; Push sends it";
+
     // Branches and tags pointing at this commit, such as "HEAD -> main, tag: v0.1.0, origin/main"
     public string Refs { get; init; } = string.Empty;
 
