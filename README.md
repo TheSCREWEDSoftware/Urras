@@ -146,10 +146,11 @@ Both use their own settings and Git configuration in a temporary folder, so they
   `git` output; the choice is saved
 - Files rendered, old and new side by side with changed blocks or rows marked (Preview switch): Markdown (HTML
   inside it included), HTML (text and structure, with Open in browser for the real page), CSV/TSV tables, Jupyter
-  notebooks, reStructuredText and AsciiDoc; pictures from the repository (or the internet, if chosen) and a full
-  screen view
-- "+406 −553" and GitHub's five squares for each diff, change marks on the diff's scroll bar, and opening a diff at
-  its first change
+  notebooks (with their output and charts), reStructuredText and AsciiDoc; pictures from the repository (or the
+  internet, if chosen), and a Full screen view for previews and images
+- "+406 −553" and GitHub's five squares for each diff
+- A column of change marks beside each diff and preview: hovering one names its lines ("Lines 12–18 added"),
+  clicking it goes there; a file opens at its first change
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
 - Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or
@@ -160,8 +161,9 @@ Both use their own settings and Git configuration in a temporary folder, so they
 <details>
 <summary><b>History and the past</b></summary>
 
-- History with the full diff of each commit, a commit graph with branch lanes across every branch, and badges
-  for branches, remote branches and tags
+- History with the full diff of each commit, a commit graph with branch lanes across every branch, the author's
+  picture on each commit, branch labels in their lane's colour (with the remote beside a pushed branch), tags, and
+  commits not pushed yet
 - Looking into the past: history of a file or folder, blame, browsing the files at any commit, searching commits
   by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
   finding lost commits
@@ -180,7 +182,6 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - Force push after a rewrite: when a pushed branch's commits were rewritten (authors fixed, amended, rebased), Sync
   offers to replace the remote's old copies instead of pulling them back in; force pushes use --force-with-lease
 - Background fetching of every repository (Settings)
-- Close button can minimise Urras to the system tray instead of exiting, and Urras can ask before exiting (Settings)
 - Tags, checking out a commit, revert, cherry-pick, stashes, merge and rebase
 - Bisect from History with a banner to mark commits; submodules, worktrees and Git LFS (with locks) from
   the Branch menu
@@ -213,20 +214,24 @@ Both use their own settings and Git configuration in a temporary folder, so they
   `crash.log` instead of closing Urras
 - Custom commands: run builds, scripts or other tools from the menus, with the repository, branch, file or
   commit filled in
-- Options: accounts, external editor and shell (or your own), Git name, email and default branch, theme, date
-  and time formats, tab size, which questions to ask, what happens to changes when switching branch, background
-  fetch
+- Options: accounts, external editor and shell (or your own), Git name, email and default branch, theme, font
+  and text size, date and time formats, tab size, pictures in previews, which questions to ask, what happens to
+  changes when switching branch, background fetch
+- Close button can minimise Urras to the system tray (Windows and macOS) instead of exiting, and Urras can ask
+  before exiting
 - AI assistant with the service of your choice (OpenAI-compatible, Anthropic or a command-line agent): commit
   messages from the staged changes, explaining commits, conflict suggestions; off by default
-- Git log panel showing every command Urras runs and its output
+- Git log panel showing the commands that change something, and any that fail, with Git's output
 - Failed commands open a window with Git's error, like GitHub Desktop (can be turned off)
 - Commit signing with an SSH or GPG key (Options > Git), for GitHub's Verified badge
 - A daily check for a new Urras on GitHub, offered from the title bar; Help > Check for updates asks at once
 - Keyboard shortcuts listed under Help (F1); starting Urras again brings the open one forward
 - Discarded files are copied first and kept for a week, since Git can't undo a discard
-- Themes: built-in Dark and Light, and your own colours in shareable theme files that newer versions keep up to
-  date ([docs/themes.md](docs/themes.md)); any installed font and a text size, for every theme or per theme;
-  ready-made themes and the built-in colours can be edited and restored
+- Themes: built-in Dark and Light, twelve ready-made ones (Frost, Fel, Horde, Alliance, Parchment, Anarres,
+  GitHub, GitLab, SourceGit, Fork) and your own, in theme files shared with Anarres
+  ([docs/themes.md](docs/themes.md)); any of them can be edited and restored, and any installed font and a text
+  size set for every theme or just one
+- Its own title bar on Windows, with minimise, maximise and close in the theme's colours
 
 </details>
 
@@ -255,7 +260,8 @@ The screenshots are 1920 × 1080 and show Lumen, a small demo repository with br
   <tr>
     <td>
       <img src="docs/screenshots/changes.png" alt="Screenshot: changes"><br>
-      Changes: the files changed, a diff with word-level colours, and the commit message with its length counter
+      Changes: the files changed, a diff with word-level colours, "+3 −2" with its squares, the change marks beside
+      it, and the commit message with its length counter
     </td>
     <td>
       <img src="docs/screenshots/theme-editor.png" alt="Screenshot: theme editor"><br>
@@ -269,7 +275,7 @@ The screenshots are 1920 × 1080 and show Lumen, a small demo repository with br
     </td>
     <td>
       <img src="docs/screenshots/markdown-preview.png" alt="Screenshot: markdown preview"><br>
-      Markdown rendered instead of shown as text (Preview)
+      Markdown rendered instead of shown as text, pictures and the HTML in it included (Preview)
     </td>
   </tr>
   <tr>
@@ -280,6 +286,16 @@ The screenshots are 1920 × 1080 and show Lumen, a small demo repository with br
     <td>
       <img src="docs/screenshots/csv-preview.png" alt="Screenshot: CSV preview"><br>
       CSV and TSV as tables, with just the changed rows marked (Preview)
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/notebook-preview.png" alt="Screenshot: notebook preview"><br>
+      Jupyter notebooks with their code, output and charts (Preview)
+    </td>
+    <td>
+      <img src="docs/screenshots/rst-preview.png" alt="Screenshot: reStructuredText preview"><br>
+      reStructuredText (and AsciiDoc) rendered (Preview)
     </td>
   </tr>
   <tr>
