@@ -17,7 +17,8 @@ public partial class MainWindow
             return;
 
         ExtendClientAreaToDecorationsHint = true;
-        ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.PreferSystemChrome;
+        // Avalonia's own minimise, maximise and close buttons follow the theme; Windows' turn white on hover
+        ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
         ExtendClientAreaTitleBarHeightHint = TITLE_BAR_HEIGHT;
         TitleBar.Height = TITLE_BAR_HEIGHT;
         TitleBar.Margin = new Thickness(0, 0, CAPTION_BUTTONS_WIDTH, 0);
