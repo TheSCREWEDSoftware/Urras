@@ -6,7 +6,7 @@ public static class ThemePresetTests
 {
     public static void ReadyMadeThemesHaveEveryColour()
     {
-        Assert.True(ThemePresets.Names.Count >= 6, "GitHub, GitLab, SourceGit and Fork");
+        Assert.True(ThemePresets.Names.Count >= 12, "the WoW colours, Anarres, GitHub, GitLab, SourceGit and Fork");
         foreach (string name in ThemePresets.Names)
         {
             Theme theme = ThemePresets.Find(name)!;

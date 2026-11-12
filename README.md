@@ -277,7 +277,8 @@ date of each change
   <tr>
     <td>
       <img src="docs/screenshots/options-appearance.png" alt="Screenshot: options appearance"><br>
-      Options: ready-made themes (GitHub, GitLab, SourceGit, Fork) with their colours, and your own
+      Options: ready-made themes (Frost, Fel, Horde, Alliance, Parchment, Anarres, GitHub, GitLab, SourceGit,
+      Fork) with their colours, and your own
     </td>
     <td>
       <img src="docs/screenshots/options-prompts.png" alt="Screenshot: options prompts"><br>

@@ -1,8 +1,14 @@
 namespace Urras.Core.Settings;
 
-// Ready-made themes in the colours of other Git apps; only what differs from the dark or light base is listed
+// Ready-made themes, the same as Anarres's; only what differs from the dark or light base is listed
 public static class ThemePresets
 {
+    public const string ANARRES = "Anarres";
+    public const string FROST = "Frost";
+    public const string FEL = "Fel";
+    public const string HORDE = "Horde";
+    public const string ALLIANCE = "Alliance";
+    public const string PARCHMENT = "Parchment";
     public const string GITHUB_DARK = "GitHub Dark";
     public const string GITHUB_DIMMED = "GitHub Dark Dimmed";
     public const string GITHUB_LIGHT = "GitHub Light";
@@ -14,6 +20,20 @@ public static class ThemePresets
 
     private static readonly Preset[] Presets =
     {
+        // Anarres's own accent, for both apps to look alike
+        Dark(ANARRES, "#14161B", "#1B1E24", "#252930", "#2E333B", "#383E47", "#30353D", "#A27BFF", "#E6EDF3",
+             "#8B949E"),
+        Dark(FROST, "#0F1620", "#152030", "#1D2B3E", "#253750", "#2E4360", "#26384F", "#5AB7FF", "#E3F1FF",
+             "#88A2BD"),
+        Dark(FEL, "#0F1712", "#151F18", "#1D2B21", "#26382B", "#2F4535", "#27392C", "#7CDB3A", "#E6F5E1",
+             "#8FA996"),
+        Dark(HORDE, "#1A1212", "#221717", "#2E1F1F", "#3A2828", "#463131", "#3B2A2A", "#E5484D", "#F5E6E6",
+             "#B09595"),
+        Dark(ALLIANCE, "#10141F", "#161C2B", "#1F273A", "#28324A", "#323D5A", "#2A3550", "#4C8DFF", "#E8EEF8",
+             "#909CB4"),
+        new Preset(PARCHMENT, ThemeBase.Light, Colours("#EFE6D2", "#FAF5E8", "#FFFBF0", "#EBE0C8", "#E0D3B6",
+                                                       "#D6C7A4", "#8C4A1E", "#2B2216", "#6E604A")),
+        // The same ready-made themes as Anarres, in the colours of other Git apps
         Dark(GITHUB_DARK, "#010409", "#0D1117", "#21262D", "#30363D", "#282E33", "#30363D", "#1F6FEB", "#E6EDF3",
              "#7D8590"),
         Dark(GITHUB_DIMMED, "#1C2128", "#22272E", "#2D333B", "#373E47", "#444C56", "#444C56", "#316DCA", "#ADBAC7",

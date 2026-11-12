@@ -563,8 +563,9 @@ public sealed class OptionsWindow : Window
         themeButtons.Children.Add(folder);
 
         return Page(Heading("Theme"), themes, Label("Colours"), _colours, _preview, themeButtons,
-                    Note("Colours offers ready-made themes in GitHub, GitLab, SourceGit and Fork's colours, and " +
-                         "your own; editing a ready-made one or the built-in colours makes a copy. A theme sets " +
+                    Note("Colours offers ready-made themes (the same as Anarres's: Frost, Fel, Horde, Alliance, " +
+                         "Parchment, Anarres's own, and GitHub, GitLab, SourceGit and Fork's colours) and your " +
+                         "own; editing a ready-made one or the built-in colours makes a copy. A theme sets " +
                          "every colour of Urras on top of a dark or light base, and its base wins over the choice " +
                          "above. Your themes are files in the themes folder, to share or edit; colours added by " +
                          "newer versions of Urras are written into them automatically."),
@@ -664,10 +665,10 @@ public sealed class OptionsWindow : Window
     // A new theme starts as a copy of the built-in dark or light colours, whichever look is chosen above
     private async Task NewThemeAsync()
     {
-        string? name = await Dialogs.PromptAsync(this, "New theme", "Name of the theme:");
-        if (name == null)
+        string? name = (await Dialogs.PromptAsync(this, "New theme", "Name of the theme:"))?.Trim();
+        if (string.IsNullOrEmpty(name))
             return;
-        if (name is Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT ||
+        if (name is Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT or BUILT_IN_COLOURS ||
             ThemePresets.IsPreset(name) || _themeStore.Find(name) != null)
         {
             await Dialogs.ShowTextAsync(this, "New theme", "There's already a theme called " + name + ".");

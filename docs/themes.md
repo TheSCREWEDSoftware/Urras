@@ -2,6 +2,11 @@
 
 Urras comes with Dark and Light colours. A custom theme changes any of its colours on top of one of them.
 
+**Colours** also offers ready-made themes, the same as
+[Anarres](https://github.com/TheSCREWEDSoftware/Anarres)'s: Anarres, Frost, Fel, Horde, Alliance and Parchment,
+and GitHub Dark, GitHub Dark Dimmed, GitHub Light, GitLab Dark, SourceGit Dark and Fork Dark. Theme files use the
+same format in both apps, so a file works in either; colours one app doesn't know are left alone by the other.
+
 ## Making one
 
 1. Open **Options > Appearance**.

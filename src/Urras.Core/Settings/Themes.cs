@@ -236,6 +236,10 @@ public sealed class ThemeStore
     public const string FOLDER_NAME = "themes";
     private const string EXTENSION = ".json";
     private const string UNSAFE_CHARACTERS = "\\/:*?\"<>|";
+    private static readonly EnumerationOptions AnyCase = new EnumerationOptions
+    {
+        MatchCasing = MatchCasing.CaseInsensitive
+    };
 
     public ThemeStore(string folder)
     {
@@ -254,7 +258,9 @@ public sealed class ThemeStore
             return new List<Theme>();
 
         List<Theme> themes = new List<Theme>();
-        foreach (string file in Directory.EnumerateFiles(Folder, "*" + EXTENSION).Order(StringComparer.Ordinal))
+        // .json in any case, so a THEME.JSON copied from Windows still shows on Linux
+        foreach (string file in Directory.EnumerateFiles(Folder, "*" + EXTENSION, AnyCase)
+                                         .Order(StringComparer.Ordinal))
         {
             if (Load(file) is { } theme)
                 themes.Add(theme);
