@@ -76,11 +76,13 @@ public partial class MainWindow
     private async Task DiscardLinesAsync(string diff, HashSet<int> lines, string what)
     {
         if (!await ConfirmIfAsync(_settings.Prompts.DiscardingChanges, "Discard changes",
-                                  "Discard the selected " + what + "? This cannot be undone.", "Discard"))
+                                  "Discard the selected " + what + "? Git can't undo this, but Urras keeps a " +
+                                  "copy of the file for a week.", "Discard"))
             return;
 
-        await RunGitAsync("Discarding lines…", repository => repository.DiscardLinesAsync(diff, lines),
-                          "Lines discarded.");
+        if (await RunGitAsync("Discarding lines…", repository => repository.DiscardLinesAsync(diff, lines),
+                              "Lines discarded."))
+            ShowDiscardCopy();
         await ReloadChangesDiffAsync();
     }
 

@@ -15,6 +15,10 @@ public partial class MainWindow : Window
 {
     // An error window shows at most this many of Git's lines; the Git log has them all
     private const int MAX_ERROR_LINES = 20;
+    private bool _showingGitError;
+    // History shows this many commits, raised by Show more; back to the default for another repository
+    private int _historyLimit = GitRepository.DEFAULT_HISTORY_LIMIT;
+    private string? _historyLimitPath;
     // Narrower than this, History marks unpushed commits with an arrow
     private const double NARROW_HISTORY_WIDTH = 900;
     private const int MAX_LOG_CHARACTERS = 200000;
@@ -40,6 +44,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitializeTitleBar();
+        ShowMoreHistoryButton.Click += async (_, _) =>
+        {
+            _historyLimit += GitRepository.DEFAULT_HISTORY_LIMIT;
+            await RefreshAsync();
+        };
         // A narrow history marks unpushed commits with an arrow instead of "Not pushed", leaving room for summaries
         HistoryList.SizeChanged += (_, size) => HistoryList.Classes.Set("narrow",
                                                                         size.NewSize.Width < NARROW_HISTORY_WIDTH);
@@ -160,8 +169,14 @@ public partial class MainWindow : Window
             // Independent reads, so they run side by side
             Task<RepositoryStatus> statusTask = _repository.GetStatusAsync();
             Task<List<BranchInfo>> branchesTask = _repository.GetBranchesAsync();
+            if (_historyLimitPath != _repository.Path)
+            {
+                _historyLimitPath = _repository.Path;
+                _historyLimit = GitRepository.DEFAULT_HISTORY_LIMIT;
+            }
+
             Task<List<CommitInfo>> historyTask = _repository.GetHistoryAsync(
-                filter: _historyFilter, allBranches: _settings.HistoryAllBranches);
+                _historyLimit, _historyFilter, _settings.HistoryAllBranches);
             Task<DateTimeOffset?> fetchedTask = _repository.GetLastFetchedAsync();
             Task<List<string>> remotesTask = _repository.GetRemotesAsync();
             Task<HashSet<string>> unpushedTask = _repository.GetUnpushedAsync();
@@ -170,6 +185,8 @@ public partial class MainWindow : Window
             RepositoryStatus status = statusTask.Result;
             List<BranchInfo> branches = branchesTask.Result;
             List<CommitInfo> history = historyTask.Result;
+            // A full page means there may be older commits
+            ShowMoreHistoryButton.IsVisible = history.Count >= _historyLimit;
             // Without a remote the current branch's commits are marked "Local only" instead of "Not pushed"
             foreach (CommitInfo commit in history)
             {
@@ -259,6 +276,7 @@ public partial class MainWindow : Window
         UnstagedList.ItemsSource = null;
         StagedList.ItemsSource = null;
         HistoryList.ItemsSource = null;
+        ShowMoreHistoryButton.IsVisible = false;
         _branches = new List<BranchInfo>();
         BranchButtonText.Text = "No branch";
         UpdateWorktreeButton();
@@ -348,12 +366,23 @@ public partial class MainWindow : Window
         string what = changes.Count == 1 ? changes[0].Path : changes.Count + " files";
         bool discard = await ConfirmIfAsync(_settings.Prompts.DiscardingChanges, "Discard changes",
                                             "Discard the changes to " + what +
-                                            "? Untracked files are deleted. This cannot be undone.",
-                                            "Discard");
+                                            "? Git can't undo this, but Urras keeps a copy of the files for " +
+                                            "a week.", "Discard");
         if (!discard)
             return;
 
-        await RunGitAsync("Discarding…", repository => repository.DiscardAsync(changes), "Discarded.");
+        if (await RunGitAsync("Discarding…", repository => repository.DiscardAsync(changes), "Discarded."))
+            ShowDiscardCopy();
+    }
+
+    // "Discarded. A copy is in …": clicking the status opens the folder with the copies
+    private void ShowDiscardCopy()
+    {
+        if (_repository?.LastDiscardBackup is not { } folder)
+            return;
+
+        SetStatus("Discarded. A copy of the files is kept for a week in " + folder + " (click to open).", false);
+        _statusFolder = folder;
     }
 
     private async Task OnAmendToggledAsync()
@@ -713,13 +742,25 @@ public partial class MainWindow : Window
     // Like GitHub Desktop, a failed command opens a window so the error isn't missed; Options can turn it off
     private async Task ShowGitErrorAsync(string message)
     {
-        if (!_settings.Prompts.ShowingGitErrors || message.Trim().Length == 0)
+        // One window at a time: a burst of failures shows the first; the status bar and Git log have the rest
+        if (!_settings.Prompts.ShowingGitErrors || message.Trim().Length == 0 || _showingGitError)
             return;
 
         string[] lines = message.Trim().Split('\n');
         string shown = string.Join("\n", lines.Take(MAX_ERROR_LINES)) +
                        (lines.Length > MAX_ERROR_LINES ? "\n…the rest is in the Git log." : string.Empty);
-        if (!await Dialogs.GitErrorAsync(this, shown))
+        _showingGitError = true;
+        bool openLog;
+        try
+        {
+            openLog = await Dialogs.GitErrorAsync(this, shown);
+        }
+        finally
+        {
+            _showingGitError = false;
+        }
+
+        if (!openLog)
             return;
 
         LogToggle.IsChecked = true;

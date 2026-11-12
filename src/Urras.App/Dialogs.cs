@@ -312,9 +312,14 @@ public static class Dialogs
     private static WrapPanel Sentence(params (string Text, string? Url)[] parts)
     {
         WrapPanel sentence = new WrapPanel();
+        // Non-breaking spaces, since a text's trailing spaces aren't measured and words would run together
         foreach ((string part, string? url) in parts)
             sentence.Children.Add(url == null
-                                      ? new TextBlock { Text = part, VerticalAlignment = VerticalAlignment.Center }
+                                      ? new TextBlock
+                                      {
+                                          Text = part.Replace(' ', '\u00A0'),
+                                          VerticalAlignment = VerticalAlignment.Center
+                                      }
                                       : Links.ToPage(part, url));
         return sentence;
     }

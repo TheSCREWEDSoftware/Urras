@@ -556,6 +556,9 @@ Esc clears it" />
               </Grid>
             </Border>
             <TextBlock x:Name="HistoryHint" Grid.Row="2" Classes="hint" Text="No commits yet" ZIndex="1" />
+            <!-- History loads 300 commits at a time; this loads 300 more -->
+            <Button x:Name="ShowMoreHistoryButton" Grid.Row="2" ZIndex="1" Content="Show more history"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14" IsVisible="False" />
             <ListBox x:Name="HistoryList" Grid.Row="2" Classes="files" Margin="0,0,0,6" SelectionMode="Multiple"
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>

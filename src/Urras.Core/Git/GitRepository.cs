@@ -90,11 +90,16 @@ public sealed partial class GitRepository
         return await Run("reset", "-q");
     }
 
-    // Throws away unstaged changes; untracked files are deleted
+    // Where the last discard's copies went, or null when nothing was copied
+    public string? LastDiscardBackup { get; private set; }
+
+    // Throws away unstaged changes, untracked files deleted, after copying the files to DiscardBackup
     public async Task<GitResult> DiscardAsync(IEnumerable<FileChange> changes)
     {
+        List<FileChange> all = changes.ToList();
+        LastDiscardBackup = Urras.Core.Settings.DiscardBackup.Save(Path, all.Select(change => change.Path));
         List<string> tracked = new List<string>();
-        foreach (FileChange change in changes)
+        foreach (FileChange change in all)
         {
             if (change.Kind == ChangeKind.Untracked)
             {

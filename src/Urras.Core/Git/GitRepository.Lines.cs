@@ -18,6 +18,10 @@ public partial class GitRepository
     // diff is the unstaged diff; the selected lines are reverted in the working tree
     public Task<GitResult> DiscardLinesAsync(string diff, IReadOnlySet<int> lines)
     {
+        // The whole file is copied first, from the "+++ b/path" line of its diff
+        string? path = diff.Split('\n').Select(line => line.TrimEnd('\r'))
+                           .FirstOrDefault(line => line.StartsWith("+++ b/", StringComparison.Ordinal))?[6..];
+        LastDiscardBackup = path == null ? null : Urras.Core.Settings.DiscardBackup.Save(Path, new[] { path });
         return ApplyAsync(PatchBuilder.Build(diff, lines, reverse: true), "-R");
     }
 
