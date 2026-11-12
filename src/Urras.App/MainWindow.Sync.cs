@@ -38,6 +38,19 @@ public partial class MainWindow
     private bool _hasRemote = true;
     // Ahead and behind only because the branch's commits were rewritten: Sync offers to force push
     private bool _rewritten;
+    // Repositories whose remote answered "Repository not found": Sync offers to publish them again
+    private readonly HashSet<string> _missingRemotes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    private bool RemoteMissing => _repository != null && _missingRemotes.Contains(_repository.Path);
+
+    // Remembers or forgets that a repository's remote was deleted, from the answer to a fetch, pull or push
+    private void NoteRemote(string path, GitResult result)
+    {
+        if (result.Success)
+            _missingRemotes.Remove(path);
+        else if (MissingRemote.IsMissing(result.Message))
+            _missingRemotes.Add(path);
+    }
     private SyncState? _sync;
     private DateTimeOffset? _lastFetched;
 
@@ -58,7 +71,7 @@ public partial class MainWindow
             return;
         if (kind == SyncKind.PublishRepository)
         {
-            await PublishRepositoryAsync();
+            await PublishRepositoryAsync(RemoteMissing);
             return;
         }
         if (kind == SyncKind.ForcePush && !await ConfirmForcePushAsync())
@@ -68,6 +81,9 @@ public partial class MainWindow
         try
         {
             await RunSyncStepAsync(kind);
+            // A fetch, pull or push that reached the remote shows it exists again
+            if (_repository != null && _lastGitResult is { } answer)
+                NoteRemote(_repository.Path, answer);
         }
         finally
         {
@@ -161,10 +177,12 @@ public partial class MainWindow
         ContextMenu menu = new ContextMenu();
         if (!_hasRemote)
         {
-            AddMenuItem(menu, "Publish repository…", PublishRepositoryAsync);
+            AddMenuItem(menu, "Publish repository…", () => PublishRepositoryAsync(false));
             menu.Open(SyncMenuButton);
             return;
         }
+        if (RemoteMissing)
+            AddMenuItem(menu, "Publish repository again…", () => PublishRepositoryAsync(true));
 
         SyncKind shown = _sync?.Kind ?? SyncKind.Fetch;
         if (shown != SyncKind.Fetch)
@@ -214,7 +232,7 @@ public partial class MainWindow
             return;
         }
 
-        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote, _rewritten);
+        _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote, _rewritten, RemoteMissing);
         BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
         BranchCounts.Text = SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;

@@ -423,6 +423,18 @@ public sealed partial class GitRepository
         return Run("remote", "add", name, url);
     }
 
+    public Task<GitResult> SetRemoteUrlAsync(string name, string url)
+    {
+        return Run("remote", "set-url", name, url);
+    }
+
+    // The remote's fetch address, or null when there's no such remote
+    public async Task<string?> GetRemoteUrlAsync(string name)
+    {
+        GitResult result = await Run("remote", "get-url", name);
+        return result.Success ? result.Output.Trim() : null;
+    }
+
     // False in a new repository whose first commit hasn't been made, where there's nothing to push yet
     public async Task<bool> HasCommitsAsync()
     {

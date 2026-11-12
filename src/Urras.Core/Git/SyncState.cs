@@ -17,13 +17,16 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
 {
     private const string DEFAULT_REMOTE = "origin";
 
-    // No remote offers Publish repository; a rewritten branch offers to replace the remote's old copies, not pull them
+    // Offers Publish repository without a remote or again once it's deleted, and force push after a rewrite
     public static SyncState For(RepositoryStatus status, DateTimeOffset? lastFetched, DateTimeOffset now,
-                                bool hasRemote = true, bool rewritten = false)
+                                bool hasRemote = true, bool rewritten = false, bool remoteMissing = false)
     {
         if (!hasRemote)
             return new SyncState(SyncKind.PublishRepository, "Publish repository",
                                  "Publish this repository to GitHub", 0, 0);
+        if (remoteMissing)
+            return new SyncState(SyncKind.PublishRepository, "Publish repository again",
+                                 "Its online repository was deleted", 0, 0);
 
         string remote = Remote(status.Upstream) ?? DEFAULT_REMOTE;
         string fetched = lastFetched is { } when

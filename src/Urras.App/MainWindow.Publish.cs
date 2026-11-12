@@ -6,7 +6,8 @@ namespace Urras.App;
 // Publish repository: make it on GitHub (or GitLab, Gitea), add it as origin and push, like GitHub Desktop
 public partial class MainWindow
 {
-    private async Task PublishRepositoryAsync()
+    // again: the remote's repository was deleted, so its old name and owner are offered and origin is pointed anew
+    private async Task PublishRepositoryAsync(bool again = false)
     {
         if (_repository == null || _accounts == null || _busy)
             return;
@@ -32,7 +33,13 @@ public partial class MainWindow
             return;
         }
 
-        PublishRepositoryWindow window = new PublishRepositoryWindow(choices, _repository.Name, SignInAgainAsync);
+        string name = _repository.Name;
+        string? owner = null;
+        if (again && await _repository.GetRemoteUrlAsync(RepositoryPublisher.REMOTE) is { } url &&
+            MissingRemote.OwnerAndName(url) is { } old)
+            (owner, name) = old;
+
+        PublishRepositoryWindow window = new PublishRepositoryWindow(choices, name, SignInAgainAsync, owner);
         if (await window.ShowDialog<PlatformRepository?>(this) is not { } online)
             return;
 
@@ -41,11 +48,12 @@ public partial class MainWindow
         StartSyncAnimation(SyncKind.Publish);
         try
         {
-            await RunGitAsync("Publishing " + online.FullName + "…",
+            if (await RunGitAsync("Publishing " + online.FullName + "…",
                               repository => RepositoryPublisher.ConnectAsync(repository, online, ReportSyncProgress),
                               hasCommits
                                   ? "Published " + online.FullName + "."
-                                  : "Made " + online.FullName + "; commit something, then publish the branch.");
+                                  : "Made " + online.FullName + "; commit something, then publish the branch."))
+                _missingRemotes.Remove(_repository.Path);
         }
         finally
         {

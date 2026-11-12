@@ -663,6 +663,7 @@ public partial class MainWindow : Window
         try
         {
             GitResult result = await action(_repository);
+            _lastGitResult = result;
             success = ReportResult(result, successText);
         }
         catch (Exception exception) when (exception is GitException or IOException or UnauthorizedAccessException)
@@ -678,12 +679,22 @@ public partial class MainWindow : Window
         return success;
     }
 
+    // The answer to the last command run through RunGitAsync, for steps that look at more than success
+    private GitResult? _lastGitResult;
+
     private bool ReportResult(GitResult result, string? successText)
     {
         if (result.Success)
         {
             SetStatus(successText ?? "Done.", false);
             return true;
+        }
+
+        if (_repository != null && MissingRemote.IsMissing(result.Message))
+        {
+            NoteRemote(_repository.Path, result);
+            SetStatus("This repository's online copy no longer exists. Sync offers to publish it again.", true);
+            return false;
         }
 
         SetStatus(FirstLine(result.Message) + "  (see Git log)", true);

@@ -19,11 +19,13 @@ public static class RepositoryPublisher
         return name.ToString();
     }
 
-    // Adds origin and pushes the current branch to it, unless there's no commit to push yet
+    // Adds origin, or repoints a deleted one, and pushes the current branch unless there's nothing to push yet
     public static async Task<GitResult> ConnectAsync(GitRepository repository, PlatformRepository online,
                                                      Action<string>? progress = null)
     {
-        GitResult added = await repository.AddRemoteAsync(REMOTE, online.CloneUrl);
+        GitResult added = await repository.GetRemoteUrlAsync(REMOTE) == null
+            ? await repository.AddRemoteAsync(REMOTE, online.CloneUrl)
+            : await repository.SetRemoteUrlAsync(REMOTE, online.CloneUrl);
         if (!added.Success || !await repository.HasCommitsAsync())
             return added;
 

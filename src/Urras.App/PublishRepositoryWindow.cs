@@ -34,14 +34,17 @@ public sealed class PublishRepositoryWindow : Window
                                                     Classes = { "accent" } };
     private readonly Button _signIn = new Button { Content = "Sign in again", IsVisible = false };
     private int _organizationsLoad;
+    // The owner of a deleted repository being published again; its organisation is chosen once listed
+    private readonly string? _owner;
 
     // signInAgain replaces an account whose token the site refused; null when the sign-in was cancelled
     public PublishRepositoryWindow(List<(Account Account, PlatformClient Client)> choices, string folderName,
-                                   Func<Window, Account, Task<PlatformClient?>> signInAgain)
+                                   Func<Window, Account, Task<PlatformClient?>> signInAgain, string? owner = null)
     {
         _choices = choices;
+        _owner = owner;
         _signInAgain = signInAgain;
-        Title = "Publish repository";
+        Title = owner == null ? "Publish repository" : "Publish repository again";
         Width = WINDOW_WIDTH;
         SizeToContent = SizeToContent.Height;
         CanResize = false;
@@ -115,7 +118,10 @@ public sealed class PublishRepositoryWindow : Window
             if (load != _organizationsLoad)
                 return;
             _organization.ItemsSource = new object[] { NONE }.Concat(organizations).ToList();
-            _organization.SelectedIndex = 0;
+            // Publishing a deleted repository again picks its old organisation; its old user is None
+            int previous = organizations.FindIndex(organization => string.Equals(organization.Login, _owner,
+                                                                                  StringComparison.OrdinalIgnoreCase));
+            _organization.SelectedIndex = previous + 1;
         }
         catch (PlatformException exception) when (exception.TokenRefused)
         {
