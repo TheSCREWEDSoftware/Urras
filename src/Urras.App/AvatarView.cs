@@ -109,6 +109,9 @@ public sealed class AvatarView : Control
     public override void Render(DrawingContext context)
     {
         double size = Math.Min(Bounds.Width, Bounds.Height);
+        // Laid out with no room (as rows reflow), there is nothing to draw, and text can't be zero-sized
+        if (size <= 0)
+            return;
         Rect area = new Rect(0, 0, size, size);
         if (_picture != null)
         {
