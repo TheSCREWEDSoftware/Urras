@@ -62,23 +62,45 @@ public static class ThemeTests
         }
     }
 
-    public static void CopiesRememberTheirOriginalAndText()
+    // The same as Anarres: a theme's own text size or font replaces the ones for every theme
+    public static void ThemesHaveTheirOwnText()
     {
-        Theme preset = ThemePresets.Find(ThemePresets.Names[0])!;
-        Theme copy = preset.Copy("Mine");
-        Assert.Equal(preset.Name, copy.CopiedFrom, "a ready-made theme's copy remembers it");
-        Assert.Equal(preset.Name, copy.Copy("Mine 2").CopiedFrom, "a copy of a copy keeps the original");
-        Assert.Equal(preset.Colour(ThemeColours.SURFACE), copy.Original()!.Colour(ThemeColours.SURFACE),
-                     "the original is found again");
-        Assert.Equal(Theme.DARK, Theme.BuiltIn(ThemeBase.Dark).Copy("D").CopiedFrom, "built-in colours too");
-        Assert.True(new Theme { Name = "Own" }.Original() == null, "a theme of your own has none");
+        AppSettings settings = new AppSettings { FontSize = 14, FontFamily = "Inter" };
+        settings.ThemeText["Fel"] = new ThemeText { FontSize = 16 };
+        Assert.Equal(16.0, settings.FontSizeFor("fel"), "Fel's own size, any case");
+        Assert.Equal("Inter", settings.FontFamilyFor("Fel"), "Fel follows the font for every theme");
+        Assert.Equal(14.0, settings.FontSizeFor("Frost"), "other themes follow the size for every theme");
+        Assert.Equal(AppSettings.BUILT_IN_COLOURS, settings.ThemeKey, "no theme chosen is the built-in colours");
+    }
 
-        Assert.True(!copy.HasOwnText, "fonts follow Options until a theme sets its own");
-        copy.FontFamily = "Inter";
-        copy.FontSize = 16;
-        Theme? loaded = Theme.FromJson(copy.ToJson());
-        Assert.Equal("Inter", loaded!.FontFamily, "font saved");
-        Assert.Equal(16.0, loaded.FontSize, "size saved");
-        Assert.True(!Theme.BuiltIn(ThemeBase.Dark).ToJson().Contains("FontSize"), "unset text isn't written");
+    // Ready-made themes and the built-in colours are edited in place, and Restore defaults brings them back
+    public static void EditsReadyMadeThemesAndRestoresThem()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "urras-themes-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            ThemeStore store = new ThemeStore(folder);
+            string preset = ThemePresets.FEL;
+            Theme edited = ThemePresets.Find(preset)!.Copy(preset);
+            edited.Colours[ThemeColours.ACCENT] = "#123456";
+            store.Save(edited);
+            Assert.Equal("#123456", store.Resolve(preset, ThemeBase.Dark).Colour(ThemeColours.ACCENT), "yours");
+            store.RemoveEdits(preset);
+            Assert.Equal(ThemePresets.Find(preset)!.Colour(ThemeColours.ACCENT),
+                         store.Resolve(preset, ThemeBase.Dark).Colour(ThemeColours.ACCENT), "the original again");
+
+            Theme dark = Theme.BuiltIn(ThemeBase.Dark);
+            dark.Colours[ThemeColours.TEXT] = "#ABCDEF";
+            store.Save(dark);
+            Assert.Equal("#ABCDEF", store.BuiltIn(ThemeBase.Dark).Colour(ThemeColours.TEXT), "edited built-in");
+            Assert.True(ThemeStore.Original("Dark") != null && ThemeStore.Original("Mine") == null,
+                        "what has defaults");
+            Assert.True(Theme.BuiltIn(ThemeBase.Dark).LooksLike(Theme.BuiltIn(ThemeBase.Dark)) &&
+                        !dark.LooksLike(Theme.BuiltIn(ThemeBase.Dark)), "compares colours");
+        }
+        finally
+        {
+            TestFolders.Delete(folder);
+        }
     }
 }

@@ -92,10 +92,18 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _tabSize;
     private readonly ComboBox _font;
     private readonly ComboBox _fontSize;
+    private readonly ComboBox _themeFont;
+    private readonly ComboBox _themeSize;
+    private readonly TextBlock _themeTextTitle = new TextBlock { FontWeight = FontWeight.SemiBold,
+                                                                 Margin = new Thickness(0, 8, 0, 0) };
+    private readonly List<string> _fonts = TextLook.SystemFonts();
+    private Dictionary<string, ThemeText> _themeText;
+    private string? _textTheme;
     private readonly ComboBox _colours = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ThemeStore _themeStore = ThemeStore.Default;
-    private const string BUILT_IN_COLOURS = "Built-in colours";
-    private const string DEFAULT_FONT = "Default (Segoe UI)";
+    private const string BUILT_IN_COLOURS = AppSettings.BUILT_IN_COLOURS;
+    private const string SYSTEM_FONT = "System default";
+    private const string SAME_FOR_ALL = "Same as every theme";
     private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
     // The listed themes by name, read once per listing rather than once per row drawn
     private Dictionary<string, Urras.Core.Settings.Theme> _listedThemes =
@@ -159,8 +167,17 @@ public sealed class OptionsWindow : Window
                                                                                         : size.ToString()).ToList(),
                          null);
         _tabSize.SelectedIndex = Math.Max(0, Array.IndexOf(TabSizes, settings.TabSize));
-        _font = TextLook.FontPicker(DEFAULT_FONT, settings.FontFamily);
-        _fontSize = TextLook.SizePicker(null, settings.FontSize);
+        _font = TextLook.FontPicker(SYSTEM_FONT, _fonts);
+        TextLook.ChooseFont(_font, _fonts, settings.FontFamily);
+        _fontSize = TextLook.SizePicker(null);
+        TextLook.ChooseSize(_fontSize, false, settings.FontSize);
+        _themeFont = TextLook.FontPicker(SAME_FOR_ALL, _fonts);
+        _themeSize = TextLook.SizePicker(SAME_FOR_ALL);
+        _themeText = settings.ThemeText.ToDictionary(entry => entry.Key, entry => new ThemeText
+        {
+            FontSize = entry.Value.FontSize,
+            FontFamily = entry.Value.FontFamily
+        }, StringComparer.OrdinalIgnoreCase);
 
         PromptSettings prompts = settings.Prompts;
         _confirmRemoveRepository = Check("Removing repositories from the list", prompts.RemovingRepositories);
@@ -305,6 +322,7 @@ public sealed class OptionsWindow : Window
         _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
         _tracker.Track(APPEARANCE, "Font", () => Selected(_font));
         _tracker.Track(APPEARANCE, "Text size", () => Selected(_fontSize));
+        _tracker.Track(APPEARANCE, "Text per theme", ThemeTextSummary);
         _tracker.Track(APPEARANCE, "Full scroll bars", () => OnOff(_fullScrollBars));
         _tracker.Track(APPEARANCE, "Every window in the taskbar", () => OnOff(_windowsInTaskbar));
         foreach (CheckBox box in new[]
@@ -540,7 +558,12 @@ public sealed class OptionsWindow : Window
             return row;
         });
         ListColours(_settings.CustomTheme);
-        _colours.SelectionChanged += (_, _) => ShowPreview();
+        _colours.SelectionChanged += (_, _) =>
+        {
+            ShowPreview();
+            ShowThemeText();
+        };
+        ShowThemeText();
         foreach (RadioButton look in _themes)
             look.IsCheckedChanged += (_, _) => ShowPreview();
         ShowPreview();
@@ -554,9 +577,9 @@ public sealed class OptionsWindow : Window
             Directory.CreateDirectory(_themeStore.Folder);
             SystemShell.OpenFolder(_themeStore.Folder);
         };
-        Button enforce = new Button { Content = "Use this font and size in every theme" };
-        ToolTip.SetTip(enforce, "Clears the font and text size your themes set for themselves");
-        enforce.Click += async (_, _) => await EnforceTextAsync();
+        ToolTip.SetTip(edit, "Change the colours of the theme chosen under Colours");
+        Button everywhere = new Button { Content = "Use this theme's text for every theme" };
+        everywhere.Click += (_, _) => UseThemeTextEverywhere();
         StackPanel themeButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         themeButtons.Children.Add(create);
         themeButtons.Children.Add(edit);
@@ -565,12 +588,16 @@ public sealed class OptionsWindow : Window
         return Page(Heading("Theme"), themes, Label("Colours"), _colours, _preview, themeButtons,
                     Note("Colours offers ready-made themes (the same as Anarres's: Frost, Fel, Horde, Alliance, " +
                          "Parchment, Anarres's own, and GitHub, GitLab, SourceGit and Fork's colours) and your " +
-                         "own; editing a ready-made one or the built-in colours makes a copy. A theme sets " +
-                         "every colour of Urras on top of a dark or light base, and its base wins over the choice " +
-                         "above. Your themes are files in the themes folder, to share or edit; colours added by " +
-                         "newer versions of Urras are written into them automatically."),
-                    Heading("Text"), Label("Font"), _font, Label("Text size"), _fontSize, enforce,
-                    Note("A theme can have its own font and text size (Edit… above); otherwise it uses these."),
+                         "own. A theme sets every colour of Urras on top of a dark or light base, and its base " +
+                         "wins over the choice above. Edit changes the theme chosen under Colours, built-in and " +
+                         "ready-made ones included; Restore defaults in the editor brings back their original " +
+                         "colours. Themes are files in the themes folder, in the same format as Anarres's, to " +
+                         "share or edit; colours added by newer versions of Urras are written into them."),
+                    Heading("Text, every theme"), Label("Text size"), _fontSize, Label("Font"), _font,
+                    _themeTextTitle, Label("Text size"), _themeSize, Label("Font"), _themeFont, everywhere,
+                    Note("A theme can have its own text size and font; \"" + SAME_FOR_ALL + "\" follows the " +
+                         "settings above. The button makes this theme's choice the one for every theme and clears " +
+                         "the other themes' own choices. Fonts are the ones installed on this computer."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars,
                     Heading("Taskbar"), _windowsInTaskbar);
@@ -649,13 +676,17 @@ public sealed class OptionsWindow : Window
     // Built-in colours first, then each theme file, with the given one chosen
     private void ListColours(string? chosen)
     {
-        // Ready-made themes first, then the theme files
-        List<Urras.Core.Settings.Theme> listed = ThemePresets.Names.Select(name => ThemePresets.Find(name)!)
-                                                             .Concat(_themeStore.LoadAll()).ToList();
+        // Ready-made themes, then theme files; one named after a ready-made theme, Dark or Light is your version
         _listedThemes = new Dictionary<string, Urras.Core.Settings.Theme>(StringComparer.OrdinalIgnoreCase);
-        foreach (Urras.Core.Settings.Theme theme in listed)
-            _listedThemes.TryAdd(theme.Name, theme);
-        List<string> names = listed.Select(theme => theme.Name).ToList();
+        foreach (string preset in ThemePresets.Names)
+            _listedThemes[preset] = ThemePresets.Find(preset)!;
+        foreach (Urras.Core.Settings.Theme theme in _themeStore.LoadAll())
+        {
+            if (theme.Name is not (Urras.Core.Settings.Theme.DARK or Urras.Core.Settings.Theme.LIGHT))
+                _listedThemes[theme.Name] = theme;
+        }
+
+        List<string> names = _listedThemes.Keys.ToList();
         _colours.ItemsSource = names.Prepend(BUILT_IN_COLOURS).ToList();
         int index = chosen == null ? -1 : names.FindIndex(name => string.Equals(name, chosen,
                                                                                 StringComparison.OrdinalIgnoreCase));
@@ -693,61 +724,95 @@ public sealed class OptionsWindow : Window
         await EditThemeAsync();
     }
 
+    // Edits the chosen theme in place; built-in and ready-made ones are saved as your version of them
     private async Task EditThemeAsync()
     {
-        if (_colours.SelectedItem is not string listed)
-            return;
-
-        // Ready-made themes and the built-in colours stay as they are; editing one makes a copy, saved by Save
-        Urras.Core.Settings.Theme? original = listed == BUILT_IN_COLOURS ? ThemeNamed(listed)
-                                                                         : ThemePresets.Find(listed);
-        Urras.Core.Settings.Theme? theme;
-        if (original != null)
+        string chosen = _colours.SelectedItem as string ?? BUILT_IN_COLOURS;
+        Urras.Core.Settings.Theme theme;
+        string about;
+        if (chosen == BUILT_IN_COLOURS)
         {
-            string copyName = original.Name + " (mine)";
-            for (int number = 2; _themeStore.Find(copyName) != null; number++)
-                copyName = original.Name + " (mine " + number + ")";
-            theme = original.Copy(copyName);
+            ThemeBase look = ChosenBase();
+            theme = _themeStore.BuiltIn(look).Copy(look == ThemeBase.Light ? Urras.Core.Settings.Theme.LIGHT
+                                                                           : Urras.Core.Settings.Theme.DARK);
+            about = "the built-in " + theme.Name + " colours (the choice above picks Dark or Light)";
+        }
+        else if (ThemePresets.IsPreset(chosen))
+        {
+            theme = (_themeStore.Find(chosen) ?? ThemePresets.Find(chosen)!).Copy(chosen);
+            about = chosen + ", a ready-made theme";
+        }
+        else if (_themeStore.Find(chosen) is { } custom)
+        {
+            theme = custom;
+            about = chosen + ", your theme";
         }
         else
-            theme = _themeStore.Find(listed);
-
-        if (theme == null)
             return;
-        bool saved = await new ThemeEditorWindow(theme, _themeStore, _settings).ShowDialog<bool>(this);
-        // The edited colours show in the list and the preview straight away; cancelling a copy leaves no file
-        ListColours(saved ? theme.Name : listed == BUILT_IN_COLOURS ? null : listed);
+
+        await new ThemeEditorWindow(theme, _themeStore, about).ShowDialog<bool>(this);
+        // The edited colours show in the list and the preview straight away
+        ListColours(chosen == BUILT_IN_COLOURS ? null : chosen);
         ShowPreview();
     }
 
-    // Every theme file drops its own font and size, so all of them follow the general ones
-    private async Task EnforceTextAsync()
+    private ThemeBase ChosenBase()
     {
-        List<Urras.Core.Settings.Theme> own = _themeStore.LoadAll().Where(theme => theme.HasOwnText).ToList();
-        if (own.Count == 0)
-        {
-            await Dialogs.ShowTextAsync(this, "Font and text size", "Every theme already uses these.");
-            return;
-        }
+        bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
+        return light ? ThemeBase.Light : ThemeBase.Dark;
+    }
 
-        string names = string.Join(", ", own.Select(theme => theme.Name));
-        if (!await Dialogs.ConfirmAsync(this, "Font and text size", "These themes set their own font or text " +
-                                                                    "size: " + names + ". Use the ones here " +
-                                                                    "in all of them instead?", "Use everywhere"))
+    private string ThemeKey => _colours.SelectedItem as string ?? BUILT_IN_COLOURS;
+
+    // Keeps the shown theme's own text choices, then shows the newly chosen theme's
+    private void ShowThemeText()
+    {
+        KeepThemeText();
+        _textTheme = ThemeKey;
+        _themeTextTitle.Text = "Text, this theme only: " + _textTheme;
+        ThemeText? text = _themeText.GetValueOrDefault(_textTheme);
+        TextLook.ChooseSize(_themeSize, true, text?.FontSize);
+        TextLook.ChooseFont(_themeFont, _fonts, text?.FontFamily);
+    }
+
+    private void KeepThemeText()
+    {
+        if (_textTheme == null)
             return;
-        try
+        _themeText[_textTheme] = new ThemeText
         {
-            foreach (Urras.Core.Settings.Theme theme in own)
-            {
-                theme.FontFamily = null;
-                theme.FontSize = null;
-                _themeStore.Save(theme);
-            }
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            await Dialogs.ShowTextAsync(this, "Font and text size", "Couldn't save a theme: " + exception.Message);
-        }
+            FontSize = TextLook.ChosenSize(_themeSize, true),
+            FontFamily = TextLook.ChosenFont(_themeFont)
+        };
+    }
+
+    // The themes with their own text, such as "Fel: 16 pt Inter", for the unsaved-changes list
+    private string ThemeTextSummary()
+    {
+        KeepThemeText();
+        List<string> own = _themeText.Where(entry => entry.Value.FontSize != null ||
+                                                     !string.IsNullOrEmpty(entry.Value.FontFamily))
+                                     .OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
+                                     .Select(entry => entry.Key + ": " + Describe(entry.Value)).ToList();
+        return own.Count == 0 ? "none" : string.Join(", ", own);
+    }
+
+    private static string Describe(ThemeText text)
+    {
+        string size = text.FontSize is { } points ? points + " pt" : string.Empty;
+        return (size + " " + text.FontFamily).Trim();
+    }
+
+    // This theme's text becomes the one for every theme, and every theme's own choice is cleared
+    private void UseThemeTextEverywhere()
+    {
+        if (_themeSize.SelectedIndex > 0)
+            _fontSize.SelectedIndex = _themeSize.SelectedIndex - 1;
+        if (_themeFont.SelectedIndex > 0)
+            _font.SelectedIndex = _themeFont.SelectedIndex;
+        _themeText.Clear();
+        _textTheme = null;
+        ShowThemeText();
     }
 
     // A theme by its name in the list; the built-in entry follows the dark or light choice above
@@ -755,8 +820,7 @@ public sealed class OptionsWindow : Window
     {
         if (name != BUILT_IN_COLOURS && _listedThemes.TryGetValue(name, out Urras.Core.Settings.Theme? theme))
             return theme;
-        bool light = Array.FindIndex(_themes, radio => radio.IsChecked == true) == (int)ThemeChoice.Light;
-        return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);
+        return _themeStore.BuiltIn(ChosenBase());
     }
 
     private void ShowPreview()
@@ -767,8 +831,9 @@ public sealed class OptionsWindow : Window
     // The theme picked under Colours, ready-made or a file; null for the built-in colours
     private Urras.Core.Settings.Theme? SelectedTheme()
     {
-        return _colours.SelectedIndex > 0 && _colours.SelectedItem is string name
-            ? ThemePresets.Find(name) ?? _themeStore.Find(name)
+        return _colours.SelectedIndex > 0 && _colours.SelectedItem is string name &&
+               _listedThemes.TryGetValue(name, out Urras.Core.Settings.Theme? theme)
+            ? theme
             : null;
     }
 
@@ -806,8 +871,13 @@ public sealed class OptionsWindow : Window
         _settings.DateFormat = DisplayFormats.Dates[Math.Max(0, _dateFormat.SelectedIndex)];
         _settings.TimeFormat = DisplayFormats.Times[Math.Max(0, _timeFormat.SelectedIndex)];
         _settings.TabSize = TabSizes[Math.Max(0, _tabSize.SelectedIndex)];
-        _settings.FontFamily = TextLook.ChosenFont(_font);
+        _settings.FontFamily = TextLook.ChosenFont(_font) ?? string.Empty;
         _settings.FontSize = TextLook.ChosenSize(_fontSize, false) ?? AppSettings.DEFAULT_FONT_SIZE;
+        KeepThemeText();
+        _settings.ThemeText = _themeText.Where(entry => entry.Value.FontSize != null ||
+                                                        !string.IsNullOrEmpty(entry.Value.FontFamily))
+                                        .ToDictionary(entry => entry.Key, entry => entry.Value,
+                                                      StringComparer.OrdinalIgnoreCase);
         _settings.CustomTheme = _colours.SelectedIndex > 0 ? _colours.SelectedItem as string : null;
 
         PromptSettings prompts = _settings.Prompts;

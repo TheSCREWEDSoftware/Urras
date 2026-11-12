@@ -3,6 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace Urras.Core.Settings;
 
+// A theme's own text size and font; null means the one set for every theme
+public sealed class ThemeText
+{
+    public double? FontSize { get; set; }
+
+    public string? FontFamily { get; set; }
+}
+
 // Per file: a list of changed files with one diff at a time. Combined: every file in one diff
 public enum FileListMode
 {
@@ -46,7 +54,8 @@ public sealed class AppSettings
     public const int DEFAULT_AUTO_FETCH_MINUTES = 10;
     public const int DEFAULT_TAB_SIZE = 4;
     public const double DEFAULT_FONT_SIZE = 14;
-    public static readonly double[] FontSizes = { 12, 13, 14, 15, 16, 18, 20 };
+    public const string BUILT_IN_COLOURS = "Built-in colours";
+    public static readonly double[] FontSizes = { 12, 13, 14, 15, 16, 18 };
 
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
@@ -95,9 +104,30 @@ public sealed class AppSettings
     // A theme file's name from the themes folder; null uses the built-in colours of the chosen Theme
     public string? CustomTheme { get; set; }
 
-    // The font and text size for every theme that doesn't set its own; a null font uses Urras's default
-    public string? FontFamily { get; set; }
+    // Text size and font for every theme; empty font means Urras's own interface font
     public double FontSize { get; set; } = DEFAULT_FONT_SIZE;
+    public string FontFamily { get; set; } = string.Empty;
+
+    // Per theme (by its name under Colours), a text size or font that replaces the ones above, as in Anarres
+    public Dictionary<string, ThemeText> ThemeText { get; set; } =
+        new Dictionary<string, ThemeText>(StringComparer.OrdinalIgnoreCase);
+
+    // The theme's name under Colours, the key for its own text
+    [JsonIgnore]
+    public string ThemeKey => string.IsNullOrEmpty(CustomTheme) ? BUILT_IN_COLOURS : CustomTheme;
+
+    public double FontSizeFor(string theme)
+    {
+        double size = ThemeText.TryGetValue(theme, out ThemeText? text) && text.FontSize is { } own ? own : FontSize;
+        return Math.Clamp(size, FontSizes[0], FontSizes[^1]);
+    }
+
+    public string FontFamilyFor(string theme)
+    {
+        return ThemeText.TryGetValue(theme, out ThemeText? text) && !string.IsNullOrEmpty(text.FontFamily)
+                   ? text.FontFamily
+                   : FontFamily ?? string.Empty;
+    }
 
     // Dialogs and other windows get their own taskbar entry; off keeps Urras to one entry, its main window
     public bool ShowWindowsInTaskbar { get; set; }

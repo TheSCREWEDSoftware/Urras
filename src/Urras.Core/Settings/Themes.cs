@@ -138,20 +138,6 @@ public sealed class Theme
 
     public Dictionary<string, string> Colours { get; set; } = new Dictionary<string, string>();
 
-    // The ready-made theme (or Dark or Light) this one was copied from, so its colours can be restored
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? CopiedFrom { get; set; }
-
-    // This theme's own font and text size; null follows the general ones in Options
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? FontFamily { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? FontSize { get; set; }
-
-    [JsonIgnore]
-    public bool HasOwnText => FontFamily != null || FontSize != null;
-
     [JsonIgnore]
     // Dark, Light and the ready-made themes, which aren't files
     public bool IsBuiltIn => Name is DARK or LIGHT || ThemePresets.IsPreset(Name);
@@ -187,29 +173,16 @@ public sealed class Theme
         return added;
     }
 
-    // A copy of a ready-made theme remembers it; a copy of a copy keeps pointing at the same original
     public Theme Copy(string name)
     {
-        return new Theme
-        {
-            Name = name,
-            Base = Base,
-            Colours = new Dictionary<string, string>(Colours),
-            CopiedFrom = IsBuiltIn ? Name : CopiedFrom,
-            FontFamily = FontFamily,
-            FontSize = FontSize
-        };
+        return new Theme { Name = name, Base = Base, Colours = new Dictionary<string, string>(Colours) };
     }
 
-    // The theme this one was copied from, if it still exists: a ready-made theme, Dark or Light
-    public Theme? Original()
+    // True when every colour and the base are the same as the other theme's
+    public bool LooksLike(Theme other)
     {
-        return CopiedFrom switch
-        {
-            DARK => BuiltIn(ThemeBase.Dark),
-            LIGHT => BuiltIn(ThemeBase.Light),
-            _ => ThemePresets.Find(CopiedFrom)
-        };
+        return Base == other.Base && ThemeColours.All.All(colour => string.Equals(
+            Colour(colour.Key), other.Colour(colour.Key), StringComparison.OrdinalIgnoreCase));
     }
 
     public string ToJson()
@@ -306,5 +279,42 @@ public sealed class ThemeStore
     {
         Directory.CreateDirectory(Folder);
         File.WriteAllText(FileFor(theme.Name), theme.ToJson());
+    }
+
+    // The theme for a name: a ready-made one or the built-in colours (your edited version if any), or a theme file
+    public Theme Resolve(string? name, ThemeBase fallback)
+    {
+        if (ThemePresets.Find(name) is { } preset)
+            return Find(preset.Name) ?? preset;
+        if (!string.IsNullOrEmpty(name) && name is not (Theme.DARK or Theme.LIGHT) && Find(name) is { } custom)
+            return custom;
+        return BuiltIn(fallback);
+    }
+
+    // The built-in Dark or Light colours, or your edited version of them
+    public Theme BuiltIn(ThemeBase themeBase)
+    {
+        Theme original = Theme.BuiltIn(themeBase);
+        return Find(original.Name) ?? original;
+    }
+
+    // What a theme looks like as shipped: a ready-made one or the built-in colours; null for your own themes
+    public static Theme? Original(string name)
+    {
+        if (ThemePresets.Find(name) is { } preset)
+            return preset;
+        return name switch
+        {
+            Theme.DARK => Theme.BuiltIn(ThemeBase.Dark),
+            Theme.LIGHT => Theme.BuiltIn(ThemeBase.Light),
+            _ => null
+        };
+    }
+
+    // Deletes your version of a ready-made theme or the built-in colours, so the shipped one is used again
+    public void RemoveEdits(string name)
+    {
+        if (Original(name) != null && File.Exists(FileFor(name)))
+            File.Delete(FileFor(name));
     }
 }

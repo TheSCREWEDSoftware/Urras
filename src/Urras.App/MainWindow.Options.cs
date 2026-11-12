@@ -88,7 +88,7 @@ public partial class MainWindow
                 Application.Current.RequestedThemeVariant = theme.Base == ThemeBase.Light ? ThemeVariant.Light
                                                                                           : ThemeVariant.Dark;
             ThemeBrushes.Use(theme, Application.Current.Resources);
-            TextLook.Apply(_settings, theme, Application.Current.Resources);
+            TextLook.Apply(_settings, Application.Current.Resources);
 
             // A style belongs to one application, so each gets its own (the interface tests start several)
             Styles styles = Application.Current.Styles;
@@ -103,11 +103,11 @@ public partial class MainWindow
     // The chosen ready-made or custom theme, or the built-in colours for the dark or light look in use
     private Urras.Core.Settings.Theme ChooseTheme(Application application)
     {
-        if (_settings.CustomTheme is { Length: > 0 } name &&
-            (ThemePresets.Find(name) ?? ThemeStore.Default.Find(name)) is { } chosen)
-            return chosen;
+        // Ready-made themes and the built-in colours come as you edited them, if you did
         bool light = application.ActualThemeVariant == ThemeVariant.Light;
-        return Urras.Core.Settings.Theme.BuiltIn(light ? ThemeBase.Light : ThemeBase.Dark);
+        ThemeBase look = light ? ThemeBase.Light : ThemeBase.Dark;
+        return string.IsNullOrEmpty(_settings.CustomTheme) ? ThemeStore.Default.BuiltIn(look)
+                                                           : ThemeStore.Default.Resolve(_settings.CustomTheme, look);
     }
 
     // "VS Code" style name of the chosen editor, for menus

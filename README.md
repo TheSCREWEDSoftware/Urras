@@ -220,7 +220,8 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - Keyboard shortcuts listed under Help (F1); starting Urras again brings the open one forward
 - Discarded files are copied first and kept for a week, since Git can't undo a discard
 - Themes: built-in Dark and Light, and your own colours in shareable theme files that newer versions keep up to
-  date ([docs/themes.md](docs/themes.md)); any installed font and a text size, for all themes or per theme
+  date ([docs/themes.md](docs/themes.md)); any installed font and a text size, for every theme or per theme;
+  ready-made themes and the built-in colours can be edited and restored
 
 </details>
 

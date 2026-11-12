@@ -16,15 +16,17 @@ same format in both apps, so a file works in either; colours one app doesn't kno
    value as `#RRGGBB`, or `#AARRGGBB` for a see-through colour.
 4. Pick the theme under **Colours** and save Options.
 
-**Edit…** on a ready-made theme or on the built-in colours makes your own copy (for example "GitHub Dark (mine)")
-and leaves the original alone; the copy is only written when you save it. The editor's heading says which theme
-you're changing and where it's saved. **Restore original** puts a copy back to the theme it came from.
+**Edit…** changes the theme chosen under **Colours**, ready-made ones and the built-in colours included. Your
+version of a ready-made theme (or of Dark or Light) is saved as a file with its name and used instead of it;
+**Restore defaults** in the editor brings back the original colours, and saving them removes your version. The
+editor's heading says which theme you're changing and where it's saved. Anarres works the same way.
 
 ## Font and text size
 
-**Options > Appearance > Text** sets the font (any font installed on the computer) and the text size for every
-theme. A theme can set its own in the editor; "Same as Options" follows the general ones. **Use this font and
-size in every theme** clears the font and size your themes set for themselves.
+**Options > Appearance** sets the text size and font for every theme (any font installed on the computer), and,
+under "Text, this theme only", a size or font for the theme chosen under **Colours**; "Same as every theme"
+follows the general ones. **Use this theme's text for every theme** makes the chosen theme's text the general one
+and clears every theme's own choice. These are saved in Urras's settings, not in the theme files.
 
 ## Theme files
 
@@ -42,8 +44,6 @@ Each theme is a JSON file in the `themes` folder beside Urras's settings (`%APPD
   }
 }
 ```
-
-`CopiedFrom`, `FontFamily` and `FontSize` are optional and only written when set.
 
 `Base` is `Dark` or `Light`: it sets the look of buttons and lists, and the colour of anything the file leaves
 out. When a newer version of Urras adds colours, it writes them into every theme file at start-up, with the
