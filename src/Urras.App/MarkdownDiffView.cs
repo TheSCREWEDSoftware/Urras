@@ -8,7 +8,7 @@ using Urras.Core.Markdown;
 
 namespace Urras.App;
 
-// Markdown rendered as a page: the new version alone, or old and new side by side with changed blocks marked
+// Markdown, HTML or a CSV table as a page: the new version alone, or both side by side with changes marked
 public sealed class MarkdownDiffView : UserControl
 {
     private const double BASE_FONT_SIZE = 14;
@@ -35,12 +35,13 @@ public sealed class MarkdownDiffView : UserControl
         Content = new ScrollViewer { Content = _columns, Padding = new Thickness(16, 8) };
     }
 
-    // Either side may be null, for a new or deleted file
-    public void Show(byte[]? before, byte[]? after)
+    // Either side may be null, for a new or deleted file; the path says how to read it
+    public void Show(byte[]? before, byte[]? after, string path = "README.md")
     {
         _columns.Children.Clear();
-        List<MarkdownBlock> oldBlocks = MarkdownDocument.Parse(Text(before));
-        List<MarkdownBlock> newBlocks = MarkdownDocument.Parse(Text(after));
+        PreviewKind kind = PreviewFiles.KindOf(path);
+        List<MarkdownBlock> oldBlocks = PreviewFiles.Parse(kind, path, Text(before));
+        List<MarkdownBlock> newBlocks = PreviewFiles.Parse(kind, path, Text(after));
         (HashSet<int> removed, HashSet<int> added) = MarkdownDocument.Changes(oldBlocks, newBlocks);
 
         bool sideBySide = before != null && after != null && (removed.Count > 0 || added.Count > 0);
@@ -49,14 +50,49 @@ public sealed class MarkdownDiffView : UserControl
             Control page = Page(after != null ? newBlocks : oldBlocks, new HashSet<int>(), null, null);
             Grid.SetColumnSpan(page, 3);
             _columns.Children.Add(page);
-            return;
+        }
+        else
+        {
+            Control left = Page(oldBlocks, removed, RemovedBackground, RemovedBar);
+            Control right = Page(newBlocks, added, AddedBackground, AddedBar);
+            Grid.SetColumn(right, 2);
+            _columns.Children.Add(left);
+            _columns.Children.Add(right);
         }
 
-        Control left = Page(oldBlocks, removed, RemovedBackground, RemovedBar);
-        Control right = Page(newBlocks, added, AddedBackground, AddedBar);
-        Grid.SetColumn(right, 2);
-        _columns.Children.Add(left);
-        _columns.Children.Add(right);
+        // HTML is a reading view: say so, and offer the real thing in the browser
+        if (kind == PreviewKind.Html)
+            _columns.Children.Insert(0, HtmlNote(after ?? before, path));
+        _columns.RowDefinitions = new RowDefinitions(kind == PreviewKind.Html ? "Auto,*" : "*");
+        foreach (Control child in _columns.Children.Skip(kind == PreviewKind.Html ? 1 : 0))
+            Grid.SetRow(child, kind == PreviewKind.Html ? 1 : 0);
+    }
+
+    private static Control HtmlNote(byte[]? contents, string path)
+    {
+        TextBlock note = new TextBlock
+        {
+            Text = "Text and structure only: no styles, scripts or layout.",
+            Foreground = MutedBrush,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Button open = new Button { Content = "Open in browser", IsEnabled = contents != null, Classes = { "subtle" } };
+        ToolTip.SetTip(open, "Shows this version of the page in your browser, from a temporary copy");
+        open.Click += (_, _) =>
+        {
+            // A copy in its own folder, as files next to the page (styles, pictures) aren't there anyway
+            string folder = Path.Combine(Path.GetTempPath(), "Urras", "preview");
+            Directory.CreateDirectory(folder);
+            string copy = Path.Combine(folder, Path.GetFileName(path));
+            File.WriteAllBytes(copy, contents!);
+            SystemShell.OpenFile(copy);
+        };
+        DockPanel bar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
+        DockPanel.SetDock(open, Dock.Right);
+        bar.Children.Add(open);
+        bar.Children.Add(note);
+        Grid.SetColumnSpan(bar, 3);
+        return bar;
     }
 
     public void Clear()
@@ -74,6 +110,17 @@ public sealed class MarkdownDiffView : UserControl
         StackPanel page = new StackPanel { Spacing = 8 };
         for (int i = 0; i < blocks.Count; ++i)
         {
+            // Rows of a CSV table go in one grid, so their columns line up, with changed rows marked
+            if (blocks[i].Marker == DelimitedTable.ROW_MARKER)
+            {
+                int end = i;
+                while (end < blocks.Count && blocks[end].Marker == DelimitedTable.ROW_MARKER)
+                    ++end;
+                page.Children.Add(Rows(blocks, i, end, changed, background));
+                i = end - 1;
+                continue;
+            }
+
             Control block = Block(blocks[i]);
             if (!changed.Contains(i))
             {
@@ -151,7 +198,25 @@ public sealed class MarkdownDiffView : UserControl
         }
     }
 
+    private static Control Rows(List<MarkdownBlock> blocks, int start, int end, HashSet<int> changed,
+                                IBrush? background)
+    {
+        MarkdownBlock table = new MarkdownBlock
+        {
+            Kind = BlockKind.Table,
+            Rows = blocks.Skip(start).Take(end - start).SelectMany(block => block.Rows).ToList()
+        };
+        HashSet<int> marked = changed.Where(index => index >= start && index < end).Select(index => index - start)
+                                     .ToHashSet();
+        return Table(table, marked, background, blocks[start].Level == 0);
+    }
+
     private static Control Table(MarkdownBlock block)
+    {
+        return Table(block, new HashSet<int>(), null, true);
+    }
+
+    private static Control Table(MarkdownBlock block, HashSet<int> marked, IBrush? background, bool header)
     {
         int columns = block.Rows.Max(row => row.Count);
         Grid grid = new Grid();
@@ -163,13 +228,14 @@ public sealed class MarkdownDiffView : UserControl
             for (int column = 0; column < block.Rows[row].Count; ++column)
             {
                 TextBlock cell = Paragraph(block.Rows[row][column], BASE_FONT_SIZE);
-                if (row == 0)
+                if (row == 0 && header)
                     cell.FontWeight = FontWeight.SemiBold;
                 Border border = new Border
                 {
                     BorderBrush = RuleBrush,
                     BorderThickness = new Thickness(0, 0, 1, 1),
                     Padding = new Thickness(8, 4),
+                    Background = marked.Contains(row) ? background : null,
                     Child = cell
                 };
                 Grid.SetRow(border, row);

@@ -129,7 +129,7 @@ public partial class MainWindow
         }
 
         string title = change.DisplayPath + (staged ? "  (staged)" : string.Empty);
-        bool markdown = MarkdownFiles.IsMarkdown(change.Path);
+        bool markdown = Urras.Core.Markdown.PreviewFiles.CanPreview(change.Path);
         PreviewBox.IsVisible = markdown;
         if (ImageFiles.IsImage(change.Path) || (markdown && _settings.MarkdownPreview))
         {
@@ -137,7 +137,7 @@ public partial class MainWindow
             _changesDiffText = null;
             DiffTitle.Text = title;
             if (markdown)
-                ShowMarkdown(MarkdownView, ImageView, DiffList, before, after);
+                ShowMarkdown(MarkdownView, ImageView, DiffList, before, after, change.Path);
             else
                 ShowImage(ImageView, MarkdownView, DiffList, before, after);
             return;
@@ -221,7 +221,7 @@ public partial class MainWindow
             return;
 
         string title = source.Title + "  ·  " + file.DisplayPath;
-        bool markdown = MarkdownFiles.IsMarkdown(file.Path);
+        bool markdown = Urras.Core.Markdown.PreviewFiles.CanPreview(file.Path);
         CommitPreviewBox.IsVisible = markdown;
         if (ImageFiles.IsImage(file.Path) || (markdown && _settings.MarkdownPreview))
         {
@@ -233,7 +233,7 @@ public partial class MainWindow
             _commitDiffText = null;
             CommitDiffTitle.Text = title;
             if (markdown)
-                ShowMarkdown(CommitMarkdownView, CommitImageView, CommitDiffList, before, after);
+                ShowMarkdown(CommitMarkdownView, CommitImageView, CommitDiffList, before, after, file.Path);
             else
                 ShowImage(CommitImageView, CommitMarkdownView, CommitDiffList, before, after);
             return;
@@ -263,13 +263,13 @@ public partial class MainWindow
     }
 
     private void ShowMarkdown(MarkdownDiffView view, ImageDiffView image, ListBox list, byte[]? before,
-                              byte[]? after)
+                              byte[]? after, string path)
     {
         HideImage(image);
         list.ItemsSource = null;
         list.IsVisible = false;
         view.IsVisible = true;
-        view.Show(before, after);
+        view.Show(before, after, path);
         UpdateHints();
     }
 

@@ -13,13 +13,3 @@ public static class ImageFiles
         return Extensions.Contains(Path.GetExtension(path));
     }
 }
-
-public static class MarkdownFiles
-{
-    public static bool IsMarkdown(string path)
-    {
-        string extension = Path.GetExtension(path);
-        return extension.Equals(".md", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".markdown", StringComparison.OrdinalIgnoreCase);
-    }
-}

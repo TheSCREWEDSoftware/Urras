@@ -573,7 +573,8 @@ Esc clears it" />
                   <CheckBox x:Name="WrapBox" DockPanel.Dock="Right" Content="Wrap" Margin="8,0"
                             ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
                   <CheckBox x:Name="PreviewBox" DockPanel.Dock="Right" Content="Preview" Margin="8,0,0,0"
-                            IsVisible="False" ToolTip.Tip="Show Markdown rendered, old and new side by side" />
+                            IsVisible="False"
+                            ToolTip.Tip="Show Markdown, HTML and CSV rendered, old and new side by side" />
                   <CheckBox x:Name="WhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
                             ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
                   <ComboBox x:Name="FileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
@@ -703,7 +704,8 @@ Esc clears it" />
                 <CheckBox x:Name="CommitWrapBox" DockPanel.Dock="Right" Content="Wrap" Margin="8,0"
                           ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
                 <CheckBox x:Name="CommitPreviewBox" DockPanel.Dock="Right" Content="Preview" Margin="8,0,0,0"
-                          IsVisible="False" ToolTip.Tip="Show Markdown rendered, old and new side by side" />
+                          IsVisible="False"
+                          ToolTip.Tip="Show Markdown, HTML and CSV rendered, old and new side by side" />
                 <CheckBox x:Name="CommitWhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
                           ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
                 <ComboBox x:Name="CommitFileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
