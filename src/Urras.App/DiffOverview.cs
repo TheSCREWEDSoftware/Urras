@@ -14,8 +14,6 @@ public sealed class DiffOverview : Control
     private const double MARK_OPACITY = 0.8;
     // Row height in the list; a diff shorter than the list puts each mark beside its row, not spread to the bottom
     private const double DEFAULT_ROW_HEIGHT = 16;
-    // The file and hunk headers a diff starts with, which are neither added nor removed
-    private const int HEADER_ROWS = 6;
 
     private enum Kind
     {
@@ -28,12 +26,6 @@ public sealed class DiffOverview : Control
 
     private IReadOnlyList<DiffRow> _rows = Array.Empty<DiffRow>();
     private List<Mark> _marks = new List<Mark>();
-
-    public DiffOverview()
-    {
-        // A transparent background makes the whole column take the pointer, not just the marks
-        Cursor = new Cursor(StandardCursorType.Hand);
-    }
 
     public double RowHeight { get; set; } = DEFAULT_ROW_HEIGHT;
 
@@ -48,13 +40,13 @@ public sealed class DiffOverview : Control
         InvalidateVisual();
     }
 
-    // Rows of the same kind next to each other make one mark; a new or deleted file, all one change, makes none
+    // Neighbouring rows of one kind make one mark; a diff without unchanged lines (a new file) makes none
     private static List<Mark> Marks(IReadOnlyList<DiffRow> rows)
     {
         List<Mark> marks = new List<Mark>();
-        int added = rows.Count(row => row.IsAdded);
-        int removed = rows.Count(row => row.IsRemoved);
-        if ((added == 0 || removed == 0) && added + removed >= rows.Count - HEADER_ROWS)
+        // An unchanged line has both numbers, or in the raw view starts with a space
+        if (!rows.Any(row => !row.IsAdded && !row.IsRemoved &&
+                             ((row.OldNumber.Length > 0 && row.NewNumber.Length > 0) || row.Text.StartsWith(' '))))
             return marks;
 
         int index = 0;
@@ -120,7 +112,9 @@ public sealed class DiffOverview : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        ToolTip.SetTip(this, MarkAt(e.GetPosition(this).Y)?.Lines);
+        Mark? mark = MarkAt(e.GetPosition(this).Y);
+        ToolTip.SetTip(this, mark?.Lines);
+        Cursor = mark == null ? Cursor.Default : new Cursor(StandardCursorType.Hand);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

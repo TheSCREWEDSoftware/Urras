@@ -111,6 +111,9 @@ public sealed class MarkdownDiffView : UserControl
     // Either side may be null, for a new or deleted file; the path says how to read it, the loader finds pictures
     public void Show(byte[]? before, byte[]? after, string path = "README.md", ImageLoader? loader = null)
     {
+        // The same file again (a refresh) keeps the page and where it was scrolled to
+        if (path == _path && _columns.Children.Count > 0 && Same(before, _before) && Same(after, _after))
+            return;
         _before = before;
         _after = after;
         _path = path;
@@ -177,6 +180,11 @@ public sealed class MarkdownDiffView : UserControl
         }, Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
+    private static bool Same(byte[]? first, byte[]? second)
+    {
+        return first == null ? second == null : second != null && first.AsSpan().SequenceEqual(second);
+    }
+
     private void OpenInBrowser()
     {
         byte[]? contents = _after ?? _before;
@@ -215,6 +223,9 @@ public sealed class MarkdownDiffView : UserControl
     {
         ++_generation;
         _columns.Children.Clear();
+        _before = null;
+        _after = null;
+        _path = string.Empty;
     }
 
     private static string Text(byte[]? bytes)
@@ -483,11 +494,6 @@ public sealed class PreviewMarks : Control
 
     private IReadOnlyList<Mark> _marks = Array.Empty<Mark>();
 
-    public PreviewMarks()
-    {
-        Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
-    }
-
     // The page offset of a clicked mark's block
     public event Action<double>? MarkClicked;
 
@@ -516,7 +522,10 @@ public sealed class PreviewMarks : Control
     protected override void OnPointerMoved(Avalonia.Input.PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        ToolTip.SetTip(this, MarkAt(e.GetPosition(this).Y)?.Label);
+        Mark? mark = MarkAt(e.GetPosition(this).Y);
+        ToolTip.SetTip(this, mark?.Label);
+        Cursor = mark == null ? Avalonia.Input.Cursor.Default
+                              : new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
     }
 
     protected override void OnPointerPressed(Avalonia.Input.PointerPressedEventArgs e)

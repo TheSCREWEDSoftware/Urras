@@ -10,7 +10,12 @@ public static class PreviewPictures
     // Larger downloads are left out, so a huge picture can't stall the preview
     private const long MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024;
 
+    // Pictures from the internet are fetched once while Urras runs, not again for every refresh or file
+    private const int MAX_CACHED = 200;
+
     private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS) };
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<byte[]?>> Downloads =
+        new System.Collections.Concurrent.ConcurrentDictionary<string, Task<byte[]?>>(StringComparer.Ordinal);
 
     // oldVersion and newVersion read a file of the repository at each side's version; null when previews show none
     public static MarkdownDiffView.ImageLoader? For(AppSettings settings, string filePath,
@@ -26,10 +31,21 @@ public static class PreviewPictures
                 return data;
             if (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 source.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                return settings.PreviewImages == PreviewImages.Internet ? await DownloadAsync(source) : null;
+                return settings.PreviewImages == PreviewImages.Internet ? await CachedDownloadAsync(source) : null;
             string? path = PreviewFiles.PicturePath(filePath, source);
             return path == null ? null : await (newSide ? newVersion : oldVersion)(path);
         };
+    }
+
+    private static Task<byte[]?> CachedDownloadAsync(string address)
+    {
+        if (Downloads.Count > MAX_CACHED)
+            Downloads.Clear();
+        Task<byte[]?> download = Downloads.GetOrAdd(address, DownloadAsync);
+        // A failed download is tried again next time rather than remembered
+        download.ContinueWith(_ => Downloads.TryRemove(address, out Task<byte[]?>? _),
+                              TaskContinuationOptions.NotOnRanToCompletion);
+        return download;
     }
 
     private static async Task<byte[]?> DownloadAsync(string address)
