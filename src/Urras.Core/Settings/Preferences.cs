@@ -30,6 +30,8 @@ public sealed class PromptSettings
     public bool CheckingOutCommits { get; set; } = true;
     public bool RemovingWorktrees { get; set; } = true;
     public bool ShowCommitLengthWarning { get; set; } = true;
+    // A failed Git command opens a window with its error, like GitHub Desktop, as well as the status bar
+    public bool ShowingGitErrors { get; set; } = true;
 
     [JsonConverter(typeof(JsonStringEnumConverter<BranchSwitchChanges>))]
     public BranchSwitchChanges SwitchingWithChanges { get; set; } = BranchSwitchChanges.Ask;

@@ -90,6 +90,7 @@ public sealed class OptionsWindow : Window
     private readonly CheckBox _confirmCheckout;
     private readonly CheckBox _confirmRemoveWorktree;
     private readonly CheckBox _lengthWarning;
+    private readonly CheckBox _gitErrors;
     private readonly RadioButton[] _switching;
 
     // AI assistant
@@ -148,6 +149,7 @@ public sealed class OptionsWindow : Window
         _confirmCheckout = Check("Checking out a commit", prompts.CheckingOutCommits);
         _confirmRemoveWorktree = Check("Removing worktrees", prompts.RemovingWorktrees);
         _lengthWarning = Check("Show the summary length counter", prompts.ShowCommitLengthWarning);
+        _gitErrors = Check("Show Git's errors in a window, not just the status bar", prompts.ShowingGitErrors);
         _switching = new[]
         {
             Radio("Ask me where the changes should go", "switch"),
@@ -282,7 +284,7 @@ public sealed class OptionsWindow : Window
         foreach (CheckBox box in new[]
                  {
                      _confirmRemoveRepository, _confirmDiscard, _confirmDropStash, _confirmCheckout,
-                     _confirmRemoveWorktree, _lengthWarning
+                     _confirmRemoveWorktree, _lengthWarning, _gitErrors
                  })
             _tracker.Track(PROMPTS, box.Content as string ?? "Prompt", () => OnOff(box));
         _tracker.Track(PROMPTS, "Switching branches with changes", () => Chosen(_switching));
@@ -546,7 +548,8 @@ public sealed class OptionsWindow : Window
         return Page(Heading("Ask before…"), _confirmRemoveRepository, _confirmDiscard, _confirmDropStash,
                     _confirmCheckout, _confirmRemoveWorktree,
                     Heading("If I have changes and switch branches…"), switching,
-                    Heading("Commit message"), _lengthWarning);
+                    Heading("Commit message"), _lengthWarning,
+                    Heading("When Git fails"), _gitErrors);
     }
 
     private Control AssistantPage()
@@ -739,6 +742,7 @@ public sealed class OptionsWindow : Window
         prompts.CheckingOutCommits = _confirmCheckout.IsChecked == true;
         prompts.RemovingWorktrees = _confirmRemoveWorktree.IsChecked == true;
         prompts.ShowCommitLengthWarning = _lengthWarning.IsChecked == true;
+        prompts.ShowingGitErrors = _gitErrors.IsChecked == true;
         prompts.SwitchingWithChanges = (BranchSwitchChanges)Math.Max(0, Array.FindIndex(_switching,
                                                                          radio => radio.IsChecked == true));
 

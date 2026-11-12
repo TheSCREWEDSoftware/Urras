@@ -289,13 +289,40 @@ public static class Dialogs
             "details."));
         text.Children.Add(Links.ToPage("Source code: " + Links.REPOSITORY, Links.REPOSITORY));
         text.Children.Add(Links.ToPage("Licence (GNU AGPL 3.0)", Links.Document("LICENSE")));
-        text.Children.Add(Paragraph("Built with Avalonia (MIT) and Tmds.DBus.Protocol (MIT) on .NET."));
+        text.Children.Add(Sentence(("Built with ", null), ("Avalonia", AVALONIA_URL), (" (MIT) and ", null),
+                                   ("Tmds.DBus.Protocol", DBUS_URL), (" (MIT) on ", null), (".NET", DOTNET_URL),
+                                   (".", null)));
+        text.Children.Add(Sentence(("The licence is the ", null), ("GNU AGPL", AGPL_URL), (", by the ", null),
+                                   ("Free Software Foundation", FSF_URL), (".", null)));
 
         Button close = new Button { Content = "Close", IsDefault = true, IsCancel = true };
         Button unused = new Button { IsVisible = false };
         close.Click += (_, _) => dialog.Close(null);
         dialog.Content = Layout(text, null, close, unused);
         await dialog.ShowDialog<object?>(owner);
+    }
+
+    private const string AVALONIA_URL = "https://avaloniaui.net";
+    private const string DBUS_URL = "https://github.com/tmds/Tmds.DBus";
+    private const string DOTNET_URL = "https://dotnet.microsoft.com";
+    private const string AGPL_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
+    private const string FSF_URL = "https://www.fsf.org";
+
+    // Text with some words as links: (text, address) pairs, where a null address is plain text
+    private static WrapPanel Sentence(params (string Text, string? Url)[] parts)
+    {
+        WrapPanel sentence = new WrapPanel();
+        foreach ((string part, string? url) in parts)
+            sentence.Children.Add(url == null
+                                      ? new TextBlock { Text = part, VerticalAlignment = VerticalAlignment.Center }
+                                      : Links.ToPage(part, url));
+        return sentence;
+    }
+
+    // A failed Git command, like GitHub Desktop's error window; true when the Git log should open
+    public static Task<bool> GitErrorAsync(Window owner, string message)
+    {
+        return ConfirmAsync(owner, "Git couldn't do that", message, "Show the Git log");
     }
 
     // A list with a button per action; returns the selected item and the action clicked, or nulls when closed

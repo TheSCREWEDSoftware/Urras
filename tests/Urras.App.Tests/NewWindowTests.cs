@@ -134,7 +134,7 @@ public sealed class NewWindowTests
         MainWindow window = new MainWindow();
         window.Show();
         Ui.Pump();
-        window.FindControl<Button>("SettingsButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.FindControl<MenuItem>("SettingsButton")!.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         Ui.Pump(() => window.OwnedWindows.Count > 0);
         OptionsWindow options = Assert.IsType<OptionsWindow>(window.OwnedWindows[^1]);
         Ui.VisitEveryPage(options);

@@ -174,11 +174,13 @@
 
     <!-- Urras's own title bar on Windows (File menu and title; Windows draws the buttons on the right), a menu row
          elsewhere; the empty parts drag the window. The shortcuts are handled in OnPreviewKeyDown -->
-    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*" MinHeight="32">
+    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto" MinHeight="32">
       <Image x:Name="TitleIcon" Grid.Column="0" Source="/Assets/urras.png" Width="16" Height="16"
              Margin="12,0,4,0" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="False" />
       <TextBlock x:Name="WindowTitle" Grid.Column="2" Classes="windowTitle" Text="Urras" IsVisible="False"
                  HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
+      <Button x:Name="NotificationsButton" Grid.Column="3" Content="Notifications" Classes="subtle"
+              Padding="10,4" VerticalAlignment="Center" IsVisible="False" />
       <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent">
         <MenuItem Header="_File">
           <MenuItem x:Name="NewRepositoryItem" Header="New repository…" InputGesture="Ctrl+N" />
@@ -188,6 +190,16 @@
           <MenuItem x:Name="OptionsItem" Header="Options…   Ctrl+," />
           <Separator />
           <MenuItem x:Name="ExitItem" Header="Exit" InputGesture="Alt+F4" />
+        </MenuItem>
+        <!-- Like Anarres: settings, accounts and the Git log live in the title bar, not the status bar -->
+        <MenuItem Header="_View">
+          <MenuItem x:Name="SettingsButton" Header="_Settings…" />
+          <MenuItem x:Name="AccountsButton" Header="_Accounts…" />
+          <Separator />
+          <MenuItem x:Name="LogToggle" Header="_Git log" ToggleType="CheckBox" />
+        </MenuItem>
+        <MenuItem Header="_Help">
+          <MenuItem x:Name="AboutButton" Header="_About Urras" />
         </MenuItem>
       </Menu>
     </Grid>
@@ -278,15 +290,6 @@
     <!-- Status bar -->
     <Border DockPanel.Dock="Bottom" Padding="12,2,12,4">
       <DockPanel>
-        <ToggleButton x:Name="LogToggle" DockPanel.Dock="Right" Content="Git log" Padding="8,2" Classes="subtle" />
-        <Button x:Name="AboutButton" DockPanel.Dock="Right" Content="About" Padding="8,2" Margin="0,0,2,0"
-                Classes="subtle" />
-        <Button x:Name="SettingsButton" DockPanel.Dock="Right" Content="Settings…" Padding="8,2" Margin="0,0,2,0"
-                Classes="subtle" />
-        <Button x:Name="AccountsButton" DockPanel.Dock="Right" Content="Accounts…" Padding="8,2" Margin="0,0,2,0"
-                Classes="subtle" />
-        <Button x:Name="NotificationsButton" DockPanel.Dock="Right" Content="Notifications" Padding="8,2"
-                Margin="0,0,2,0" IsVisible="False" Classes="subtle" />
         <TextBlock x:Name="AutoFetchText" DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12"
                    Foreground="{DynamicResource Urras.MutedText}" Margin="0,0,12,0" />
         <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="Ready"

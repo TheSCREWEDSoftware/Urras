@@ -13,6 +13,8 @@ namespace Urras.App;
 
 public partial class MainWindow : Window
 {
+    // An error window shows at most this many of Git's lines; the Git log has them all
+    private const int MAX_ERROR_LINES = 20;
     // Narrower than this, History marks unpushed commits with an arrow
     private const double NARROW_HISTORY_WIDTH = 900;
     private const int MAX_LOG_CHARACTERS = 200000;
@@ -695,13 +697,34 @@ public partial class MainWindow : Window
         if (MissingRemote.UrlIn(result.Message) is { } missing)
         {
             SetStatus(missing + " was deleted, or this account can't reach it.  (see Git log)", true);
+            _ = ShowGitErrorAsync(missing + " was deleted, or this account can't reach it. If it was deleted, Sync " +
+                                  "offers to publish it again.\n\n" + result.Message);
             return false;
         }
 
         SetStatus(FirstLine(result.Message) + "  (see Git log)", true);
         if (PushRefusal.Parse(result.Message) is { } refusal)
             _ = ExplainPushRefusalAsync(refusal);
+        else
+            _ = ShowGitErrorAsync(result.Message);
         return false;
+    }
+
+    // Like GitHub Desktop, a failed command opens a window so the error isn't missed; Options can turn it off
+    private async Task ShowGitErrorAsync(string message)
+    {
+        if (!_settings.Prompts.ShowingGitErrors || message.Trim().Length == 0)
+            return;
+
+        string[] lines = message.Trim().Split('\n');
+        string shown = string.Join("\n", lines.Take(MAX_ERROR_LINES)) +
+                       (lines.Length > MAX_ERROR_LINES ? "\n…the rest is in the Git log." : string.Empty);
+        if (!await Dialogs.GitErrorAsync(this, shown))
+            return;
+
+        LogToggle.IsChecked = true;
+        LogBox.IsVisible = true;
+        ScrollLogToEnd();
     }
 
     // GitHub said no: usually an organisation that hasn't approved Urras yet, or no write access

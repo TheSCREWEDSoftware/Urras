@@ -126,8 +126,8 @@ public sealed class MainWindowTests : IDisposable
     public void OptionsOpenFromTheMainWindow()
     {
         MainWindow window = OpenWindow();
-        Button settings = window.FindControl<Button>("SettingsButton")!;
-        settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        MenuItem settings = window.FindControl<MenuItem>("SettingsButton")!;
+        settings.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         Ui.Pump(() => window.OwnedWindows.Count > 0);
         OptionsWindow options = Assert.IsType<OptionsWindow>(window.OwnedWindows[^1]);
         Ui.VisitEveryPage(options);
