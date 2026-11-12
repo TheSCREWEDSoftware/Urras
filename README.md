@@ -231,8 +231,10 @@ Both use their own settings and Git configuration in a temporary folder, so they
 <summary><b>Show the screenshots</b></summary>
 
 <img src="docs/screenshots/history-graph.png" alt="Screenshot: history graph"><br>
-History: the commit graph with a lane per branch, branch labels, authors with their pictures, and the commit and
-date of each change
+History: the commit graph with a lane per branch, branch labels in their lane's colour (with the remote beside a
+branch that's pushed), commits not pushed yet, authors with their pictures, and the commit and date of each change
+
+The screenshots are 1920 × 1080 and show Lumen, a small demo repository with branches, beside Urras's own projects.
 
 <table>
   <tr>
@@ -243,6 +245,16 @@ date of each change
     <td>
       <img src="docs/screenshots/repository-menu.png" alt="Screenshot: repository menu"><br>
       A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/changes.png" alt="Screenshot: changes"><br>
+      Changes: the files changed, a diff with word-level colours, and the commit message with its length counter
+    </td>
+    <td>
+      <img src="docs/screenshots/theme-editor.png" alt="Screenshot: theme editor"><br>
+      Editing a theme, ready-made ones included; Restore defaults brings back the original colours
     </td>
   </tr>
   <tr>
@@ -272,14 +284,14 @@ date of each change
     </td>
     <td>
       <img src="docs/screenshots/options-git.png" alt="Screenshot: options git"><br>
-      Options: your Git name, email (or GitHub's private address) and default branch
+      Options: your Git name, email (or GitHub's private address), default branch and commit signing
     </td>
   </tr>
   <tr>
     <td>
       <img src="docs/screenshots/options-appearance.png" alt="Screenshot: options appearance"><br>
       Options: ready-made themes (Frost, Fel, Horde, Alliance, Parchment, Anarres, GitHub, GitLab, SourceGit,
-      Fork) with their colours, and your own
+      Fork) and your own, and the text size and font for every theme or just one
     </td>
     <td>
       <img src="docs/screenshots/options-prompts.png" alt="Screenshot: options prompts"><br>
@@ -289,11 +301,21 @@ date of each change
   <tr>
     <td>
       <img src="docs/screenshots/options-advanced.png" alt="Screenshot: options advanced"><br>
-      Options: background fetch and checks before committing
+      Options: what the close button does, update checks, background fetch and checks before committing
     </td>
     <td>
       <img src="docs/screenshots/git-log.png" alt="Screenshot: git log"><br>
-      Git log: every command Urras runs, and what Git answered
+      Git log: the commands that change something, and any that failed, with what Git answered
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="docs/screenshots/options-accounts.png" alt="Screenshot: options accounts"><br>
+      Options: sign in to GitHub, GitLab, Gitea or Bitbucket, and what forks do by default
+    </td>
+    <td>
+      <img src="docs/screenshots/options-ai.png" alt="Screenshot: options AI assistant"><br>
+      Options: an AI assistant for commit messages and explanations, off unless you choose one
     </td>
   </tr>
 </table>
