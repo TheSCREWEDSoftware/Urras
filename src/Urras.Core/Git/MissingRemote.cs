@@ -21,6 +21,18 @@ public static partial class MissingRemote
         return match.Success ? match.Groups["url"].Value.TrimEnd('/') : null;
     }
 
+    // The same repository whatever the trailing slash, ".git" or letter case
+    public static bool SameAddress(string first, string second)
+    {
+        return string.Equals(Normalised(first), Normalised(second), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string Normalised(string url)
+    {
+        string trimmed = url.Trim().TrimEnd('/');
+        return trimmed.EndsWith(".git", StringComparison.OrdinalIgnoreCase) ? trimmed[..^".git".Length] : trimmed;
+    }
+
     // The owner and name in an HTTPS or SSH address, so publishing again can offer them; null if it has none
     public static (string Owner, string Name)? OwnerAndName(string url)
     {

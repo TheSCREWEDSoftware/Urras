@@ -15,7 +15,13 @@ public static class GitRunner
     // Settings added to every command, as -c name=value (see CredentialSetup)
     public static IReadOnlyList<string> ExtraSettings { get; set; } = Array.Empty<string>();
 
-    // A lock left by a Git that crashed is removed and the command run once more
+    // Commands that can safely run again after a stale lock stopped them; a half-done merge or rebase can't
+    private static readonly HashSet<string> Repeatable = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "fetch", "pull", "push"
+    };
+
+    // A lock left by a Git that crashed is removed and a fetch, pull or push run once more
     public static async Task<GitResult> RunAsync(string workingDirectory, IEnumerable<string> arguments,
                                                  string? standardInput = null,
                                                  CancellationToken cancellationToken = default, bool quiet = false,
@@ -25,7 +31,7 @@ public static class GitRunner
         List<string> given = arguments.ToList();
         GitResult result = await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet,
                                               environment, progress);
-        if (result.Success || !StaleLock.TryClear(result.Message, workingDirectory))
+        if (result.Success || !given.Any(Repeatable.Contains) || !StaleLock.TryClear(result.Message, workingDirectory))
             return result;
 
         return await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet, environment,

@@ -40,6 +40,21 @@ public static class RemoteHealthTests
         Assert.Equal("origin/main", (await local.Repository.GetStatusAsync()).Upstream, "pushed");
     }
 
+    public static async Task TellsAGoneOriginFromAGoneFork()
+    {
+        using TempRepository local = await TempRepository.CreateAsync();
+        Assert.Success(await local.Repository.AddRemoteAsync("origin", "https://github.com/ryan/game.git"), "origin");
+        Assert.Success(await local.Repository.AddRemoteAsync("fork", "https://github.com/friend/game"), "fork");
+        Assert.True(MissingRemote.SameAddress("https://github.com/Ryan/game/", "https://github.com/ryan/game.git"),
+                    "same repository");
+
+        string forkGone = "remote: Repository not found.\nfatal: repository 'https://github.com/friend/game/' " +
+                          "not found";
+        Assert.Equal("fork", await local.Repository.RemoteNamedInAsync(forkGone), "only the fork is gone");
+        string originGone = "fatal: repository 'https://github.com/ryan/game.git/' not found";
+        Assert.Equal("origin", await local.Repository.RemoteNamedInAsync(originGone), "origin is gone");
+    }
+
     public static void ClearsOnlyLocksLeftOverByACrash()
     {
         string folder = Path.Combine(Path.GetTempPath(), "urras-lock-" + Guid.NewGuid().ToString("N"));

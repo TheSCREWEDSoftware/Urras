@@ -26,7 +26,7 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
                                  "Publish this repository to GitHub", 0, 0);
         if (remoteMissing)
             return new SyncState(SyncKind.PublishRepository, "Publish repository again",
-                                 "Its online repository was deleted", 0, 0);
+                                 "Its online repository is gone", 0, 0);
 
         string remote = Remote(status.Upstream) ?? DEFAULT_REMOTE;
         string fetched = lastFetched is { } when

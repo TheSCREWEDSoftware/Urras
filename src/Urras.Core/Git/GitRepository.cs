@@ -428,6 +428,21 @@ public sealed partial class GitRepository
         return Run("remote", "set-url", name, url);
     }
 
+    // The remote whose address Git couldn't find, so only a deleted origin offers publishing again, not a fork's
+    public async Task<string?> RemoteNamedInAsync(string message)
+    {
+        if (MissingRemote.UrlIn(message) is not { } missing)
+            return null;
+
+        foreach (string name in await GetRemotesAsync())
+        {
+            if (await GetRemoteUrlAsync(name) is { } url && MissingRemote.SameAddress(url, missing))
+                return name;
+        }
+
+        return null;
+    }
+
     // The remote's fetch address, or null when there's no such remote
     public async Task<string?> GetRemoteUrlAsync(string name)
     {

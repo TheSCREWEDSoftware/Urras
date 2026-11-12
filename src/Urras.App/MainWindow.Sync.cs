@@ -43,12 +43,19 @@ public partial class MainWindow
 
     private bool RemoteMissing => _repository != null && _missingRemotes.Contains(_repository.Path);
 
-    // Remembers or forgets that a repository's remote was deleted, from the answer to a fetch, pull or push
-    private void NoteRemote(string path, GitResult result)
+    // Notes a gone origin from a failed answer; a fetch, pull or push that worked (reached) shows it's back
+    private async Task NoteRemoteAsync(string path, GitResult result, bool reached)
     {
         if (result.Success)
-            _missingRemotes.Remove(path);
-        else if (MissingRemote.IsMissing(result.Message))
+        {
+            if (reached)
+                _missingRemotes.Remove(path);
+            return;
+        }
+
+        // A deleted fork remote fails "fetch --all" too, but only a gone origin is worth publishing again
+        if (MissingRemote.IsMissing(result.Message) &&
+            await new GitRepository(path).RemoteNamedInAsync(result.Message) == RepositoryPublisher.REMOTE)
             _missingRemotes.Add(path);
     }
     private SyncState? _sync;
@@ -80,10 +87,14 @@ public partial class MainWindow
         StartSyncAnimation(kind);
         try
         {
+            _lastGitResult = null;
             await RunSyncStepAsync(kind);
             // A fetch, pull or push that reached the remote shows it exists again
             if (_repository != null && _lastGitResult is { } answer)
-                NoteRemote(_repository.Path, answer);
+            {
+                await NoteRemoteAsync(_repository.Path, answer, true);
+                ShowSync(_status, _lastFetched);
+            }
         }
         finally
         {

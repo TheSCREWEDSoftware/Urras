@@ -451,7 +451,7 @@ public partial class MainWindow
             foreach (string path in _settings.Repositories.ToList())
             {
                 if (Directory.Exists(path))
-                    NoteRemote(path, await new GitRepository(path).FetchAsync(true));
+                    await NoteRemoteAsync(path, await new GitRepository(path).FetchAsync(true), true);
             }
 
             AutoFetchText.Text = "Fetched " + DateTime.Now.ToString(DisplayFormats.TimeFormat);

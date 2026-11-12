@@ -665,6 +665,7 @@ public partial class MainWindow : Window
             GitResult result = await action(_repository);
             _lastGitResult = result;
             success = ReportResult(result, successText);
+            await NoteRemoteAsync(_repository.Path, result, false);
         }
         catch (Exception exception) when (exception is GitException or IOException or UnauthorizedAccessException)
         {
@@ -690,10 +691,10 @@ public partial class MainWindow : Window
             return true;
         }
 
-        if (_repository != null && MissingRemote.IsMissing(result.Message))
+        // GitHub says the same for a deleted repository and for one this account can't see
+        if (MissingRemote.UrlIn(result.Message) is { } missing)
         {
-            NoteRemote(_repository.Path, result);
-            SetStatus("This repository's online copy no longer exists. Sync offers to publish it again.", true);
+            SetStatus(missing + " was deleted, or this account can't reach it.  (see Git log)", true);
             return false;
         }
 
