@@ -312,15 +312,13 @@ pick the configuration in their toolbar instead; choose Release there once and t
 <details>
 <summary><b>Publishing a release</b></summary>
 
-Push a version tag; the Release workflow tests Urras, builds the Windows and Linux downloads and publishes them with
-notes made from the changes since the last release:
+1. Raise `<Version>` in `src/Urras.App/Urras.App.csproj` (for example to `0.2.0`), commit and push.
+2. On GitHub, open **Actions › Release › Run workflow** and pick the branch.
 
-```
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-A tag with a hyphen, such as `v0.2.0-beta.1`, becomes a pre-release.
+The workflow tests Urras, builds the Windows and Linux downloads, tags the commit `v0.2.0` and publishes the release
+with notes made from the changes since the last one. Tick **pre-release**, or use a version with a hyphen such as
+`0.2.0-beta.1`, to mark it as a pre-release. A version that is already released stops the run before anything is
+built.
 
 </details>
 

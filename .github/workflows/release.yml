@@ -1,11 +1,14 @@
 name: Release
 
-# Pushing a version tag (git tag v0.2.0, then git push origin v0.2.0) tests Urras, builds ready-to-run downloads
-# for Windows and Linux, and publishes them as a GitHub release with notes made from the merged changes.
+# Run by hand from the Actions tab: tests Urras, builds ready-to-run downloads for Windows and Linux, and publishes
+# them as a GitHub release tagged with the <Version> in src/Urras.App/Urras.App.csproj
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: Mark the release as a pre-release
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -26,8 +29,26 @@ jobs:
       - name: Interface tests (Avalonia headless)
         run: dotnet test tests/Urras.App.Tests -c Release
 
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      # Stops early when that version was already released, so a release is never overwritten
+      - id: read
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' src/Urras.App/Urras.App.csproj)
+          if gh release view "v$version" > /dev/null 2>&1; then
+            echo "::error::v$version is already released; raise <Version> in Urras.App.csproj first"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   build:
-    needs: test
+    needs: [test, version]
     strategy:
       matrix:
         include:
@@ -49,16 +70,18 @@ jobs:
         run: >-
           dotnet publish src/Urras.App -c Release -r ${{ matrix.runtime }} --self-contained
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:Version=${GITHUB_REF_NAME#v} -o publish
+          -p:Version=${{ needs.version.outputs.version }} -o publish
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path publish/* -DestinationPath "Urras-$env:GITHUB_REF_NAME-${{ matrix.runtime }}.zip"
+        run: >-
+          Compress-Archive -Path publish/*
+          -DestinationPath "Urras-v${{ needs.version.outputs.version }}-${{ matrix.runtime }}.zip"
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
-        run: tar -czf "Urras-${GITHUB_REF_NAME}-${{ matrix.runtime }}.tar.gz" -C publish .
+        run: tar -czf "Urras-v${{ needs.version.outputs.version }}-${{ matrix.runtime }}.tar.gz" -C publish .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -68,7 +91,7 @@ jobs:
             Urras-*.tar.gz
 
   release:
-    needs: build
+    needs: [build, version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,12 +101,13 @@ jobs:
           path: downloads
           merge-multiple: true
 
-      # A tag with a hyphen (v0.2.0-beta.1) is marked as a pre-release
+      # The tag is made on the commit that was built
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           prerelease=""
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
-          gh release create "$GITHUB_REF_NAME" downloads/* --title "Urras ${GITHUB_REF_NAME#v}" --generate-notes \
-            $prerelease
+          if [[ "${{ inputs.prerelease }}" == "true" || "$VERSION" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "v$VERSION" downloads/* --target "$GITHUB_SHA" --title "Urras $VERSION" \
+            --generate-notes $prerelease
