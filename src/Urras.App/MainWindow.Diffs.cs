@@ -287,6 +287,7 @@ public partial class MainWindow
         list.ItemsSource = null;
         list.IsVisible = false;
         view.IsVisible = true;
+        view.JumpToFirstChange = _settings.JumpToFirstChange;
         view.Show(before, after, path, pictures);
         UpdateHints();
     }

@@ -586,10 +586,11 @@ Esc clears it" />
                   <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
                 <Panel>
-                  <ListBox x:Name="DiffList" Classes="diff" SelectionMode="Multiple" />
-                  <!-- Where the changes are, drawn over the scroll bar; clicks go through to it -->
-                  <local:DiffOverview x:Name="DiffMarks" HorizontalAlignment="Right" Width="6" Margin="0,0,3,0"
-                                      IsHitTestVisible="False" IsVisible="{Binding #DiffList.IsVisible}" />
+                  <!-- Where the changes are, in a column beside the diff: hover names the lines, a click goes there -->
+                  <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding #DiffList.IsVisible}">
+                    <local:DiffOverview x:Name="DiffMarks" Grid.Column="1" Width="8" Margin="4,0,0,0" />
+                  </Grid>
+                  <ListBox x:Name="DiffList" Classes="diff" SelectionMode="Multiple" Margin="0,0,12,0" />
                   <local:ImageDiffView x:Name="ImageView" IsVisible="False" />
                   <local:MarkdownDiffView x:Name="MarkdownView" IsVisible="False" />
                   <TextBlock x:Name="DiffHint" Classes="hint" Text="Select a file to see its changes" />
@@ -731,9 +732,10 @@ Esc clears it" />
                 </ListBox.ItemTemplate>
               </ListBox>
               <Panel>
-                <ListBox x:Name="CommitDiffList" Classes="diff" />
-                <local:DiffOverview x:Name="CommitDiffMarks" HorizontalAlignment="Right" Width="6" Margin="0,0,3,0"
-                                    IsHitTestVisible="False" IsVisible="{Binding #CommitDiffList.IsVisible}" />
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding #CommitDiffList.IsVisible}">
+                  <local:DiffOverview x:Name="CommitDiffMarks" Grid.Column="1" Width="8" Margin="4,0,0,0" />
+                </Grid>
+                <ListBox x:Name="CommitDiffList" Classes="diff" Margin="0,0,12,0" />
                 <local:ImageDiffView x:Name="CommitImageView" IsVisible="False" />
                 <local:MarkdownDiffView x:Name="CommitMarkdownView" IsVisible="False" />
                 <TextBlock x:Name="CommitDiffHint" Classes="hint" Text="Select a commit to see its changes" />

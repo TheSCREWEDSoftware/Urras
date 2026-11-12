@@ -106,6 +106,8 @@ public partial class MainWindow : Window
 
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         Closed += (_, _) => GitRunner.CommandFinished -= OnGitCommandFinished;
+        DiffMarks.MarkClicked += index => ScrollNearTop(DiffList, index);
+        CommitDiffMarks.MarkClicked += index => ScrollNearTop(CommitDiffList, index);
 
         InitializeBasics();
         InitializeDiffOptions();
@@ -694,21 +696,22 @@ public partial class MainWindow : Window
     private static void JumpToFirstChange(ListBox list, List<DiffRow> rows)
     {
         int first = rows.FindIndex(row => row.IsAdded || row.IsRemoved);
-        if (first < 0)
+        if (first >= 0)
+            Dispatcher.UIThread.Post(() => ScrollNearTop(list, first), DispatcherPriority.Loaded);
+    }
+
+    // Scrolls so a row is near the top, with a few rows of what comes before above it
+    private static void ScrollNearTop(ListBox list, int index)
+    {
+        if (list.ItemsSource is not IList<DiffRow> rows || index >= rows.Count)
             return;
-        // After layout, so the list knows its rows' height; scrolling to a row well below first puts it near the top
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (list.ItemsSource != rows)
-                return;
-            int viewportRows = list.Scroll is { } scroll && list.ContainerFromIndex(0) is { } container &&
-                               container.Bounds.Height > 0
-                ? (int)(scroll.Viewport.Height / container.Bounds.Height)
-                : 0;
-            int top = Math.Max(0, first - ROWS_ABOVE_FIRST_CHANGE);
-            list.ScrollIntoView(Math.Min(rows.Count - 1, top + Math.Max(0, viewportRows - 1)));
-            list.ScrollIntoView(top);
-        }, DispatcherPriority.Loaded);
+        // Scrolling to a row a screen further down first, then back up to the row, leaves the row near the top
+        int viewportRows = list.Scroll is { } scroll && list.ContainerFromIndex(0) is { Bounds.Height: > 0 } row
+            ? (int)(scroll.Viewport.Height / row.Bounds.Height)
+            : 0;
+        int top = Math.Max(0, index - ROWS_ABOVE_FIRST_CHANGE);
+        list.ScrollIntoView(Math.Min(rows.Count - 1, top + Math.Max(0, viewportRows - 1)));
+        list.ScrollIntoView(top);
     }
 
     private void OnDiffModeChanged(ComboBox source)

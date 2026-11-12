@@ -41,8 +41,15 @@ public sealed class ImageDiffView : UserControl
     private readonly Slider _slider;
     private Bitmap? _oldBitmap;
     private Bitmap? _newBitmap;
+    private byte[]? _oldBytes;
+    private byte[]? _newBytes;
 
-    public ImageDiffView()
+    public ImageDiffView() : this(true)
+    {
+    }
+
+    // A full-screen copy has no button to go full screen again
+    public ImageDiffView(bool canGoFullScreen)
     {
         _modeBox = new ComboBox
         {
@@ -62,6 +69,11 @@ public sealed class ImageDiffView : UserControl
         StackPanel tools = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 0, 0, 6) };
         tools.Children.Add(_modeBox);
         tools.Children.Add(_slider);
+        Button fullScreen = new Button { Content = "Full screen", Classes = { "subtle" }, IsVisible = canGoFullScreen,
+                                         Margin = new Thickness(12, 0, 0, 0) };
+        ToolTip.SetTip(fullScreen, "Shows the images in a window of their own (Esc closes it)");
+        fullScreen.Click += (_, _) => OpenFullScreen();
+        tools.Children.Add(fullScreen);
 
         _sideBySide = new Grid
         {
@@ -108,8 +120,26 @@ public sealed class ImageDiffView : UserControl
         UpdateMode();
     }
 
+    private void OpenFullScreen()
+    {
+        ImageDiffView view = new ImageDiffView(false);
+        Window window = new Window { Title = "Images", WindowState = WindowState.Maximized, Content = view };
+        window.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Escape)
+                window.Close();
+        };
+        view.Show(_oldBytes, _newBytes);
+        if (TopLevel.GetTopLevel(this) is Window owner)
+            window.Show(owner);
+        else
+            window.Show();
+    }
+
     public void Show(byte[]? oldBytes, byte[]? newBytes)
     {
+        _oldBytes = oldBytes;
+        _newBytes = newBytes;
         _oldBitmap?.Dispose();
         _newBitmap?.Dispose();
         _oldBitmap = Load(oldBytes, _oldInfo);

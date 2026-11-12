@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Urras.Core.Markdown;
 
 namespace Urras.App;
@@ -28,6 +29,21 @@ public sealed class MarkdownDiffView : UserControl
     private static readonly IBrush AddedBar = Brush("#57AB5A");
     private static readonly IBrush RemovedBar = Brush("#E5534B");
 
+    // Characters of a changed block's text shown when hovering its mark
+    private const int SNIPPET_LENGTH = 60;
+
+    private static string Snippet(Control block)
+    {
+        string text = string.Join(" ", block.GetVisualDescendants().OfType<TextBlock>()
+                                            .Select(textBlock => textBlock.Inlines?.Text ?? textBlock.Text)
+                                            .Where(part => !string.IsNullOrWhiteSpace(part)));
+        text = string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return text.Length > SNIPPET_LENGTH ? text[..SNIPPET_LENGTH] + "…" : text.Length > 0 ? text : "a picture";
+    }
+
+    // Space kept above the first change when the preview scrolls to it
+    private const double JUMP_MARGIN = 60;
+
     // Pictures wider than this are shrunk to fit
     private const double MAX_IMAGE_WIDTH = 900;
 
@@ -48,6 +64,13 @@ public sealed class MarkdownDiffView : UserControl
     private string _path = string.Empty;
     private ImageLoader? _loader;
     private bool _newSide;
+    private readonly ScrollViewer _scroll = new ScrollViewer { Padding = new Thickness(16, 8) };
+    private readonly PreviewMarks _marks = new PreviewMarks { Width = 8, Margin = new Thickness(4, 0, 4, 0) };
+    // Changed blocks, and whether each was added (new side) or removed, for the marks and the first change
+    private readonly List<(Control Block, bool Added)> _changes = new List<(Control, bool)>();
+
+    // Showing a file scrolls to its first change; set from Options
+    public bool JumpToFirstChange { get; set; } = true;
     private int _generation;
 
     public MarkdownDiffView() : this(true)
@@ -74,7 +97,14 @@ public sealed class MarkdownDiffView : UserControl
         DockPanel root = new DockPanel();
         DockPanel.SetDock(toolbar, Dock.Top);
         root.Children.Add(toolbar);
-        root.Children.Add(new ScrollViewer { Content = _columns, Padding = new Thickness(16, 8) });
+        _scroll.Content = _columns;
+        // The marks are a column beside the page: hover names the change, a click scrolls to it
+        Grid body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        Grid.SetColumn(_marks, 1);
+        body.Children.Add(_scroll);
+        body.Children.Add(_marks);
+        root.Children.Add(body);
+        _marks.MarkClicked += offset => _scroll.Offset = new Vector(0, Math.Max(0, offset - JUMP_MARGIN));
         Content = root;
     }
 
@@ -87,6 +117,8 @@ public sealed class MarkdownDiffView : UserControl
         _loader = loader;
         ++_generation;
         _columns.Children.Clear();
+        _changes.Clear();
+        _marks.Show(Array.Empty<PreviewMarks.Mark>());
         PreviewKind kind = PreviewFiles.KindOf(path);
         bool html = kind == PreviewKind.Html;
         _note.IsVisible = html;
@@ -103,6 +135,7 @@ public sealed class MarkdownDiffView : UserControl
             Control page = Page(after != null ? newBlocks : oldBlocks, new HashSet<int>(), null, null);
             Grid.SetColumnSpan(page, 3);
             _columns.Children.Add(page);
+            AfterLayout();
             return;
         }
 
@@ -113,6 +146,35 @@ public sealed class MarkdownDiffView : UserControl
         Grid.SetColumn(right, 2);
         _columns.Children.Add(left);
         _columns.Children.Add(right);
+        AfterLayout();
+    }
+
+    // Once laid out: marks where the changes are, and the view scrolled to the first one
+    private void AfterLayout()
+    {
+        int generation = _generation;
+        _scroll.Offset = default;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (generation != _generation || _columns.Bounds.Height <= 0)
+                return;
+            double total = _columns.Bounds.Height;
+            List<PreviewMarks.Mark> marks = new List<PreviewMarks.Mark>();
+            double first = double.MaxValue;
+            foreach ((Control block, bool added) in _changes)
+            {
+                if (block.TranslatePoint(new Point(0, 0), _columns) is not { } top)
+                    continue;
+                marks.Add(new PreviewMarks.Mark(top.Y / total, (top.Y + block.Bounds.Height) / total, added, top.Y,
+                                                (added ? "Added: " : "Removed: ") + Snippet(block)));
+                first = Math.Min(first, top.Y);
+            }
+
+            _marks.Show(marks);
+            // A few lines of what comes before stay in view above the change
+            if (JumpToFirstChange && first < double.MaxValue)
+                _scroll.Offset = new Vector(0, Math.Max(0, first - JUMP_MARGIN));
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     private void OpenInBrowser()
@@ -183,14 +245,16 @@ public sealed class MarkdownDiffView : UserControl
                 continue;
             }
 
-            page.Children.Add(new Border
+            Border changedBlock = new Border
             {
                 Background = background,
                 BorderBrush = bar,
                 BorderThickness = new Thickness(3, 0, 0, 0),
                 Padding = new Thickness(8, 4),
                 Child = block
-            });
+            };
+            _changes.Add((changedBlock, _newSide));
+            page.Children.Add(changedBlock);
         }
 
         if (blocks.Count == 0)
@@ -293,6 +357,8 @@ public sealed class MarkdownDiffView : UserControl
                     Background = marked.Contains(row) ? background : null,
                     Child = cell
                 };
+                if (column == 0 && marked.Contains(row))
+                    _changes.Add((border, _newSide));
                 Grid.SetRow(border, row);
                 Grid.SetColumn(border, column);
                 grid.Children.Add(border);
@@ -403,5 +469,79 @@ public sealed class MarkdownDiffView : UserControl
     private static IBrush Brush(string colour)
     {
         return new SolidColorBrush(Color.Parse(colour));
+    }
+}
+
+// A column beside the preview marking added (green) and removed (red) blocks; hovering names one, a click goes there
+public sealed class PreviewMarks : Control
+{
+    private const double MIN_MARK_HEIGHT = 3;
+    private const double MARK_OPACITY = 0.8;
+
+    // Where a block is, as fractions of the page, its offset in the page, and what hovering it says
+    public sealed record Mark(double Top, double Bottom, bool Added, double Offset, string Label);
+
+    private IReadOnlyList<Mark> _marks = Array.Empty<Mark>();
+
+    public PreviewMarks()
+    {
+        Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
+    }
+
+    // The page offset of a clicked mark's block
+    public event Action<double>? MarkClicked;
+
+    public void Show(IReadOnlyList<Mark> marks)
+    {
+        _marks = marks;
+        ToolTip.SetTip(this, null);
+        InvalidateVisual();
+    }
+
+    private (double Top, double Bottom) Span(Mark mark)
+    {
+        double top = Math.Floor(mark.Top * Bounds.Height);
+        return (top, Math.Max(top + MIN_MARK_HEIGHT, Math.Ceiling(mark.Bottom * Bounds.Height)));
+    }
+
+    private Mark? MarkAt(double y)
+    {
+        return _marks.FirstOrDefault(mark =>
+        {
+            (double top, double bottom) = Span(mark);
+            return y >= top - 1 && y <= bottom + 1;
+        });
+    }
+
+    protected override void OnPointerMoved(Avalonia.Input.PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        ToolTip.SetTip(this, MarkAt(e.GetPosition(this).Y)?.Label);
+    }
+
+    protected override void OnPointerPressed(Avalonia.Input.PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (MarkAt(e.GetPosition(this).Y) is { } mark)
+            MarkClicked?.Invoke(mark.Offset);
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        // A transparent background makes the whole column take the pointer, not just the marks
+        context.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));
+        IBrush added = ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.ADDED);
+        IBrush removed = ThemeBrushes.Get(Urras.Core.Settings.ThemeColours.REMOVED);
+        using (context.PushOpacity(MARK_OPACITY))
+        {
+            foreach (Mark mark in _marks)
+            {
+                // The old page's changes on the left half, the new page's on the right, as the pages sit
+                (double top, double bottom) = Span(mark);
+                double half = Bounds.Width / 2;
+                context.FillRectangle(mark.Added ? added : removed,
+                                      new Rect(mark.Added ? half : 0, top, half, bottom - top), (float)(half / 2));
+            }
+        }
     }
 }
