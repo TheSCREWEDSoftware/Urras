@@ -90,9 +90,12 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _dateFormat;
     private readonly ComboBox _timeFormat;
     private readonly ComboBox _tabSize;
+    private readonly ComboBox _font;
+    private readonly ComboBox _fontSize;
     private readonly ComboBox _colours = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ThemeStore _themeStore = ThemeStore.Default;
     private const string BUILT_IN_COLOURS = "Built-in colours";
+    private const string DEFAULT_FONT = "Default (Segoe UI)";
     private readonly ThemePreview _preview = new ThemePreview { Margin = new Thickness(0, 8, 0, 0) };
     // The listed themes by name, read once per listing rather than once per row drawn
     private Dictionary<string, Urras.Core.Settings.Theme> _listedThemes =
@@ -156,6 +159,8 @@ public sealed class OptionsWindow : Window
                                                                                         : size.ToString()).ToList(),
                          null);
         _tabSize.SelectedIndex = Math.Max(0, Array.IndexOf(TabSizes, settings.TabSize));
+        _font = TextLook.FontPicker(DEFAULT_FONT, settings.FontFamily);
+        _fontSize = TextLook.SizePicker(null, settings.FontSize);
 
         PromptSettings prompts = settings.Prompts;
         _confirmRemoveRepository = Check("Removing repositories from the list", prompts.RemovingRepositories);
@@ -298,6 +303,8 @@ public sealed class OptionsWindow : Window
         _tracker.Track(APPEARANCE, "Date format", () => Selected(_dateFormat));
         _tracker.Track(APPEARANCE, "Time format", () => Selected(_timeFormat));
         _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
+        _tracker.Track(APPEARANCE, "Font", () => Selected(_font));
+        _tracker.Track(APPEARANCE, "Text size", () => Selected(_fontSize));
         _tracker.Track(APPEARANCE, "Full scroll bars", () => OnOff(_fullScrollBars));
         _tracker.Track(APPEARANCE, "Every window in the taskbar", () => OnOff(_windowsInTaskbar));
         foreach (CheckBox box in new[]
@@ -547,8 +554,9 @@ public sealed class OptionsWindow : Window
             Directory.CreateDirectory(_themeStore.Folder);
             SystemShell.OpenFolder(_themeStore.Folder);
         };
-        _colours.SelectionChanged += (_, _) => edit.IsEnabled = _colours.SelectedIndex > 0;
-        edit.IsEnabled = _colours.SelectedIndex > 0;
+        Button enforce = new Button { Content = "Use this font and size in every theme" };
+        ToolTip.SetTip(enforce, "Clears the font and text size your themes set for themselves");
+        enforce.Click += async (_, _) => await EnforceTextAsync();
         StackPanel themeButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         themeButtons.Children.Add(create);
         themeButtons.Children.Add(edit);
@@ -556,10 +564,12 @@ public sealed class OptionsWindow : Window
 
         return Page(Heading("Theme"), themes, Label("Colours"), _colours, _preview, themeButtons,
                     Note("Colours offers ready-made themes in GitHub, GitLab, SourceGit and Fork's colours, and " +
-                         "your own; editing a ready-made one makes a copy. A theme sets every colour of Urras on " +
-                         "top of a dark or light base, and its base wins over the choice above. Your themes are " +
-                         "files in the themes folder, to share or edit; colours added by newer versions of Urras " +
-                         "are written into them automatically."),
+                         "your own; editing a ready-made one or the built-in colours makes a copy. A theme sets " +
+                         "every colour of Urras on top of a dark or light base, and its base wins over the choice " +
+                         "above. Your themes are files in the themes folder, to share or edit; colours added by " +
+                         "newer versions of Urras are written into them automatically."),
+                    Heading("Text"), Label("Font"), _font, Label("Text size"), _fontSize, enforce,
+                    Note("A theme can have its own font and text size (Edit… above); otherwise it uses these."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize, Heading("Scroll bars"), _fullScrollBars,
                     Heading("Taskbar"), _windowsInTaskbar);
@@ -684,35 +694,59 @@ public sealed class OptionsWindow : Window
 
     private async Task EditThemeAsync()
     {
-        if (_colours.SelectedIndex <= 0 || _colours.SelectedItem is not string name)
+        if (_colours.SelectedItem is not string listed)
             return;
 
-        // A ready-made theme stays as it is; editing it makes a copy to change
-        if (ThemePresets.Find(name) is { } preset)
+        // Ready-made themes and the built-in colours stay as they are; editing one makes a copy, saved by Save
+        Urras.Core.Settings.Theme? original = listed == BUILT_IN_COLOURS ? ThemeNamed(listed)
+                                                                         : ThemePresets.Find(listed);
+        Urras.Core.Settings.Theme? theme;
+        if (original != null)
         {
-            string copyName = name + " (mine)";
+            string copyName = original.Name + " (mine)";
             for (int number = 2; _themeStore.Find(copyName) != null; number++)
-                copyName = name + " (mine " + number + ")";
-            try
-            {
-                _themeStore.Save(preset.Copy(copyName));
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                await Dialogs.ShowTextAsync(this, "Edit theme", "Couldn't save the copy: " + exception.Message);
-                return;
-            }
+                copyName = original.Name + " (mine " + number + ")";
+            theme = original.Copy(copyName);
+        }
+        else
+            theme = _themeStore.Find(listed);
 
-            ListColours(copyName);
-            name = copyName;
+        if (theme == null)
+            return;
+        bool saved = await new ThemeEditorWindow(theme, _themeStore, _settings).ShowDialog<bool>(this);
+        // The edited colours show in the list and the preview straight away; cancelling a copy leaves no file
+        ListColours(saved ? theme.Name : listed == BUILT_IN_COLOURS ? null : listed);
+        ShowPreview();
+    }
+
+    // Every theme file drops its own font and size, so all of them follow the general ones
+    private async Task EnforceTextAsync()
+    {
+        List<Urras.Core.Settings.Theme> own = _themeStore.LoadAll().Where(theme => theme.HasOwnText).ToList();
+        if (own.Count == 0)
+        {
+            await Dialogs.ShowTextAsync(this, "Font and text size", "Every theme already uses these.");
+            return;
         }
 
-        if (_themeStore.Find(name) is not { } theme)
+        string names = string.Join(", ", own.Select(theme => theme.Name));
+        if (!await Dialogs.ConfirmAsync(this, "Font and text size", "These themes set their own font or text " +
+                                                                    "size: " + names + ". Use the ones here " +
+                                                                    "in all of them instead?", "Use everywhere"))
             return;
-        await new ThemeEditorWindow(theme, _themeStore).ShowDialog<bool>(this);
-        // The edited colours show in the list and the preview straight away
-        ListColours(name);
-        ShowPreview();
+        try
+        {
+            foreach (Urras.Core.Settings.Theme theme in own)
+            {
+                theme.FontFamily = null;
+                theme.FontSize = null;
+                _themeStore.Save(theme);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            await Dialogs.ShowTextAsync(this, "Font and text size", "Couldn't save a theme: " + exception.Message);
+        }
     }
 
     // A theme by its name in the list; the built-in entry follows the dark or light choice above
@@ -771,6 +805,8 @@ public sealed class OptionsWindow : Window
         _settings.DateFormat = DisplayFormats.Dates[Math.Max(0, _dateFormat.SelectedIndex)];
         _settings.TimeFormat = DisplayFormats.Times[Math.Max(0, _timeFormat.SelectedIndex)];
         _settings.TabSize = TabSizes[Math.Max(0, _tabSize.SelectedIndex)];
+        _settings.FontFamily = TextLook.ChosenFont(_font);
+        _settings.FontSize = TextLook.ChosenSize(_fontSize, false) ?? AppSettings.DEFAULT_FONT_SIZE;
         _settings.CustomTheme = _colours.SelectedIndex > 0 ? _colours.SelectedItem as string : null;
 
         PromptSettings prompts = _settings.Prompts;

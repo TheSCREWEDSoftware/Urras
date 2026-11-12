@@ -3,6 +3,7 @@ using System.Text;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using Urras.Core.Accounts;
 using Urras.Core.Settings;
 using Xunit;
@@ -100,11 +101,35 @@ public sealed class NewWindowTests
         Window owner = Owner();
         string folder = Path.Combine(TestApp.SettingsFolder, "themes-test");
         Urras.Core.Settings.Theme theme = Urras.Core.Settings.Theme.BuiltIn(ThemeBase.Dark).Copy("Test");
-        Ui.OpenAndClose(owner, () => new ThemeEditorWindow(theme, new ThemeStore(folder)).ShowDialog<bool>(owner));
+        Ui.OpenAndClose(owner, () => new ThemeEditorWindow(theme, new ThemeStore(folder), new AppSettings())
+                                                .ShowDialog<bool>(owner));
         Dialogs.UnsavedChoice choice = Ui.OpenAndClose(owner, () => Dialogs.UnsavedChangesAsync(
             owner, new[] { "Changed Theme from Dark to Light (Appearance)" }));
         Assert.Equal(Dialogs.UnsavedChoice.KeepEditing, choice);
         owner.Close();
+    }
+
+    // A copy of a ready-made theme can be put back to the original, and saving writes where it came from
+    [AvaloniaFact]
+    public void ThemeEditorRestoresTheOriginal()
+    {
+        string folder = Path.Combine(TestApp.SettingsFolder, "themes-restore");
+        Urras.Core.Settings.Theme preset = ThemePresets.Find(ThemePresets.Names[0])!;
+        ThemeEditorWindow editor = new ThemeEditorWindow(preset.Copy("Restored"), new ThemeStore(folder),
+                                                         new AppSettings());
+        editor.Show();
+        Ui.Pump();
+        List<TextBox> values = editor.GetVisualDescendants().OfType<TextBox>().ToList();
+        values[0].Text = "#123456";
+        Button restore = editor.GetVisualDescendants().OfType<Button>()
+                               .First(button => Equals(button.Content, "Restore original"));
+        restore.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert.Equal(preset.Colour(ThemeColours.All[0].Key), values[0].Text);
+
+        Button save = editor.GetVisualDescendants().OfType<Button>().First(button => Equals(button.Content, "Save"));
+        save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Ui.Pump();
+        Assert.Equal(preset.Name, new ThemeStore(folder).Find("Restored")!.CopiedFrom);
     }
 
     // With one taskbar entry chosen, the main window keeps it and the other windows stay out of the taskbar

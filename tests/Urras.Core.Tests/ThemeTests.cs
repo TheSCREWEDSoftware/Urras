@@ -61,4 +61,24 @@ public static class ThemeTests
             TestFolders.Delete(folder);
         }
     }
+
+    public static void CopiesRememberTheirOriginalAndText()
+    {
+        Theme preset = ThemePresets.Find(ThemePresets.Names[0])!;
+        Theme copy = preset.Copy("Mine");
+        Assert.Equal(preset.Name, copy.CopiedFrom, "a ready-made theme's copy remembers it");
+        Assert.Equal(preset.Name, copy.Copy("Mine 2").CopiedFrom, "a copy of a copy keeps the original");
+        Assert.Equal(preset.Colour(ThemeColours.SURFACE), copy.Original()!.Colour(ThemeColours.SURFACE),
+                     "the original is found again");
+        Assert.Equal(Theme.DARK, Theme.BuiltIn(ThemeBase.Dark).Copy("D").CopiedFrom, "built-in colours too");
+        Assert.True(new Theme { Name = "Own" }.Original() == null, "a theme of your own has none");
+
+        Assert.True(!copy.HasOwnText, "fonts follow Options until a theme sets its own");
+        copy.FontFamily = "Inter";
+        copy.FontSize = 16;
+        Theme? loaded = Theme.FromJson(copy.ToJson());
+        Assert.Equal("Inter", loaded!.FontFamily, "font saved");
+        Assert.Equal(16.0, loaded.FontSize, "size saved");
+        Assert.True(!Theme.BuiltIn(ThemeBase.Dark).ToJson().Contains("FontSize"), "unset text isn't written");
+    }
 }

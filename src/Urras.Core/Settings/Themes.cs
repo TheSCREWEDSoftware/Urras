@@ -138,6 +138,20 @@ public sealed class Theme
 
     public Dictionary<string, string> Colours { get; set; } = new Dictionary<string, string>();
 
+    // The ready-made theme (or Dark or Light) this one was copied from, so its colours can be restored
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CopiedFrom { get; set; }
+
+    // This theme's own font and text size; null follows the general ones in Options
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FontFamily { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? FontSize { get; set; }
+
+    [JsonIgnore]
+    public bool HasOwnText => FontFamily != null || FontSize != null;
+
     [JsonIgnore]
     // Dark, Light and the ready-made themes, which aren't files
     public bool IsBuiltIn => Name is DARK or LIGHT || ThemePresets.IsPreset(Name);
@@ -173,9 +187,29 @@ public sealed class Theme
         return added;
     }
 
+    // A copy of a ready-made theme remembers it; a copy of a copy keeps pointing at the same original
     public Theme Copy(string name)
     {
-        return new Theme { Name = name, Base = Base, Colours = new Dictionary<string, string>(Colours) };
+        return new Theme
+        {
+            Name = name,
+            Base = Base,
+            Colours = new Dictionary<string, string>(Colours),
+            CopiedFrom = IsBuiltIn ? Name : CopiedFrom,
+            FontFamily = FontFamily,
+            FontSize = FontSize
+        };
+    }
+
+    // The theme this one was copied from, if it still exists: a ready-made theme, Dark or Light
+    public Theme? Original()
+    {
+        return CopiedFrom switch
+        {
+            DARK => BuiltIn(ThemeBase.Dark),
+            LIGHT => BuiltIn(ThemeBase.Light),
+            _ => ThemePresets.Find(CopiedFrom)
+        };
     }
 
     public string ToJson()

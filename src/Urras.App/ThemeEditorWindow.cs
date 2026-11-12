@@ -6,27 +6,35 @@ using Urras.Core.Settings;
 
 namespace Urras.App;
 
-// Edits a custom theme's colours: a swatch, what it colours, and its value as #RRGGBB or #AARRGGBB
+// Edits a custom theme: its font, text size and colours (each as #RRGGBB or #AARRGGBB)
 public sealed class ThemeEditorWindow : Window
 {
     private const double WINDOW_WIDTH = 640;
     private const double WINDOW_HEIGHT = 680;
     private const double SWATCH_SIZE = 22;
     private const double VALUE_WIDTH = 120;
+    private const double PICKER_WIDTH = 220;
+    private const double CHOICE_GAP = 8;
+    private const double NAME_FONT_SIZE = 18;
+    // Keeps the colour boxes clear of the list's scroll bar
+    private const double SCROLL_BAR_ROOM = 18;
+    private const string GENERAL = "Same as Options";
 
     private readonly Urras.Core.Settings.Theme _theme;
     private readonly ThemeStore _store;
     private readonly ComboBox _base = new ComboBox { ItemsSource = new[] { "Dark", "Light" }, Width = 140 };
+    private readonly ComboBox _font;
+    private readonly ComboBox _fontSize;
     private readonly Dictionary<string, (TextBox Value, Border Swatch)> _rows =
         new Dictionary<string, (TextBox Value, Border Swatch)>();
     private readonly TextBlock _problem = new TextBlock { Foreground = Brushes.IndianRed, IsVisible = false,
                                                           TextWrapping = TextWrapping.Wrap };
 
-    public ThemeEditorWindow(Urras.Core.Settings.Theme theme, ThemeStore store)
+    public ThemeEditorWindow(Urras.Core.Settings.Theme theme, ThemeStore store, AppSettings settings)
     {
         _theme = theme;
         _store = store;
-        Title = "Theme: " + theme.Name;
+        Title = "Editing theme: " + theme.Name;
         Width = WINDOW_WIDTH;
         Height = WINDOW_HEIGHT;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -36,21 +44,48 @@ public sealed class ThemeEditorWindow : Window
         foreach (ThemeColour colour in ThemeColours.All)
             list.Children.Add(Row(colour));
 
-        Button reset = new Button { Content = "Use the base's colours" };
-        ToolTip.SetTip(reset, "Every colour back to the Dark or Light default chosen above");
-        reset.Click += (_, _) =>
-        {
-            foreach (ThemeColour colour in ThemeColours.All)
-                _rows[colour.Key].Value.Text = _base.SelectedIndex == 1 ? colour.Light : colour.Dark;
-        };
+        string general = GENERAL + " (" + (settings.FontFamily ?? "default") + ")";
+        _font = TextLook.FontPicker(general, theme.FontFamily);
+        _fontSize = TextLook.SizePicker(GENERAL + " (" + TextLook.Size(settings.FontSize) + " pt)", theme.FontSize);
+        _font.Width = PICKER_WIDTH;
+        _fontSize.Width = PICKER_WIDTH;
 
-        DockPanel top = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-        StackPanel baseRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        baseRow.Children.Add(new TextBlock { Text = "Based on", VerticalAlignment = VerticalAlignment.Center });
-        baseRow.Children.Add(_base);
-        DockPanel.SetDock(reset, Dock.Right);
-        top.Children.Add(reset);
-        top.Children.Add(baseRow);
+        Urras.Core.Settings.Theme? original = theme.Original();
+        Button restore = new Button { Content = original == null ? "Use the base's colours" : "Restore original" };
+        ToolTip.SetTip(restore, original == null
+                                    ? "Every colour back to the Dark or Light default chosen below"
+                                    : "Every colour, the base, font and text size back to " + original.Name + "'s");
+        restore.Click += (_, _) => Restore(original);
+
+        // Which theme this is, and where it came from, so it's clear what Save changes
+        StackPanel heading = new StackPanel { Spacing = 2 };
+        heading.Children.Add(new TextBlock { Text = theme.Name, FontSize = NAME_FONT_SIZE,
+                                             FontWeight = FontWeight.SemiBold });
+        heading.Children.Add(new TextBlock
+        {
+            Text = (original == null ? "Your theme" : "Your copy of " + original.Name + ", which stays as it is") +
+                   "; saved as " + store.FileFor(theme.Name),
+            Foreground = ThemeBrushes.MutedText,
+            TextWrapping = TextWrapping.Wrap
+        });
+        DockPanel title = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
+        DockPanel.SetDock(restore, Dock.Right);
+        restore.VerticalAlignment = VerticalAlignment.Top;
+        title.Children.Add(restore);
+        title.Children.Add(heading);
+
+        Grid choices = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto")
+        };
+        AddChoice(choices, 0, "Based on", _base);
+        AddChoice(choices, 1, "Font", _font);
+        AddChoice(choices, 2, "Text size", _fontSize);
+
+        StackPanel top = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+        top.Children.Add(title);
+        top.Children.Add(choices);
 
         Button save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
@@ -73,8 +108,36 @@ public sealed class ThemeEditorWindow : Window
         root.Children.Add(top);
         root.Children.Add(buttons);
         root.Children.Add(_problem);
+        list.Margin = new Thickness(0, 0, SCROLL_BAR_ROOM, 0);
         root.Children.Add(new ScrollViewer { Content = list });
         Content = root;
+    }
+
+    private static void AddChoice(Grid grid, int row, string label, Control control)
+    {
+        TextBlock text = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center,
+                                         Margin = new Thickness(0, 0, CHOICE_GAP, CHOICE_GAP) };
+        control.Margin = new Thickness(0, 0, 0, CHOICE_GAP);
+        Grid.SetRow(text, row);
+        Grid.SetRow(control, row);
+        Grid.SetColumn(control, 1);
+        grid.Children.Add(text);
+        grid.Children.Add(control);
+    }
+
+    // Back to the theme it was copied from, or to the base's default colours when there is none
+    private void Restore(Urras.Core.Settings.Theme? original)
+    {
+        if (original != null)
+        {
+            _base.SelectedIndex = original.Base == ThemeBase.Light ? 1 : 0;
+            _font.SelectedIndex = 0;
+            _fontSize.SelectedIndex = 0;
+        }
+
+        foreach (ThemeColour colour in ThemeColours.All)
+            _rows[colour.Key].Value.Text = original?.Colour(colour.Key) ??
+                                           (_base.SelectedIndex == 1 ? colour.Light : colour.Dark);
     }
 
     private Control Row(ThemeColour colour)
@@ -126,6 +189,8 @@ public sealed class ThemeEditorWindow : Window
         }
 
         _theme.Base = _base.SelectedIndex == 1 ? ThemeBase.Light : ThemeBase.Dark;
+        _theme.FontFamily = TextLook.ChosenFont(_font);
+        _theme.FontSize = TextLook.ChosenSize(_fontSize, true);
         foreach ((string key, (TextBox value, Border _)) in _rows)
             _theme.Colours[key] = value.Text!.Trim();
 

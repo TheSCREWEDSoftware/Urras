@@ -11,6 +11,16 @@ Urras comes with Dark and Light colours. A custom theme changes any of its colou
    value as `#RRGGBB`, or `#AARRGGBB` for a see-through colour.
 4. Pick the theme under **Colours** and save Options.
 
+**Edit…** on a ready-made theme or on the built-in colours makes your own copy (for example "GitHub Dark (mine)")
+and leaves the original alone; the copy is only written when you save it. The editor's heading says which theme
+you're changing and where it's saved. **Restore original** puts a copy back to the theme it came from.
+
+## Font and text size
+
+**Options > Appearance > Text** sets the font (any font installed on the computer) and the text size for every
+theme. A theme can set its own in the editor; "Same as Options" follows the general ones. **Use this font and
+size in every theme** clears the font and size your themes set for themselves.
+
 ## Theme files
 
 Each theme is a JSON file in the `themes` folder beside Urras's settings (`%APPDATA%\Urras\themes` on Windows).
@@ -27,6 +37,8 @@ Each theme is a JSON file in the `themes` folder beside Urras's settings (`%APPD
   }
 }
 ```
+
+`CopiedFrom`, `FontFamily` and `FontSize` are optional and only written when set.
 
 `Base` is `Dark` or `Light`: it sets the look of buttons and lists, and the colour of anything the file leaves
 out. When a newer version of Urras adds colours, it writes them into every theme file at start-up, with the

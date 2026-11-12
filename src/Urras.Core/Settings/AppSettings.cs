@@ -45,6 +45,8 @@ public sealed class AppSettings
     public const string SETTINGS_FILE_NAME = "settings.json";
     public const int DEFAULT_AUTO_FETCH_MINUTES = 10;
     public const int DEFAULT_TAB_SIZE = 4;
+    public const double DEFAULT_FONT_SIZE = 14;
+    public static readonly double[] FontSizes = { 12, 13, 14, 15, 16, 18, 20 };
 
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
@@ -92,6 +94,10 @@ public sealed class AppSettings
 
     // A theme file's name from the themes folder; null uses the built-in colours of the chosen Theme
     public string? CustomTheme { get; set; }
+
+    // The font and text size for every theme that doesn't set its own; a null font uses Urras's default
+    public string? FontFamily { get; set; }
+    public double FontSize { get; set; } = DEFAULT_FONT_SIZE;
 
     // Dialogs and other windows get their own taskbar entry; off keeps Urras to one entry, its main window
     public bool ShowWindowsInTaskbar { get; set; }

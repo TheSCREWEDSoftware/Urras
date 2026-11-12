@@ -88,6 +88,7 @@ public partial class MainWindow
                 Application.Current.RequestedThemeVariant = theme.Base == ThemeBase.Light ? ThemeVariant.Light
                                                                                           : ThemeVariant.Dark;
             ThemeBrushes.Use(theme, Application.Current.Resources);
+            TextLook.Apply(_settings, theme, Application.Current.Resources);
 
             // A style belongs to one application, so each gets its own (the interface tests start several)
             Styles styles = Application.Current.Styles;

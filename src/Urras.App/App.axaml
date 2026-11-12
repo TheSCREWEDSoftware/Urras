@@ -3,8 +3,10 @@
              x:Class="Urras.App.App"
              RequestedThemeVariant="Dark">
   <Application.Resources>
-    <!-- Windows 11's own font, then Windows 10's, then common open fonts elsewhere -->
+    <!-- Windows 11's own font, then Windows 10's, then common open fonts elsewhere (TextLook.DEFAULT_FONTS);
+         Options can choose another font and text size -->
     <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI, Noto Sans</FontFamily>
+    <x:Double x:Key="ControlContentThemeFontSize">14</x:Double>
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />
@@ -13,6 +15,7 @@
       <Setter Property="Icon" Value="/Assets/urras.ico" />
       <Setter Property="Background" Value="{DynamicResource Urras.Background}" />
       <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
     </Style>
     <!-- The main area sits on a raised, rounded panel above the window background -->
     <Style Selector="Border.card">
