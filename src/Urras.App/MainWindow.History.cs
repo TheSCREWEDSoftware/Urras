@@ -44,6 +44,12 @@ public partial class MainWindow
             await SearchHistoryAsync();
         };
         ClearSearchButton.Click += async (_, _) => await ClearHistorySearchAsync();
+        // Emptying the box, with its clear button or by deleting the text, shows the whole history again
+        SearchBox.TextChanged += async (_, _) =>
+        {
+            if (_historyFilter != null && string.IsNullOrWhiteSpace(SearchBox.Text))
+                await ClearHistorySearchAsync();
+        };
         AllBranchesBox.IsChecked = _settings.HistoryAllBranches;
         AllBranchesBox.Click += async (_, _) =>
         {

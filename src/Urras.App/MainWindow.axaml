@@ -317,7 +317,7 @@ by owner (like GitHub Desktop), or by hand">
           </ComboBox>
           <TextBlock Classes="header" Text="Repositories" />
         </DockPanel>
-        <TextBox x:Name="RepositorySearchBox" DockPanel.Dock="Top" Margin="0,6,0,4"
+        <TextBox x:Name="RepositorySearchBox" DockPanel.Dock="Top" Margin="0,6,0,4" Classes="clearButton"
                  Watermark="Search repositories (Ctrl+F)"
                  ToolTip.Tip="Shows the repositories whose name, folder or group contains every word typed.
 Esc clears it" />
@@ -409,7 +409,7 @@ Esc clears it" />
                 <DockPanel Grid.Row="0" Margin="0,6,0,0">
                   <CheckBox x:Name="HideUntrackedBox" DockPanel.Dock="Right" Content="Hide untracked" Margin="8,0,0,0"
                             ToolTip.Tip="Hide untracked files; Stage all then stages tracked files only" />
-                  <TextBox x:Name="FileFilterBox" Watermark="Filter files" />
+                  <TextBox x:Name="FileFilterBox" Watermark="Filter files" Classes="clearButton" />
                 </DockPanel>
                 <DockPanel Grid.Row="1">
                   <Button x:Name="StageAllButton" DockPanel.Dock="Right" Content="Stage all" Padding="8,2" />
@@ -542,7 +542,8 @@ Esc clears it" />
               <Button x:Name="ClearSearchButton" DockPanel.Dock="Right" Content="Clear" Margin="6,0,0,0" />
               <TextBlock x:Name="HistoryFilterText" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.7"
                          Margin="8,0,0,0" MaxWidth="420" TextTrimming="CharacterEllipsis" />
-              <TextBox x:Name="SearchBox" Watermark="Search the history, then press Enter" />
+              <TextBox x:Name="SearchBox" Watermark="Search the history, then press Enter"
+                       Classes="clearButton" />
             </DockPanel>
             <!-- Column titles; the padding matches the list items below so the columns line up -->
             <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="{DynamicResource Urras.Raised}"

@@ -21,7 +21,7 @@ public sealed class BranchPickerView : UserControl
     private static IBrush MutedBrush => ThemeBrushes.MutedText;
     private static readonly Thickness RowPadding = new Thickness(8, 5);
 
-    private readonly TextBox _filter = new TextBox { Watermark = "Filter" };
+    private readonly TextBox _filter = new TextBox { Watermark = "Filter", Classes = { "clearButton" } };
     private readonly StackPanel _rows = new StackPanel { Spacing = ROW_GAP };
     private readonly StackPanel _pullRows = new StackPanel { Spacing = ROW_GAP };
     private readonly TabControl _tabs = new TabControl();

@@ -101,7 +101,7 @@ public static class Dialogs
             Content = item?.ToString()?.Replace("_", "__"),
             IsChecked = chosen?.Invoke(item) ?? true
         }, item)).ToList();
-        TextBox filter = new TextBox { Watermark = "Filter" };
+        TextBox filter = new TextBox { Watermark = "Filter", Classes = { "clearButton" } };
         StackPanel list = new StackPanel { Spacing = 2 };
         foreach ((CheckBox box, T _) in boxes)
             list.Children.Add(box);
@@ -233,7 +233,7 @@ public static class Dialogs
             return await dialog.ShowDialog<string?>(owner);
         }
 
-        TextBox filter = new TextBox { Watermark = "Filter" };
+        TextBox filter = new TextBox { Watermark = "Filter", Classes = { "clearButton" } };
         ListBox list = new ListBox { ItemsSource = all, Height = LIST_HEIGHT, SelectedIndex = 0 };
         filter.TextChanged += (_, _) =>
         {
