@@ -1,6 +1,6 @@
 # Urras
 
-<img src="src/Urras.App/Assets/urras.png" alt="Urras icon: shards of ice in a blizzard" width="96">
+<img src="src/Urras.App/Assets/urras.png" alt="Urras icon: three shards of ice" width="96">
 
 A fast, native Git client for Windows and Linux. No Electron: C# on .NET with an Avalonia interface, running the `git`
 you already have installed.
@@ -18,7 +18,6 @@ you already have installed.
   - [Build a standalone app](#build-a-standalone-app)
   - [Run the tests](#run-the-tests)
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [For maintainers: build types and releases](#for-maintainers-build-types-and-releases)
 - [Project layout and settings](#project-layout-and-settings)
 - [Contributing](#contributing)
@@ -104,6 +103,9 @@ Both use their own settings and Git configuration in a temporary folder, so they
 
 ## Features
 
+Each section lists what Urras does, with screenshots of it below. They are 1920 × 1080 and show Lumen, a small
+demo repository with branches, beside Urras's own projects.
+
 <details>
 <summary><b>Repositories</b></summary>
 
@@ -122,6 +124,52 @@ Both use their own settings and Git configuration in a temporary folder, so they
   local repository and Clone (owner/name is enough for GitHub), with the same shortcuts
 - A screen for repositories whose folder is gone (Locate, Clone again or Remove), and a worktree switcher
 
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/missing.png"
+           alt="Screenshot: A repository whose folder is gone: Locate, Clone again or Remove"><br>
+      A repository whose folder is gone: Locate, Clone again or Remove
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/quick-launch.png"
+           alt="Screenshot: Quick Launch (Ctrl+P): a repository, branch or command in a few letters"><br>
+      Quick Launch (Ctrl+P): a repository, branch or command in a few letters
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/repository-menu.png"
+           alt="Screenshot: A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group"><br>
+      A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/import-menu.png"
+           alt="Screenshot: import menu"><br>
+      Import: everything in a folder, GitHub Desktop's list and fork choices, or your accounts
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/import-dialog.png"
+           alt="Screenshot: Choosing which of the repositories found to add"><br>
+      Choosing which of the repositories found to add
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/new-repository.png"
+           alt="Screenshot: New repository, with a README, a .gitignore template and a licence"><br>
+      New repository, with a README, a .gitignore template and a licence
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/clone.png" alt="Screenshot: Clone: an address, or owner/name for GitHub"><br>
+      Clone: an address, or owner/name for GitHub
+    </td>
+  </tr>
+</table>
+
 </details>
 
 <details>
@@ -136,6 +184,39 @@ Both use their own settings and Git configuration in a temporary folder, so they
   and `.editorconfig`) before they are committed
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template
 - Uncommitted changes can stay with their branch: put away when you switch, back when you return
+
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/changes.png"
+           alt="Screenshot: changes"><br>
+      Changes: the files, a diff with word-level colours, its count and change marks, and the commit message
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/stage-lines.png"
+           alt="Screenshot: Staging, unstaging or discarding the selected lines or their hunk"><br>
+      Staging, unstaging or discarding the selected lines or their hunk
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/co-authors.png"
+           alt="Screenshot: Co-authors on a commit, from the history, an address or a GitHub @username"><br>
+      Co-authors on a commit, from the history, an address or a GitHub @username
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/file-filter.png" alt="Screenshot: Filtering the changes by name"><br>
+      Filtering the changes by name
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/stashes.png" alt="Screenshot: Stashes: apply, pop, show or drop"><br>
+      Stashes: apply, pop, show or drop
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -156,6 +237,51 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or
   as an onion skin
 
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/split-diff.png" alt="Screenshot: The split (side by side) diff"><br>
+      The split (side by side) diff
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/image-swipe.png"
+           alt="Screenshot: Images compared as a swipe (or side by side, or as an onion skin)"><br>
+      Images compared as a swipe (or side by side, or as an onion skin)
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/markdown-preview.png"
+           alt="Screenshot: Markdown rendered, pictures and the HTML in it included (Preview)"><br>
+      Markdown rendered, pictures and the HTML in it included (Preview)
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/html-preview.png"
+           alt="Screenshot: HTML as a reading view, with Open in browser for the real page"><br>
+      HTML as a reading view, with Open in browser for the real page
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/csv-preview.png"
+           alt="Screenshot: CSV and TSV as tables, with just the changed rows marked"><br>
+      CSV and TSV as tables, with just the changed rows marked
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/notebook-preview.png"
+           alt="Screenshot: Jupyter notebooks with their code, output and charts"><br>
+      Jupyter notebooks with their code, output and charts
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/rst-preview.png" alt="Screenshot: reStructuredText (and AsciiDoc) rendered"><br>
+      reStructuredText (and AsciiDoc) rendered
+    </td>
+  </tr>
+</table>
+
 </details>
 
 <details>
@@ -168,6 +294,53 @@ Both use their own settings and Git configuration in a temporary folder, so they
   by message, author, file or content, comparing two commits (Ctrl+click) or a branch, and the reflog for
   finding lost commits
 - Statistics: contributors, when commits happen and which files change most
+
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/history-graph.png"
+           alt="Screenshot: history graph"><br>
+      The graph: lanes, branch labels in their lane's colour, authors and commits not pushed yet
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/compare.png" alt="Screenshot: Two commits selected (Ctrl+click) are compared"><br>
+      Two commits selected (Ctrl+click) are compared
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/history-search.png"
+           alt="Screenshot: Searching the history by message, author, file or content"><br>
+      Searching the history by message, author, file or content
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/file-history.png" alt="Screenshot: The history of one file or folder"><br>
+      The history of one file or folder
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/blame.png" alt="Screenshot: Blame: who changed each line, and when"><br>
+      Blame: who changed each line, and when
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/browse-files.png" alt="Screenshot: Browsing the files at any commit"><br>
+      Browsing the files at any commit
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/statistics.png"
+           alt="Screenshot: Statistics: contributors, when commits happen and which files change most"><br>
+      Statistics: contributors, when commits happen and which files change most
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/reflog.png" alt="Screenshot: The reflog, for finding lost commits"><br>
+      The reflog, for finding lost commits
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -191,6 +364,55 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - Conflict view: both sides of every conflict next to each other, a choice per conflict and the result below
 - Repository settings: line-ending rules written to `.gitattributes` and `.editorconfig`, and normalizing
   existing files after previewing them
+
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/branch-picker.png"
+           alt="Screenshot: branch picker"><br>
+      The branch box: the default and recent branches, a filter, New branch and pull requests
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/branch-menu.png"
+           alt="Screenshot: The Branch menu: merge, rebase, compare, pull requests, tags, reflog and more"><br>
+      The Branch menu: merge, rebase, compare, pull requests, tags, reflog and more
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/interactive-rebase.png"
+           alt="Screenshot: Interactive rebase: reorder, reword, edit, squash, fix up or drop"><br>
+      Interactive rebase: reorder, reword, edit, squash, fix up or drop
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/conflict-banner.png"
+           alt="Screenshot: A stopped merge: the banner with Continue and Abort, and the conflicted files"><br>
+      A stopped merge: the banner with Continue and Abort, and the conflicted files
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/conflict-view.png"
+           alt="Screenshot: The conflict view: both sides of every conflict, a choice for each, and the result"><br>
+      The conflict view: both sides of every conflict, a choice for each, and the result
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/bisect.png" alt="Screenshot: Bisect: the banner to mark commits good or bad"><br>
+      Bisect: the banner to mark commits good or bad
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/tags.png" alt="Screenshot: Tags: create, push and delete"><br>
+      Tags: create, push and delete
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/worktrees.png" alt="Screenshot: Worktrees: open, add and remove"><br>
+      Worktrees: open, add and remove
+    </td>
+  </tr>
+</table>
 
 </details>
 
@@ -233,120 +455,84 @@ Both use their own settings and Git configuration in a temporary folder, so they
   size set for every theme or just one
 - Its own title bar on Windows, with minimise, maximise and close in the theme's colours
 
-</details>
-
-## Screenshots
-
-<details>
-<summary><b>Show the screenshots</b></summary>
-
-<img src="docs/screenshots/history-graph.png" alt="Screenshot: history graph"><br>
-History: the commit graph with a lane per branch, branch labels in their lane's colour (with the remote beside a
-branch that's pushed), commits not pushed yet, authors with their pictures, and the commit and date of each change
-
-The screenshots are 1920 × 1080 and show Lumen, a small demo repository with branches, beside Urras's own projects.
 
 <table>
   <tr>
-    <td>
-      <img src="docs/screenshots/branch-menu.png" alt="Screenshot: branch menu"><br>
-      Branch menu: branches, merge, rebase, pull requests, tags, reflog, submodules, worktrees and more
+    <td width="50%">
+      <img src="docs/screenshots/themes.png"
+           alt="Screenshot: Ready-made themes: Fel, GitHub Light, Horde and Parchment of the twelve"><br>
+      Ready-made themes: Fel, GitHub Light, Horde and Parchment of the twelve
     </td>
-    <td>
-      <img src="docs/screenshots/repository-menu.png" alt="Screenshot: repository menu"><br>
-      A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="docs/screenshots/changes.png" alt="Screenshot: changes"><br>
-      Changes: the files changed, a diff with word-level colours, "+3 −2" with its squares, the change marks beside
-      it, and the commit message with its length counter
-    </td>
-    <td>
-      <img src="docs/screenshots/theme-editor.png" alt="Screenshot: theme editor"><br>
-      Editing a theme, ready-made ones included; Restore defaults brings back the original colours
+    <td width="50%">
+      <img src="docs/screenshots/theme-editor.png"
+           alt="Screenshot: Editing a theme, ready-made ones included; Restore defaults brings back the original"><br>
+      Editing a theme, ready-made ones included; Restore defaults brings back the original
     </td>
   </tr>
   <tr>
-    <td>
-      <img src="docs/screenshots/file-filter.png" alt="Screenshot: file filter"><br>
-      Filtering the changes by name, with syntax colours in the diff
+    <td width="50%">
+      <img src="docs/screenshots/options-appearance.png"
+           alt="Screenshot: Options: themes, the text size and font for every theme or one, and diffs"><br>
+      Options: themes, the text size and font for every theme or one, and diffs
     </td>
-    <td>
-      <img src="docs/screenshots/markdown-preview.png" alt="Screenshot: markdown preview"><br>
-      Markdown rendered instead of shown as text, pictures and the HTML in it included (Preview)
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="docs/screenshots/html-preview.png" alt="Screenshot: HTML preview"><br>
-      HTML as a reading view, with Open in browser for the real page (Preview)
-    </td>
-    <td>
-      <img src="docs/screenshots/csv-preview.png" alt="Screenshot: CSV preview"><br>
-      CSV and TSV as tables, with just the changed rows marked (Preview)
+    <td width="50%">
+      <img src="docs/screenshots/options-git.png"
+           alt="Screenshot: Options: your Git name, email, default branch and commit signing"><br>
+      Options: your Git name, email, default branch and commit signing
     </td>
   </tr>
   <tr>
-    <td>
-      <img src="docs/screenshots/notebook-preview.png" alt="Screenshot: notebook preview"><br>
-      Jupyter notebooks with their code, output and charts (Preview)
+    <td width="50%">
+      <img src="docs/screenshots/options-accounts.png"
+           alt="Screenshot: Options: sign in to GitHub, GitLab, Gitea or Bitbucket, and what forks do"><br>
+      Options: sign in to GitHub, GitLab, Gitea or Bitbucket, and what forks do
     </td>
-    <td>
-      <img src="docs/screenshots/rst-preview.png" alt="Screenshot: reStructuredText preview"><br>
-      reStructuredText (and AsciiDoc) rendered (Preview)
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="docs/screenshots/import-menu.png" alt="Screenshot: import menu"><br>
-      Import: everything in a folder, GitHub Desktop's list and fork choices, or clones from your accounts
-    </td>
-    <td>
-      <img src="docs/screenshots/import-dialog.png" alt="Screenshot: import dialog"><br>
-      Choosing which of the repositories found to add
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="docs/screenshots/options-integrations.png" alt="Screenshot: options integrations"><br>
+    <td width="50%">
+      <img src="docs/screenshots/options-integrations.png" alt="Screenshot: Options: your editor and shell for "Open
+      in…""><br>
       Options: your editor and shell for "Open in…"
     </td>
-    <td>
-      <img src="docs/screenshots/options-git.png" alt="Screenshot: options git"><br>
-      Options: your Git name, email (or GitHub's private address), default branch and commit signing
-    </td>
   </tr>
   <tr>
-    <td>
-      <img src="docs/screenshots/options-appearance.png" alt="Screenshot: options appearance"><br>
-      Options: ready-made themes (Frost, Fel, Horde, Alliance, Parchment, Anarres, GitHub, GitLab, SourceGit,
-      Fork) and your own, and the text size and font for every theme or just one
-    </td>
-    <td>
-      <img src="docs/screenshots/options-prompts.png" alt="Screenshot: options prompts"><br>
+    <td width="50%">
+      <img src="docs/screenshots/options-prompts.png"
+           alt="Screenshot: Options: which questions to ask, and what happens to changes when switching branch"><br>
       Options: which questions to ask, and what happens to changes when switching branch
     </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="docs/screenshots/options-advanced.png" alt="Screenshot: options advanced"><br>
-      Options: what the close button does, update checks, background fetch and checks before committing
-    </td>
-    <td>
-      <img src="docs/screenshots/git-log.png" alt="Screenshot: git log"><br>
-      Git log: the commands that change something, and any that failed, with what Git answered
+    <td width="50%">
+      <img src="docs/screenshots/options-advanced.png"
+           alt="Screenshot: Options: the close button, update checks, background fetch and commit checks"><br>
+      Options: the close button, update checks, background fetch and commit checks
     </td>
   </tr>
   <tr>
-    <td>
-      <img src="docs/screenshots/options-accounts.png" alt="Screenshot: options accounts"><br>
-      Options: sign in to GitHub, GitLab, Gitea or Bitbucket, and what forks do by default
+    <td width="50%">
+      <img src="docs/screenshots/options-ai.png"
+           alt="Screenshot: Options: an AI assistant for commit messages, off unless you choose one"><br>
+      Options: an AI assistant for commit messages, off unless you choose one
     </td>
-    <td>
-      <img src="docs/screenshots/options-ai.png" alt="Screenshot: options AI assistant"><br>
-      Options: an AI assistant for commit messages and explanations, off unless you choose one
+    <td width="50%">
+      <img src="docs/screenshots/commands.png"
+           alt="Screenshot: commands"><br>
+      Custom commands, run from the menus with the repository, branch, file or commit filled in
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/repository-settings.png"
+           alt="Screenshot: Repository settings: line endings in .gitattributes and .editorconfig"><br>
+      Repository settings: line endings in .gitattributes and .editorconfig
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/git-log.png"
+           alt="Screenshot: The Git log: commands that change something, and any that fail"><br>
+      The Git log: commands that change something, and any that fail
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/shortcuts.png" alt="Screenshot: Keyboard shortcuts (F1)"><br>
+      Keyboard shortcuts (F1)
     </td>
   </tr>
 </table>

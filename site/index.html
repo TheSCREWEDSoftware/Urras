@@ -94,6 +94,7 @@
     @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
     figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
     figure.wide img { aspect-ratio: auto; }
+    h3.group { font-size: 1.1rem; color: var(--muted); margin: 28px 0 12px; font-weight: 600; }
 
     .twin { display: flex; gap: 18px; align-items: center; }
     .twin img { width: 72px; height: 72px; flex: none; }
@@ -171,12 +172,58 @@
   </div>
 
   <h2>Screenshots</h2>
+  <h3 class="group">Changes and commits</h3>
   <div class="gallery">
     <figure>
       <a href="screenshots/changes.png" class="shot">
         <img src="thumbs/changes.jpg" width="720" height="450" loading="lazy"
              alt="Changes: a diff with word-level colours, its count and change marks, and the message"></a>
       <figcaption>Changes: a diff with word-level colours, its count and change marks, and the message</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/stage-lines.png" class="shot">
+        <img src="thumbs/stage-lines.jpg" width="720" height="450" loading="lazy"
+             alt="Staging or discarding just the selected lines or their hunk"></a>
+      <figcaption>Staging or discarding just the selected lines or their hunk</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/co-authors.png" class="shot">
+        <img src="thumbs/co-authors.jpg" width="720" height="450" loading="lazy"
+             alt="Co-authors from the history, an address or a GitHub @username"></a>
+      <figcaption>Co-authors from the history, an address or a GitHub @username</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/stashes.png" class="shot">
+        <img src="thumbs/stashes.jpg" width="720" height="450" loading="lazy"
+             alt="Stashes: apply, pop, show or drop"></a>
+      <figcaption>Stashes: apply, pop, show or drop</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/file-filter.png" class="shot">
+        <img src="thumbs/file-filter.jpg" width="720" height="450" loading="lazy"
+             alt="Filtering the changes by name"></a>
+      <figcaption>Filtering the changes by name</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/quick-launch.png" class="shot">
+        <img src="thumbs/quick-launch.jpg" width="720" height="450" loading="lazy"
+             alt="Quick Launch (Ctrl+P): a repository, branch or command in a few letters"></a>
+      <figcaption>Quick Launch (Ctrl+P): a repository, branch or command in a few letters</figcaption>
+    </figure>
+  </div>
+  <h3 class="group">Diffs and previews</h3>
+  <div class="gallery">
+    <figure>
+      <a href="screenshots/split-diff.png" class="shot">
+        <img src="thumbs/split-diff.jpg" width="720" height="450" loading="lazy"
+             alt="The split (side by side) diff"></a>
+      <figcaption>The split (side by side) diff</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/image-swipe.png" class="shot">
+        <img src="thumbs/image-swipe.jpg" width="720" height="450" loading="lazy"
+             alt="Images compared as a swipe, side by side or as an onion skin"></a>
+      <figcaption>Images compared as a swipe, side by side or as an onion skin</figcaption>
     </figure>
     <figure>
       <a href="screenshots/markdown-preview.png" class="shot">
@@ -208,23 +255,149 @@
              alt="reStructuredText and AsciiDoc rendered"></a>
       <figcaption>reStructuredText and AsciiDoc rendered</figcaption>
     </figure>
+  </div>
+  <h3 class="group">History</h3>
+  <div class="gallery">
     <figure>
-      <a href="screenshots/file-filter.png" class="shot">
-        <img src="thumbs/file-filter.jpg" width="720" height="450" loading="lazy"
-             alt="Filtering the changes by name"></a>
-      <figcaption>Filtering the changes by name</figcaption>
+      <a href="screenshots/history-graph.png" class="shot">
+        <img src="thumbs/history-graph.jpg" width="720" height="450" loading="lazy"
+             alt="The graph: lanes, labels in their lane's colour, authors and what isn't pushed"></a>
+      <figcaption>The graph: lanes, labels in their lane's colour, authors and what isn't pushed</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/compare.png" class="shot">
+        <img src="thumbs/compare.jpg" width="720" height="450" loading="lazy"
+             alt="Two commits selected are compared"></a>
+      <figcaption>Two commits selected are compared</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/history-search.png" class="shot">
+        <img src="thumbs/history-search.jpg" width="720" height="450" loading="lazy"
+             alt="Searching by message, author, file or content"></a>
+      <figcaption>Searching by message, author, file or content</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/file-history.png" class="shot">
+        <img src="thumbs/file-history.jpg" width="720" height="450" loading="lazy"
+             alt="The history of one file or folder"></a>
+      <figcaption>The history of one file or folder</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/blame.png" class="shot">
+        <img src="thumbs/blame.jpg" width="720" height="450" loading="lazy"
+             alt="Blame: who changed each line, and when"></a>
+      <figcaption>Blame: who changed each line, and when</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/browse-files.png" class="shot">
+        <img src="thumbs/browse-files.jpg" width="720" height="450" loading="lazy"
+             alt="Browsing the files at any commit"></a>
+      <figcaption>Browsing the files at any commit</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/statistics.png" class="shot">
+        <img src="thumbs/statistics.jpg" width="720" height="450" loading="lazy"
+             alt="Contributors, when commits happen and which files change most"></a>
+      <figcaption>Contributors, when commits happen and which files change most</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/reflog.png" class="shot">
+        <img src="thumbs/reflog.jpg" width="720" height="450" loading="lazy"
+             alt="The reflog, for finding lost commits"></a>
+      <figcaption>The reflog, for finding lost commits</figcaption>
+    </figure>
+  </div>
+  <h3 class="group">Branches, merging and rebasing</h3>
+  <div class="gallery">
+    <figure>
+      <a href="screenshots/branch-picker.png" class="shot">
+        <img src="thumbs/branch-picker.jpg" width="720" height="450" loading="lazy"
+             alt="The branch box: default and recent branches, a filter and pull requests"></a>
+      <figcaption>The branch box: default and recent branches, a filter and pull requests</figcaption>
     </figure>
     <figure>
       <a href="screenshots/branch-menu.png" class="shot">
         <img src="thumbs/branch-menu.jpg" width="720" height="450" loading="lazy"
-             alt="Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees"></a>
-      <figcaption>Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees</figcaption>
+             alt="Merge, rebase, compare, pull requests, tags, reflog, submodules and worktrees"></a>
+      <figcaption>Merge, rebase, compare, pull requests, tags, reflog, submodules and worktrees</figcaption>
     </figure>
+    <figure>
+      <a href="screenshots/interactive-rebase.png" class="shot">
+        <img src="thumbs/interactive-rebase.jpg" width="720" height="450" loading="lazy"
+             alt="Interactive rebase: reorder, reword, edit, squash, fix up or drop"></a>
+      <figcaption>Interactive rebase: reorder, reword, edit, squash, fix up or drop</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/conflict-banner.png" class="shot">
+        <img src="thumbs/conflict-banner.jpg" width="720" height="450" loading="lazy"
+             alt="A stopped merge: the banner with Continue and Abort"></a>
+      <figcaption>A stopped merge: the banner with Continue and Abort</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/conflict-view.png" class="shot">
+        <img src="thumbs/conflict-view.jpg" width="720" height="450" loading="lazy"
+             alt="The conflict view: both sides, a choice for each conflict, and the result"></a>
+      <figcaption>The conflict view: both sides, a choice for each conflict, and the result</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/bisect.png" class="shot">
+        <img src="thumbs/bisect.jpg" width="720" height="450" loading="lazy"
+             alt="Bisect: mark commits good or bad from the banner"></a>
+      <figcaption>Bisect: mark commits good or bad from the banner</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/tags.png" class="shot">
+        <img src="thumbs/tags.jpg" width="720" height="450" loading="lazy"
+             alt="Tags: create, push and delete"></a>
+      <figcaption>Tags: create, push and delete</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/worktrees.png" class="shot">
+        <img src="thumbs/worktrees.jpg" width="720" height="450" loading="lazy"
+             alt="Worktrees: open, add and remove"></a>
+      <figcaption>Worktrees: open, add and remove</figcaption>
+    </figure>
+  </div>
+  <h3 class="group">Repositories</h3>
+  <div class="gallery">
     <figure>
       <a href="screenshots/repository-menu.png" class="shot">
         <img src="thumbs/repository-menu.jpg" width="720" height="450" loading="lazy"
-             alt="A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group"></a>
-      <figcaption>A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group</figcaption>
+             alt="A repository's menu: open elsewhere, view on GitHub, fetch, pull, pin and group"></a>
+      <figcaption>A repository's menu: open elsewhere, view on GitHub, fetch, pull, pin and group</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/missing.png" class="shot">
+        <img src="thumbs/missing.jpg" width="720" height="450" loading="lazy"
+             alt="A repository whose folder is gone: Locate, Clone again or Remove"></a>
+      <figcaption>A repository whose folder is gone: Locate, Clone again or Remove</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/new-repository.png" class="shot">
+        <img src="thumbs/new-repository.jpg" width="720" height="450" loading="lazy"
+             alt="New repository, with a README, .gitignore and licence"></a>
+      <figcaption>New repository, with a README, .gitignore and licence</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/clone.png" class="shot">
+        <img src="thumbs/clone.jpg" width="720" height="450" loading="lazy"
+             alt="Clone: an address, or owner/name for GitHub"></a>
+      <figcaption>Clone: an address, or owner/name for GitHub</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/import-dialog.png" class="shot">
+        <img src="thumbs/import-dialog.jpg" width="720" height="450" loading="lazy"
+             alt="Adding many repositories at once"></a>
+      <figcaption>Adding many repositories at once</figcaption>
+    </figure>
+  </div>
+  <h3 class="group">Look and settings</h3>
+  <div class="gallery">
+    <figure>
+      <a href="screenshots/themes.png" class="shot">
+        <img src="thumbs/themes.jpg" width="720" height="450" loading="lazy"
+             alt="Fel, GitHub Light, Horde and Parchment: four of the twelve ready-made themes"></a>
+      <figcaption>Fel, GitHub Light, Horde and Parchment: four of the twelve ready-made themes</figcaption>
     </figure>
     <figure>
       <a href="screenshots/theme-editor.png" class="shot">
@@ -253,14 +426,26 @@
     <figure>
       <a href="screenshots/options-advanced.png" class="shot">
         <img src="thumbs/options-advanced.jpg" width="720" height="450" loading="lazy"
-             alt="What the close button does, update checks and background fetch"></a>
-      <figcaption>What the close button does, update checks and background fetch</figcaption>
+             alt="The close button, update checks and background fetch"></a>
+      <figcaption>The close button, update checks and background fetch</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/import-dialog.png" class="shot">
-        <img src="thumbs/import-dialog.jpg" width="720" height="450" loading="lazy"
-             alt="Adding many repositories at once"></a>
-      <figcaption>Adding many repositories at once</figcaption>
+      <a href="screenshots/commands.png" class="shot">
+        <img src="thumbs/commands.jpg" width="720" height="450" loading="lazy"
+             alt="Custom commands, run from the menus"></a>
+      <figcaption>Custom commands, run from the menus</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/repository-settings.png" class="shot">
+        <img src="thumbs/repository-settings.jpg" width="720" height="450" loading="lazy"
+             alt="Line endings in .gitattributes and .editorconfig"></a>
+      <figcaption>Line endings in .gitattributes and .editorconfig</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/shortcuts.png" class="shot">
+        <img src="thumbs/shortcuts.jpg" width="720" height="450" loading="lazy"
+             alt="Keyboard shortcuts (F1)"></a>
+      <figcaption>Keyboard shortcuts (F1)</figcaption>
     </figure>
   </div>
 
