@@ -270,6 +270,16 @@ The screenshots are 1920 × 1080 and show Lumen, a small demo repository with br
   </tr>
   <tr>
     <td>
+      <img src="docs/screenshots/html-preview.png" alt="Screenshot: HTML preview"><br>
+      HTML as a reading view, with Open in browser for the real page (Preview)
+    </td>
+    <td>
+      <img src="docs/screenshots/csv-preview.png" alt="Screenshot: CSV preview"><br>
+      CSV and TSV as tables, with just the changed rows marked (Preview)
+    </td>
+  </tr>
+  <tr>
+    <td>
       <img src="docs/screenshots/import-menu.png" alt="Screenshot: import menu"><br>
       Import: everything in a folder, GitHub Desktop's list and fork choices, or clones from your accounts
     </td>

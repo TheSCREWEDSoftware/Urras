@@ -58,14 +58,40 @@
 
     .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
     figure { margin: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    figure { transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; }
+    figure:hover { transform: translateY(-3px); border-color: var(--accent);
+                   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45); }
     figure img {
       width: 100%;
+      height: auto;
       aspect-ratio: 16 / 10;
-      object-fit: cover;
-      object-position: top left;
       border-radius: 6px;
       display: block;
     }
+    .shot { cursor: zoom-in; display: block; }
+    .hero { transition: box-shadow 0.2s ease; }
+    .shot:hover .hero { box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5); }
+
+    /* The viewer: the full screenshot over the page, with its caption, arrows to move through them and Esc */
+    dialog.viewer {
+      width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 24px;
+      border: 0; background: rgba(5, 8, 12, 0.92); color: var(--text);
+    }
+    dialog.viewer[open] { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                          gap: 12px; animation: fade 0.15s ease; }
+    dialog.viewer::backdrop { background: transparent; }
+    dialog.viewer img { max-width: min(1600px, 94vw); max-height: 84vh; border-radius: 8px;
+                        border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+    dialog.viewer p { margin: 0; color: var(--muted); text-align: center; max-width: 900px; }
+    .viewer button {
+      position: absolute; background: var(--card); color: var(--text); border: 1px solid var(--border);
+      border-radius: 999px; width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer;
+    }
+    .viewer button:hover { border-color: var(--accent); }
+    .viewer .close { top: 18px; right: 18px; }
+    .viewer .previous { left: 18px; top: calc(50% - 22px); }
+    .viewer .next { right: 18px; top: calc(50% - 22px); }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
     figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
     figure.wide img { aspect-ratio: auto; }
 
@@ -90,7 +116,7 @@
     <p class="note">Windows (.zip) and Linux (.tar.gz), one file with nothing else to install.</p>
   </header>
 
-  <a href="screenshots/main-window.png"><img class="hero" src="screenshots/main-window.png"
+  <a href="screenshots/main-window.png" class="shot"><img class="hero" src="screenshots/main-window.png"
        alt="Urras: the repository list, the history graph with branches, and a commit's diff"></a>
 
   <h2>What it does</h2>
@@ -138,59 +164,78 @@
     </div>
   </div>
 
-  <h2>History at a glance</h2>
-  <figure class="wide">
-    <a href="screenshots/history-graph.png"><img src="screenshots/history-graph.png" loading="lazy"
-       alt="The history graph: a lane per branch, branch labels in their lane's colour, and commits not pushed yet"></a>
-    <figcaption>A lane per branch, labels in their lane's colour with the remote beside pushed branches, and
-      commits that aren't pushed yet</figcaption>
-  </figure>
-
   <h2>Screenshots</h2>
   <div class="gallery">
     <figure>
-      <a href="screenshots/changes.png"><img src="screenshots/changes.png" loading="lazy"
-           alt="Changes"></a>
-      <figcaption>The changes, a diff with word-level colours, and the commit message</figcaption>
+      <a href="screenshots/changes.png" class="shot">
+        <img src="thumbs/changes.jpg" width="720" height="450" loading="lazy"
+             alt="Changes: the files, a diff with word-level colours, and the commit message"></a>
+      <figcaption>Changes: the files, a diff with word-level colours, and the commit message</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/theme-editor.png"><img src="screenshots/theme-editor.png" loading="lazy"
-           alt="The theme editor"></a>
-      <figcaption>Editing a theme, ready-made ones included</figcaption>
+      <a href="screenshots/markdown-preview.png" class="shot">
+        <img src="thumbs/markdown-preview.jpg" width="720" height="450" loading="lazy"
+             alt="Markdown rendered, old and new side by side"></a>
+      <figcaption>Markdown rendered, old and new side by side</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/options-appearance.png"><img src="screenshots/options-appearance.png" loading="lazy"
-           alt="Options: appearance"></a>
-      <figcaption>Themes, and the text size and font for every theme or just one</figcaption>
+      <a href="screenshots/html-preview.png" class="shot">
+        <img src="thumbs/html-preview.jpg" width="720" height="450" loading="lazy"
+             alt="HTML as a reading view, with Open in browser for the real page"></a>
+      <figcaption>HTML as a reading view, with Open in browser for the real page</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/branch-menu.png"><img src="screenshots/branch-menu.png" loading="lazy"
-           alt="The Branch menu"></a>
-      <figcaption>Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees</figcaption>
+      <a href="screenshots/csv-preview.png" class="shot">
+        <img src="thumbs/csv-preview.jpg" width="720" height="450" loading="lazy"
+             alt="CSV and TSV as tables, with just the changed rows marked"></a>
+      <figcaption>CSV and TSV as tables, with just the changed rows marked</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/repository-menu.png"><img src="screenshots/repository-menu.png" loading="lazy"
-           alt="A repository's menu"></a>
-      <figcaption>Open a repository elsewhere, view it on GitHub, fetch, pull, pin and group</figcaption>
-    </figure>
-    <figure>
-      <a href="screenshots/markdown-preview.png"><img src="screenshots/markdown-preview.png" loading="lazy"
-           alt="A Markdown file rendered"></a>
-      <figcaption>Markdown rendered instead of shown as text</figcaption>
-    </figure>
-    <figure>
-      <a href="screenshots/file-filter.png"><img src="screenshots/file-filter.png" loading="lazy"
-           alt="Filtering the changes"></a>
+      <a href="screenshots/file-filter.png" class="shot">
+        <img src="thumbs/file-filter.jpg" width="720" height="450" loading="lazy"
+             alt="Filtering the changes by name"></a>
       <figcaption>Filtering the changes by name</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/options-accounts.png"><img src="screenshots/options-accounts.png" loading="lazy"
-           alt="Options: accounts"></a>
+      <a href="screenshots/branch-menu.png" class="shot">
+        <img src="thumbs/branch-menu.jpg" width="720" height="450" loading="lazy"
+             alt="Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees"></a>
+      <figcaption>Branches, merge, rebase, pull requests, tags, reflog, submodules and worktrees</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/repository-menu.png" class="shot">
+        <img src="thumbs/repository-menu.jpg" width="720" height="450" loading="lazy"
+             alt="A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group"></a>
+      <figcaption>A repository's menu: open it elsewhere, view it on GitHub, fetch, pull, pin and group</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/theme-editor.png" class="shot">
+        <img src="thumbs/theme-editor.jpg" width="720" height="450" loading="lazy"
+             alt="Editing a theme, ready-made ones included"></a>
+      <figcaption>Editing a theme, ready-made ones included</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/options-appearance.png" class="shot">
+        <img src="thumbs/options-appearance.jpg" width="720" height="450" loading="lazy"
+             alt="Themes, and the text size and font for every theme or just one"></a>
+      <figcaption>Themes, and the text size and font for every theme or just one</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/options-accounts.png" class="shot">
+        <img src="thumbs/options-accounts.jpg" width="720" height="450" loading="lazy"
+             alt="Sign in to GitHub, GitLab, Gitea or Bitbucket"></a>
       <figcaption>Sign in to GitHub, GitLab, Gitea or Bitbucket</figcaption>
     </figure>
     <figure>
-      <a href="screenshots/import-dialog.png"><img src="screenshots/import-dialog.png" loading="lazy"
-           alt="Choosing repositories to add"></a>
+      <a href="screenshots/options-prompts.png" class="shot">
+        <img src="thumbs/options-prompts.jpg" width="720" height="450" loading="lazy"
+             alt="Which questions to ask, and what happens to changes when switching branch"></a>
+      <figcaption>Which questions to ask, and what happens to changes when switching branch</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/import-dialog.png" class="shot">
+        <img src="thumbs/import-dialog.jpg" width="720" height="450" loading="lazy"
+             alt="Adding many repositories at once"></a>
       <figcaption>Adding many repositories at once</figcaption>
     </figure>
   </div>
@@ -212,5 +257,50 @@
     Made by <a href="https://thescrewedsoftware.github.io/">TheSCREWEDSoftware</a>.
   </footer>
 </main>
+
+<dialog class="viewer" aria-label="Screenshot">
+  <button class="close" aria-label="Close">&times;</button>
+  <button class="previous" aria-label="Previous screenshot">&#8249;</button>
+  <img alt="">
+  <p></p>
+  <button class="next" aria-label="Next screenshot">&#8250;</button>
+</dialog>
+
+<script>
+  // Screenshots open in the viewer rather than as a bare image; without JavaScript the links still work
+  (function () {
+    const shots = Array.from(document.querySelectorAll("a.shot"));
+    const viewer = document.querySelector("dialog.viewer");
+    const image = viewer.querySelector("img");
+    const caption = viewer.querySelector("p");
+    let current = 0;
+
+    function show(index) {
+      current = (index + shots.length) % shots.length;
+      image.src = shots[current].href;
+      const text = shots[current].querySelector("img").alt;
+      image.alt = text;
+      caption.textContent = text;
+    }
+
+    shots.forEach(function (shot, index) {
+      shot.addEventListener("click", function (event) {
+        event.preventDefault();
+        show(index);
+        viewer.showModal();
+      });
+    });
+    viewer.querySelector(".close").addEventListener("click", function () { viewer.close(); });
+    viewer.querySelector(".previous").addEventListener("click", function () { show(current - 1); });
+    viewer.querySelector(".next").addEventListener("click", function () { show(current + 1); });
+    // A click on the dark area around the screenshot closes it
+    viewer.addEventListener("click", function (event) { if (event.target === viewer) viewer.close(); });
+    document.addEventListener("keydown", function (event) {
+      if (!viewer.open) return;
+      if (event.key === "ArrowLeft") show(current - 1);
+      if (event.key === "ArrowRight") show(current + 1);
+    });
+  })();
+</script>
 </body>
 </html>
