@@ -26,13 +26,21 @@ public static class GitCommandKind
             ["submodule"] = new HashSet<string>(StringComparer.Ordinal) { "status" }
         };
 
+    // Git's exit code for a config key that isn't set: a normal answer, not a failure
+    public const int CONFIG_KEY_MISSING = 1;
+
+    // "git config --get x" exiting 1 only means x isn't set, so the Git log needn't show it
+    public static bool IsUnsetConfigRead(string commandLine, int exitCode)
+    {
+        string[] words = Words(commandLine, out int index);
+        return exitCode == CONFIG_KEY_MISSING && index < words.Length && words[index] == "config" &&
+               words.Skip(index + 1).Any(word => word is "--get" or "--get-all" or "--get-regexp");
+    }
+
     // "git --no-optional-locks status ..." reads; "git push" doesn't. Words are split on spaces, as logged
     public static bool IsReading(string commandLine)
     {
-        string[] words = commandLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        int index = words.Length > 0 && words[0] == "git" ? 1 : 0;
-        while (index < words.Length && words[index].StartsWith('-'))
-            index += OptionsWithValue.Contains(words[index]) ? 2 : 1;
+        string[] words = Words(commandLine, out int index);
         if (index >= words.Length)
             return false;
 
@@ -46,5 +54,15 @@ public static class GitCommandKind
         string? next = index + 1 < words.Length ? words[index + 1] : null;
         return (next != null && reading.Contains(next)) || (command == "lfs" && next == "track" &&
                                                            index + 2 >= words.Length);
+    }
+
+    // The command line's words, and where the command itself is after "git" and its options
+    private static string[] Words(string commandLine, out int index)
+    {
+        string[] words = commandLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        index = words.Length > 0 && words[0] == "git" ? 1 : 0;
+        while (index < words.Length && words[index].StartsWith('-'))
+            index += OptionsWithValue.Contains(words[index]) ? 2 : 1;
+        return words;
     }
 }

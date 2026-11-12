@@ -887,8 +887,9 @@ public partial class MainWindow : Window
 
     private void OnGitCommandFinished(string commandLine, GitResult result, bool quiet)
     {
-        // Reads that worked are left out; a read that failed is worth seeing
-        if (result.Success && (quiet || GitCommandKind.IsReading(commandLine)))
+        // Reads that worked are left out; a read that failed is worth seeing, but not a config key that isn't set
+        if ((result.Success && (quiet || GitCommandKind.IsReading(commandLine))) ||
+            GitCommandKind.IsUnsetConfigRead(commandLine, result.ExitCode))
             return;
 
         Dispatcher.UIThread.Post(() => AppendLog(commandLine, result));

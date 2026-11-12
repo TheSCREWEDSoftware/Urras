@@ -71,6 +71,9 @@ public static class SyncTests
                     "options before the command are skipped");
         Assert.True(GitCommandKind.IsReading("git lfs ls-files --long"), "listing LFS files reads");
         Assert.True(GitCommandKind.IsReading("git lfs track"), "listing LFS patterns reads");
+        Assert.True(GitCommandKind.IsUnsetConfigRead("git config --get urras.forkParent", 1), "an unset key is normal");
+        Assert.True(!GitCommandKind.IsUnsetConfigRead("git config --get urras.forkParent", 128), "a real failure");
+        Assert.True(!GitCommandKind.IsUnsetConfigRead("git config user.name x", 1), "writing config isn't a read");
         Assert.True(GitCommandKind.IsReading("git -C folder worktree list --porcelain"), "values of options skipped");
         Assert.True(!GitCommandKind.IsReading("git lfs track -- *.psd"), "tracking a pattern changes things");
         Assert.True(!GitCommandKind.IsReading("git push origin main"), "pushing is shown");

@@ -615,7 +615,7 @@ Esc clears it" />
             <!-- Column titles; the padding matches the list items below so the columns line up -->
             <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="{DynamicResource Urras.Raised}"
                     CornerRadius="6">
-              <Grid ColumnDefinitions="*,170,80,130">
+              <Grid ColumnDefinitions="*,170,80,150">
                 <TextBlock Grid.Column="0" Classes="columnHeader" Text="Graph and summary" />
                 <TextBlock Grid.Column="1" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
                 <TextBlock Grid.Column="2" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
@@ -630,7 +630,7 @@ Esc clears it" />
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,170,80,130" Height="28">
+                  <Grid ColumnDefinitions="*,170,80,150" Height="28">
                     <DockPanel Grid.Column="0">
                       <!-- The graph, with the author's picture inside each commit's ring -->
                       <Panel DockPanel.Dock="Left" Margin="0,0,4,0">
