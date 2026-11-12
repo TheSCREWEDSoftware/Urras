@@ -140,6 +140,29 @@ public sealed class NewWindowTests
         Ui.Pump();
     }
 
+    // Typing replaces the list's rows, which once crashed Urras when a recycled row had no item
+    [AvaloniaFact]
+    public void QuickLaunchFiltersAsYouType()
+    {
+        List<QuickItem> items = Enumerable.Range(0, 40)
+                                          .Select(number => new QuickItem("Repository " + number, "Repository",
+                                                                          () => Task.CompletedTask))
+                                          .ToList();
+        QuickLaunchWindow window = new QuickLaunchWindow(items);
+        window.Show();
+        Ui.Pump();
+        TextBox search = window.GetVisualDescendants().OfType<TextBox>().First();
+        foreach (string text in new[] { "r", "re", "repository 1", "", "zz", "3" })
+        {
+            search.Text = text;
+            Ui.Pump();
+        }
+
+        ListBox list = window.GetVisualDescendants().OfType<ListBox>().First();
+        Assert.True(list.ItemCount > 0);
+        window.Close();
+    }
+
     // With one taskbar entry chosen, the main window keeps it and the other windows stay out of the taskbar
     [AvaloniaFact]
     public void MainWindowStaysInTheTaskbar()

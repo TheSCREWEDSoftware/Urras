@@ -45,7 +45,11 @@ public static class TextLook
             MaxDropDownHeight = FONT_LIST_HEIGHT
         };
         picker.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((name, _) =>
-            new TextBlock { Text = name, FontFamily = name == unchosen ? FontFamily.Default : new FontFamily(name) });
+            new TextBlock
+            {
+                Text = name,
+                FontFamily = string.IsNullOrEmpty(name) || name == unchosen ? FontFamily.Default : new FontFamily(name)
+            });
         return picker;
     }
 

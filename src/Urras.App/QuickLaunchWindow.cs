@@ -47,8 +47,12 @@ public sealed class QuickLaunchWindow : Window
         Filter();
     }
 
-    private static Control Row(QuickItem item, INameScope scope)
+    private static Control Row(QuickItem? item, INameScope scope)
     {
+        // A list recycling its rows can ask for a row with no item
+        if (item == null)
+            return new Panel();
+
         DockPanel row = new DockPanel();
         TextBlock kind = new TextBlock { Text = item.Kind, Foreground = MutedBrush, FontSize = 11,
                                          VerticalAlignment = VerticalAlignment.Center };

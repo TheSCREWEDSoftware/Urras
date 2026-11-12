@@ -48,8 +48,12 @@ public sealed class BlameWindow : Window
 
     public event Action<string>? CommitRequested;
 
-    private static Control Row(BlameLine line, INameScope scope)
+    private static Control Row(BlameLine? line, INameScope scope)
     {
+        // A list recycling its rows can ask for a row with no item
+        if (line == null)
+            return new Panel();
+
         Grid grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("80,150,90,50,*"),

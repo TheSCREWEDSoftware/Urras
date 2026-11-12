@@ -53,8 +53,12 @@ public sealed class FileViewWindow : Window
         return new ListBox { ItemsSource = numbered, ItemTemplate = new FuncDataTemplate<NumberedLine>(Row) };
     }
 
-    private static Control Row(NumberedLine line, INameScope scope)
+    private static Control Row(NumberedLine? line, INameScope scope)
     {
+        // A list recycling its rows can ask for a row with no item
+        if (line == null)
+            return new Panel();
+
         Grid grid = new Grid { ColumnDefinitions = new ColumnDefinitions("56,*") };
         TextBlock number = new TextBlock
         {

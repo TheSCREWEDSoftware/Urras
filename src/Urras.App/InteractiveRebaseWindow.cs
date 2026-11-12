@@ -113,8 +113,12 @@ public sealed class InteractiveRebaseWindow : Window
     // Oldest first, the order `git rebase -i` uses
     public List<RebaseStep> Plan => Steps.Reverse().ToList();
 
-    private Control Row(RebaseStep step, INameScope scope)
+    private Control Row(RebaseStep? step, INameScope scope)
     {
+        // A list recycling its rows can ask for a row with no item
+        if (step == null)
+            return new Panel();
+
         ComboBox action = new ComboBox
         {
             ItemsSource = ActionNames,
