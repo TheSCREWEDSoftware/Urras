@@ -175,6 +175,7 @@ Both use their own settings and Git configuration in a temporary folder, so they
 - Force push after a rewrite: when a pushed branch's commits were rewritten (authors fixed, amended, rebased), Sync
   offers to replace the remote's old copies instead of pulling them back in; force pushes use --force-with-lease
 - Background fetching of every repository (Settings)
+- Close button can minimise Urras to the system tray instead of exiting, and Urras can ask before exiting (Settings)
 - Tags, checking out a commit, revert, cherry-pick, stashes, merge and rebase
 - Bisect from History with a banner to mark commits; submodules, worktrees and Git LFS (with locks) from
   the Branch menu

@@ -23,6 +23,15 @@ public enum RepositoryGrouping
     Owner
 }
 
+// What the window's close button (X) does
+public enum CloseAction
+{
+    Exit,
+
+    // Hides Urras to an icon in the notification area
+    Tray
+}
+
 public enum DiffViewMode
 {
     Unified,
@@ -127,6 +136,12 @@ public sealed class AppSettings
     // Asks GitHub once a day whether a newer Urras is out
     public bool CheckForUpdates { get; set; } = true;
     public DateTimeOffset? LastUpdateCheck { get; set; }
+
+    // The close button exits by default, like most programs
+    public CloseAction CloseButton { get; set; } = CloseAction.Exit;
+
+    // Asks "Exit Urras?" before really exiting
+    public bool ConfirmBeforeExit { get; set; }
 
     // Untracked files are left out of the change list and of Stage all
     public bool HideUntracked { get; set; }

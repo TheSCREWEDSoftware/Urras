@@ -79,6 +79,8 @@ public sealed class OptionsWindow : Window
     private string? _loadedFormat;
     private string? _loadedKey;
     private readonly CheckBox _checkUpdates;
+    private readonly ComboBox _closeButton;
+    private readonly CheckBox _confirmExit;
     private string? _loadedName;
     private string? _loadedEmail;
     private string? _loadedBranch;
@@ -179,6 +181,9 @@ public sealed class OptionsWindow : Window
                                  settings.CheckWhitespaceBeforeCommit);
         _hideUntracked = Check("Hide untracked files in Changes", settings.HideUntracked);
         _checkUpdates = Check("Check GitHub for a new version of Urras once a day", settings.CheckForUpdates);
+        _closeButton = Combo(new List<string> { "Exit Urras completely", "Minimise Urras to the system tray" }, null);
+        _closeButton.SelectedIndex = (int)settings.CloseButton;
+        _confirmExit = Check("Ask before exiting Urras", settings.ConfirmBeforeExit);
         _forkDefault = Combo(new List<string>
         {
             "Ask for each fork", "Contribute to the parent project", "Use forks for my own purposes"
@@ -313,6 +318,8 @@ public sealed class OptionsWindow : Window
         _tracker.Track(ADVANCED, "Background fetch", () => Selected(_autoFetch));
         _tracker.Track(ADVANCED, "Whitespace check", () => OnOff(_checkWhitespace));
         _tracker.Track(ADVANCED, "Update check", () => OnOff(_checkUpdates));
+        _tracker.Track(ADVANCED, "Close button", () => Selected(_closeButton));
+        _tracker.Track(ADVANCED, "Ask before exiting", () => OnOff(_confirmExit));
         _tracker.Track(ADVANCED, "Hide untracked files", () => OnOff(_hideUntracked));
     }
 
@@ -611,7 +618,10 @@ public sealed class OptionsWindow : Window
 
     private Control AdvancedPage()
     {
-        return Page(Heading("Updates"), _checkUpdates,
+        return Page(Heading("When clicking X (close window)"), _closeButton, _confirmExit,
+                    Note("In the tray, click the Urras icon to bring it back, or right-click it to exit. " +
+                         "File › Exit always exits."),
+                    Heading("Updates"), _checkUpdates,
                     Heading("Background fetch"), _autoFetch,
                     Note("Fetches every repository in the list now and then, so ahead and behind counts stay " +
                          "current."),
@@ -787,6 +797,8 @@ public sealed class OptionsWindow : Window
         _settings.CheckWhitespaceBeforeCommit = _checkWhitespace.IsChecked == true;
         _settings.HideUntracked = _hideUntracked.IsChecked == true;
         _settings.CheckForUpdates = _checkUpdates.IsChecked == true;
+        _settings.CloseButton = (CloseAction)Math.Max(0, _closeButton.SelectedIndex);
+        _settings.ConfirmBeforeExit = _confirmExit.IsChecked == true;
         _settings.AlwaysShowScrollBars = _fullScrollBars.IsChecked == true;
         _settings.ShowWindowsInTaskbar = _windowsInTaskbar.IsChecked == true;
         _settings.DefaultForkTarget = (ForkTarget)Math.Max(0, _forkDefault.SelectedIndex);

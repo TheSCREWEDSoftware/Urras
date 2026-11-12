@@ -69,5 +69,6 @@ public partial class MainWindow
             WindowState = Avalonia.Controls.WindowState.Normal;
         Show();
         Activate();
+        HideTrayIcon();
     }
 }

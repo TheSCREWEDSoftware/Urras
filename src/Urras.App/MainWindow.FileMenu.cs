@@ -12,7 +12,7 @@ public partial class MainWindow
         AddLocalRepositoryItem.Click += async (_, _) => await AddRepositoryAsync();
         CloneRepositoryItem.Click += async (_, _) => await CloneRepositoryAsync();
         OptionsItem.Click += async (_, _) => await OpenOptionsAsync(OptionsWindow.ACCOUNTS);
-        ExitItem.Click += (_, _) => Close();
+        ExitItem.Click += async (_, _) => await ExitAsync();
     }
 
     // New repositories go next to the open one by default, or in Documents when none is open
