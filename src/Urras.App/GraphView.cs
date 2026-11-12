@@ -14,11 +14,12 @@ public sealed class GraphView : Control
     public const double NARROW_LANE_WIDTH = 10;
     public const int NARROW_FROM_LANES = 10;
     // The ring round each commit, which the author's picture sits inside
-    public const double NODE_RADIUS = 9;
-    public const double AVATAR_SIZE = 14;
+    public const double NODE_RADIUS = 8.5;
+    public const double AVATAR_SIZE = 15;
     private const double LINE_THICKNESS = 2;
-    // Lanes that only pass a row are drawn faint, so the lines that touch its commit stand out
-    private const double PASSING_OPACITY = 0.4;
+    // Lanes that only pass a row are drawn thinner and faint, so the lines that touch its commit stand out
+    private const double PASSING_THICKNESS = 1.5;
+    private const double PASSING_OPACITY = 0.45;
 
     // One colour per lane, repeating; bright enough to read on the dark list
     private static readonly IBrush[] LaneBrushes =
@@ -85,7 +86,7 @@ public sealed class GraphView : Control
                 }
 
                 using (context.PushOpacity(PASSING_OPACITY))
-                    context.DrawLine(pen, from, to);
+                    context.DrawLine(new Pen(LaneBrush(line.Colour), PASSING_THICKNESS), from, to);
                 continue;
             }
 

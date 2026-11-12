@@ -25,8 +25,41 @@
       <Setter Property="MinHeight" Value="0" />
     </Style>
     <!-- History rows have no vertical padding so the graph's lines join from row to row -->
-    <Style Selector="ListBox#HistoryList ListBoxItem">
+    <Style Selector="ListBox.history ListBoxItem">
       <Setter Property="Padding" Value="8,0" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <!-- Urras's own minimise, maximise and close buttons on Windows, flat like Windows 11's -->
+    <Style Selector="Button.caption">
+      <Setter Property="Width" Value="46" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.caption Path">
+      <Setter Property="Width" Value="10" />
+      <Setter Property="Height" Value="10" />
+      <Setter Property="StrokeThickness" Value="1" />
+      <Setter Property="Stroke" Value="{DynamicResource Urras.Text}" />
+    </Style>
+    <Style Selector="Button.caption:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Urras.Hover}" />
+    </Style>
+    <Style Selector="Button.caption:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Urras.Pressed}" />
+    </Style>
+    <Style Selector="Button.caption.close:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#C42B1C" />
+    </Style>
+    <Style Selector="Button.caption.close:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#B22A1B" />
+    </Style>
+    <Style Selector="Button.caption.close:pointerover Path">
+      <Setter Property="Stroke" Value="White" />
     </Style>
     <Style Selector="Border.refBadge">
       <Setter Property="CornerRadius" Value="4" />
@@ -184,9 +217,10 @@
 
   <DockPanel x:Name="RootPanel">
 
-    <!-- Urras's own title bar on Windows (File menu and title; Windows draws the buttons on the right), a menu row
-         elsewhere; the empty parts drag the window. The shortcuts are handled in OnPreviewKeyDown -->
-    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" MinHeight="32">
+    <!-- Urras's own title bar on Windows (menus, title, and minimise, maximise and close), a menu row elsewhere;
+         the empty parts drag the window. The shortcuts are handled in OnPreviewKeyDown -->
+    <Grid x:Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" MinHeight="32"
+          Background="Transparent">
       <Image x:Name="TitleIcon" Grid.Column="0" Source="/Assets/urras.png" Width="16" Height="16"
              Margin="12,0,4,0" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="False" />
       <TextBlock x:Name="WindowTitle" Grid.Column="2" Classes="windowTitle" Text="Urras" IsVisible="False"
@@ -195,6 +229,18 @@
               VerticalAlignment="Center" IsVisible="False" />
       <Button x:Name="NotificationsButton" Grid.Column="4" Content="Notifications" Classes="subtle"
               Padding="10,4" VerticalAlignment="Center" IsVisible="False" />
+      <StackPanel x:Name="CaptionButtons" Grid.Column="5" Orientation="Horizontal" Margin="8,0,0,0"
+                  IsVisible="False">
+        <Button x:Name="MinimiseButton" Classes="caption" ToolTip.Tip="Minimise">
+          <Path Data="M0,5.5 H10" />
+        </Button>
+        <Button x:Name="MaximiseButton" Classes="caption" ToolTip.Tip="Maximise">
+          <Path x:Name="MaximiseGlyph" Data="M0.5,0.5 H9.5 V9.5 H0.5 Z" />
+        </Button>
+        <Button x:Name="CloseButton" Classes="caption close" ToolTip.Tip="Close">
+          <Path Data="M0,0 L10,10 M10,0 L0,10" />
+        </Button>
+      </StackPanel>
       <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent">
         <MenuItem Header="_File">
           <MenuItem x:Name="NewRepositoryItem" Header="New repository…" InputGesture="Ctrl+N" />
@@ -580,18 +626,18 @@ Esc clears it" />
             <!-- History loads 300 commits at a time; this loads 300 more -->
             <Button x:Name="ShowMoreHistoryButton" Grid.Row="2" ZIndex="1" Content="Show more history"
                     HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14" IsVisible="False" />
-            <ListBox x:Name="HistoryList" Grid.Row="2" Classes="files" Margin="0,0,0,6" SelectionMode="Multiple"
+            <ListBox x:Name="HistoryList" Grid.Row="2" Classes="history" Margin="0,0,0,6" SelectionMode="Multiple"
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,170,80,130" Height="24">
+                  <Grid ColumnDefinitions="*,170,80,130" Height="28">
                     <DockPanel Grid.Column="0">
                       <!-- The graph, with the author's picture inside each commit's ring -->
                       <Panel DockPanel.Dock="Left" Margin="0,0,4,0">
                         <local:GraphView Row="{Binding Graph}" />
                         <local:AvatarView Email="{Binding Email}" PersonName="{Binding Author}"
                                           IsVisible="{Binding Graph, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                          Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                          Width="15" Height="15" HorizontalAlignment="Left" VerticalAlignment="Center"
                                           Margin="{Binding Graph,
                                                    Converter={x:Static local:GraphConverters.AvatarMargin}}"
                                           IsHitTestVisible="False" />

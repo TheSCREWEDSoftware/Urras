@@ -7,8 +7,9 @@ namespace Urras.App;
 public partial class MainWindow
 {
     private const double TITLE_BAR_HEIGHT = 40;
-    // Room on the right for Windows' minimise, maximise and close buttons
-    private const double CAPTION_BUTTONS_WIDTH = 140;
+    // The maximise button's square, and two overlapping squares once maximised
+    private const string MAXIMISE_GLYPH = "M0.5,0.5 H9.5 V9.5 H0.5 Z";
+    private const string RESTORE_GLYPH = "M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z";
 
     private void InitializeTitleBar()
     {
@@ -17,13 +18,13 @@ public partial class MainWindow
             return;
 
         ExtendClientAreaToDecorationsHint = true;
-        // Avalonia's own minimise, maximise and close buttons follow the theme; Windows' turn white on hover
+        // Windows' own buttons turn white on hover in dark themes, so Urras draws themed ones instead
         ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
         ExtendClientAreaTitleBarHeightHint = TITLE_BAR_HEIGHT;
         TitleBar.Height = TITLE_BAR_HEIGHT;
-        TitleBar.Margin = new Thickness(0, 0, CAPTION_BUTTONS_WIDTH, 0);
         TitleIcon.IsVisible = true;
         WindowTitle.IsVisible = true;
+        ShowCaptionButtons();
 
         // Maximised, Windows puts the window's edges off-screen; the content moves in to stay visible
         PropertyChanged += (_, change) =>
@@ -31,6 +32,46 @@ public partial class MainWindow
             if (change.Property == OffScreenMarginProperty || change.Property == WindowStateProperty)
                 RootPanel.Margin = WindowState == WindowState.Maximized ? OffScreenMargin : default;
         };
+    }
+
+    private void ShowCaptionButtons()
+    {
+        CaptionButtons.IsVisible = true;
+        MinimiseButton.Click += (_, _) => WindowState = WindowState.Minimized;
+        MaximiseButton.Click += (_, _) => ToggleMaximised();
+        CloseButton.Click += (_, _) => Close();
+        PropertyChanged += (_, change) =>
+        {
+            if (change.Property != WindowStateProperty)
+                return;
+            bool maximised = WindowState == WindowState.Maximized;
+            MaximiseGlyph.Data = Avalonia.Media.Geometry.Parse(maximised ? RESTORE_GLYPH : MAXIMISE_GLYPH);
+            ToolTip.SetTip(MaximiseButton, maximised ? "Restore" : "Maximise");
+        };
+
+        // The empty parts of the title bar drag the window; a double-click maximises or restores it
+        AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (e.GetPosition(this).Y >= TITLE_BAR_HEIGHT || !IsTitleBarBackground(e.Source) ||
+                !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            if (e.ClickCount == 2)
+                ToggleMaximised();
+            else
+                BeginMoveDrag(e);
+            e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+    }
+
+    private bool IsTitleBarBackground(object? source)
+    {
+        return source == this || source == RootPanel || source == TitleBar || source == WindowTitle ||
+               source == TitleIcon;
+    }
+
+    private void ToggleMaximised()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     }
 
     // "cnc-exoduscommunity.github.io - Urras" in the title bar and the taskbar
