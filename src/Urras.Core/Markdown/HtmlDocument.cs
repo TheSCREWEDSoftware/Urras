@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,7 +20,7 @@ public static partial class HtmlDocument
     [GeneratedRegex(@"<(/?)([a-zA-Z][a-zA-Z0-9]*)((?:[^>""']|""[^""]*""|'[^']*')*?)(/?)>")]
     private static partial Regex TagRegex();
 
-    [GeneratedRegex(@"\b(href|src|alt)\s*=\s*(""([^""]*)""|'([^']*)'|([^\s>]+))", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(href|src|alt|width)\s*=\s*(""([^""]*)""|'([^']*)'|([^\s>]+))", RegexOptions.IgnoreCase)]
     private static partial Regex AttributeRegex();
 
     [GeneratedRegex(@"\s+")]
@@ -222,7 +223,9 @@ public static partial class HtmlDocument
                 case "img":
                 {
                     string alt = Attribute(attributes, "alt") ?? "image";
-                    _spans.Add(new MarkdownSpan(alt, SpanStyle.Image, Attribute(attributes, "src")));
+                    double? width = double.TryParse(Attribute(attributes, "width"), NumberStyles.Float,
+                                                    CultureInfo.InvariantCulture, out double pixels) ? pixels : null;
+                    _spans.Add(new MarkdownSpan(alt, SpanStyle.Image, Attribute(attributes, "src"), width));
                     _source.Append("[img:").Append(alt).Append(']');
                     break;
                 }

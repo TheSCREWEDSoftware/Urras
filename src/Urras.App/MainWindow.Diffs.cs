@@ -136,8 +136,10 @@ public partial class MainWindow
             (byte[]? before, byte[]? after) = await LoadChangeContentsAsync(change, staged);
             _changesDiffText = null;
             DiffTitle.Text = title;
+            DiffStats.Show(markdown ? await _repository.GetDiffAsync(change, staged) : null);
             if (markdown)
-                ShowMarkdown(MarkdownView, ImageView, DiffList, before, after, change.Path);
+                ShowMarkdown(MarkdownView, ImageView, DiffList, before, after, change.Path,
+                             ChangePictures(change, staged));
             else
                 ShowImage(ImageView, MarkdownView, DiffList, before, after);
             return;
@@ -232,8 +234,14 @@ public partial class MainWindow
                                                             : await _repository.GetBlobAsync(source.Target, file.Path);
             _commitDiffText = null;
             CommitDiffTitle.Text = title;
+            CommitDiffStats.Show(!markdown ? null
+                                 : source.From == null ? await _repository.GetCommitFileDiffAsync(source.Target, file)
+                                                       : await _repository.GetCompareDiffAsync(source.From,
+                                                                                               source.Target, file));
             if (markdown)
-                ShowMarkdown(CommitMarkdownView, CommitImageView, CommitDiffList, before, after, file.Path);
+                ShowMarkdown(CommitMarkdownView, CommitImageView, CommitDiffList, before, after, file.Path,
+                             PreviewPictures.For(_settings, file.Path, path => _repository.GetBlobAsync(from, path),
+                                                 path => _repository.GetBlobAsync(source.Target, path)));
             else
                 ShowImage(CommitImageView, CommitMarkdownView, CommitDiffList, before, after);
             return;
@@ -262,14 +270,24 @@ public partial class MainWindow
         UpdateHints();
     }
 
+    // Pictures for a change: the staged side reads the staging area, the other the last commit or the files on disk
+    private MarkdownDiffView.ImageLoader? ChangePictures(FileChange change, bool staged)
+    {
+        GitRepository repository = _repository!;
+        return PreviewPictures.For(_settings, change.Path,
+                                   path => repository.GetBlobAsync(staged ? "HEAD" : string.Empty, path),
+                                   path => staged ? repository.GetBlobAsync(string.Empty, path)
+                                                  : repository.GetWorkingFileAsync(path));
+    }
+
     private void ShowMarkdown(MarkdownDiffView view, ImageDiffView image, ListBox list, byte[]? before,
-                              byte[]? after, string path)
+                              byte[]? after, string path, MarkdownDiffView.ImageLoader? pictures)
     {
         HideImage(image);
         list.ItemsSource = null;
         list.IsVisible = false;
         view.IsVisible = true;
-        view.Show(before, after, path);
+        view.Show(before, after, path, pictures);
         UpdateHints();
     }
 

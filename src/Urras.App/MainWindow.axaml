@@ -574,7 +574,7 @@ Esc clears it" />
                             ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
                   <CheckBox x:Name="PreviewBox" DockPanel.Dock="Right" Content="Preview" Margin="8,0,0,0"
                             IsVisible="False"
-                            ToolTip.Tip="Show Markdown, HTML and CSV rendered, old and new side by side" />
+                            ToolTip.Tip="Show the file rendered, old and new side by side" />
                   <CheckBox x:Name="WhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
                             ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
                   <ComboBox x:Name="FileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
@@ -582,10 +582,14 @@ Esc clears it" />
                     <ComboBoxItem>Per file</ComboBoxItem>
                     <ComboBoxItem>Combined</ComboBoxItem>
                   </ComboBox>
+                  <local:DiffStatView x:Name="DiffStats" DockPanel.Dock="Right" />
                   <TextBlock x:Name="DiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
                 <Panel>
                   <ListBox x:Name="DiffList" Classes="diff" SelectionMode="Multiple" />
+                  <!-- Where the changes are, drawn over the scroll bar; clicks go through to it -->
+                  <local:DiffOverview x:Name="DiffMarks" HorizontalAlignment="Right" Width="6" Margin="0,0,3,0"
+                                      IsHitTestVisible="False" IsVisible="{Binding #DiffList.IsVisible}" />
                   <local:ImageDiffView x:Name="ImageView" IsVisible="False" />
                   <local:MarkdownDiffView x:Name="MarkdownView" IsVisible="False" />
                   <TextBlock x:Name="DiffHint" Classes="hint" Text="Select a file to see its changes" />
@@ -705,7 +709,7 @@ Esc clears it" />
                           ToolTip.Tip="Wrap long lines instead of scrolling sideways" />
                 <CheckBox x:Name="CommitPreviewBox" DockPanel.Dock="Right" Content="Preview" Margin="8,0,0,0"
                           IsVisible="False"
-                          ToolTip.Tip="Show Markdown, HTML and CSV rendered, old and new side by side" />
+                          ToolTip.Tip="Show the file rendered, old and new side by side" />
                 <CheckBox x:Name="CommitWhitespaceBox" DockPanel.Dock="Right" Content="Whitespace"
                           ToolTip.Tip="Show spaces, tabs, trailing whitespace and CRLF or LF line endings" />
                 <ComboBox x:Name="CommitFileModeBox" DockPanel.Dock="Right" Width="130" Margin="0,0,8,0"
@@ -713,6 +717,7 @@ Esc clears it" />
                   <ComboBoxItem>Per file</ComboBoxItem>
                   <ComboBoxItem>Combined</ComboBoxItem>
                 </ComboBox>
+                <local:DiffStatView x:Name="CommitDiffStats" DockPanel.Dock="Right" />
                 <TextBlock x:Name="CommitDiffTitle" Classes="header" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <ListBox x:Name="CommitFilesList" DockPanel.Dock="Left" Width="280" Margin="0,0,6,0" Classes="files">
@@ -727,6 +732,8 @@ Esc clears it" />
               </ListBox>
               <Panel>
                 <ListBox x:Name="CommitDiffList" Classes="diff" />
+                <local:DiffOverview x:Name="CommitDiffMarks" HorizontalAlignment="Right" Width="6" Margin="0,0,3,0"
+                                    IsHitTestVisible="False" IsVisible="{Binding #CommitDiffList.IsVisible}" />
                 <local:ImageDiffView x:Name="CommitImageView" IsVisible="False" />
                 <local:MarkdownDiffView x:Name="CommitMarkdownView" IsVisible="False" />
                 <TextBlock x:Name="CommitDiffHint" Classes="hint" Text="Select a commit to see its changes" />

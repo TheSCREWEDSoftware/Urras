@@ -31,6 +31,16 @@ public enum RepositoryGrouping
     Owner
 }
 
+// Which pictures previews load
+public enum PreviewImages
+{
+    Off,
+    Repository,
+
+    // Also addresses on the internet, such as README badges; the sites see that the picture was loaded
+    Internet
+}
+
 // What the window's close button (X) does
 public enum CloseAction
 {
@@ -91,6 +101,13 @@ public sealed class AppSettings
 
     // Markdown files show rendered, old and new side by side, instead of as a text diff
     public bool MarkdownPreview { get; set; } = true;
+
+    // Pictures in Markdown and HTML previews: from the repository by default; from the internet only if chosen
+    [JsonConverter(typeof(JsonStringEnumConverter<PreviewImages>))]
+    public PreviewImages PreviewImages { get; set; } = PreviewImages.Repository;
+
+    // Opening a file's diff scrolls to its first change
+    public bool JumpToFirstChange { get; set; } = true;
 
     // Each repository's first commits, by folder, so forks of one project group together without asking Git again
     public Dictionary<string, List<string>> RootCommits { get; set; } = new Dictionary<string, List<string>>();

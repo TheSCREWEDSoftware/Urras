@@ -26,8 +26,8 @@ public enum SpanStyle
     Image = 32
 }
 
-// A run of text with one style; Url is set for links and images
-public sealed record MarkdownSpan(string Text, SpanStyle Style, string? Url = null);
+// A run of text with one style; Url is set for links and images, Width for an image given one in HTML
+public sealed record MarkdownSpan(string Text, SpanStyle Style, string? Url = null, double? Width = null);
 
 // One block of a Markdown document. Source is the block's original text, used to find changed blocks in a diff.
 public sealed class MarkdownBlock
@@ -64,6 +64,24 @@ public static partial class MarkdownDocument
     [GeneratedRegex(@"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$")]
     private static partial Regex TableSeparatorRegex();
 
+    // A line that starts an HTML block: a block-level tag, a picture, a comment, or a closing tag
+    [GeneratedRegex(@"^\s{0,3}(<!--|</?(p|div|details|summary|table|thead|tbody|tr|td|th|img|picture|source|" +
+                    @"br|hr|h[1-6]|ul|ol|li|dl|dt|dd|pre|blockquote|section|article|header|footer|nav|aside|" +
+                    @"figure|figcaption|center|a)\b)", RegexOptions.IgnoreCase)]
+    private static partial Regex HtmlBlockRegex();
+
+    [GeneratedRegex(@"<img\b[^>]*?>", RegexOptions.IgnoreCase)]
+    private static partial Regex InlineImageRegex();
+
+    [GeneratedRegex(@"<a\b[^>]*?href\s*=\s*[""']([^""']*)[""'][^>]*>(.*?)</a\s*>", RegexOptions.IgnoreCase)]
+    private static partial Regex InlineLinkRegex();
+
+    [GeneratedRegex(@"\b(src|alt)\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase)]
+    private static partial Regex InlineAttributeRegex();
+
+    [GeneratedRegex(@"</?[a-zA-Z][^>]*>")]
+    private static partial Regex AnyTagRegex();
+
     public static List<MarkdownBlock> Parse(string text)
     {
         List<MarkdownBlock> blocks = new List<MarkdownBlock>();
@@ -82,6 +100,12 @@ public static partial class MarkdownDocument
             if (trimmed.StartsWith("```") || trimmed.StartsWith("~~~"))
             {
                 i = ReadCode(lines, i, blocks);
+                continue;
+            }
+
+            if (HtmlBlockRegex().IsMatch(line))
+            {
+                i = ReadHtml(lines, i, blocks);
                 continue;
             }
 
@@ -129,6 +153,16 @@ public static partial class MarkdownDocument
         }
 
         return blocks;
+    }
+
+    // HTML in Markdown (as READMEs use for pictures, <details> and tables) runs to a blank line, as in CommonMark
+    private static int ReadHtml(string[] lines, int start, List<MarkdownBlock> blocks)
+    {
+        int end = start;
+        while (end < lines.Length && lines[end].Trim().Length > 0)
+            ++end;
+        blocks.AddRange(HtmlDocument.Parse(string.Join("\n", lines[start..end])));
+        return end;
     }
 
     private static int ReadCode(string[] lines, int start, List<MarkdownBlock> blocks)
@@ -249,15 +283,34 @@ public static partial class MarkdownDocument
     {
         string trimmed = lines[index].Trim();
         return trimmed.StartsWith('#') || trimmed.StartsWith('>') || trimmed.StartsWith("```") ||
-               trimmed.StartsWith("~~~") || ListRegex().IsMatch(lines[index]) || RuleRegex().IsMatch(lines[index]);
+               trimmed.StartsWith("~~~") || ListRegex().IsMatch(lines[index]) || RuleRegex().IsMatch(lines[index]) ||
+               HtmlBlockRegex().IsMatch(lines[index]);
     }
 
     // Inline styles: **bold**, *italic* or _italic_, `code`, ~~strike~~, [text](url) and ![alt](url)
     public static List<MarkdownSpan> Inline(string text)
     {
         List<MarkdownSpan> spans = new List<MarkdownSpan>();
-        ReadInline(text, SpanStyle.None, spans);
+        ReadInline(text.Contains('<') ? WithoutHtml(text) : text, SpanStyle.None, spans);
         return Merge(spans);
+    }
+
+    // HTML inside a line of Markdown becomes the Markdown for the same thing; other tags are dropped
+    private static string WithoutHtml(string text)
+    {
+        text = InlineImageRegex().Replace(text, image =>
+        {
+            Dictionary<string, string> attributes = InlineAttributeRegex().Matches(image.Value)
+                .ToDictionary(match => match.Groups[1].Value.ToLowerInvariant(), match => match.Groups[2].Value);
+            return "![" + attributes.GetValueOrDefault("alt", "image") + "](" +
+                   attributes.GetValueOrDefault("src", string.Empty) + ")";
+        });
+        text = InlineLinkRegex().Replace(text, link => "[" + link.Groups[2].Value + "](" + link.Groups[1].Value + ")");
+        text = Regex.Replace(text, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"</?(b|strong)>", "**", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"</?(i|em)>", "*", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"</?(code|kbd)>", "`", RegexOptions.IgnoreCase);
+        return System.Net.WebUtility.HtmlDecode(AnyTagRegex().Replace(text, string.Empty));
     }
 
     private static void ReadInline(string text, SpanStyle style, List<MarkdownSpan> spans)

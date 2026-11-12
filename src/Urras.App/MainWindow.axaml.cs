@@ -624,25 +624,32 @@ public partial class MainWindow : Window
             DiffList.ItemsSource != null)
             return;
 
+        bool newFile = title != DiffTitle.Text;
         _changesDiffText = text;
         DiffTitle.Text = title;
         ShowText(ImageView, MarkdownView, DiffList);
-        RenderDiff(DiffList, text);
+        RenderDiff(DiffList, text, newFile);
     }
 
     private void ShowCommitDiff(string? text, string title)
     {
+        bool newFile = title != CommitDiffTitle.Text;
         _commitDiffText = text;
         CommitDiffTitle.Text = title;
         ShowText(CommitImageView, CommitMarkdownView, CommitDiffList);
-        RenderDiff(CommitDiffList, text);
+        RenderDiff(CommitDiffList, text, newFile);
     }
 
-    private void RenderDiff(ListBox list, string? text)
+    // newFile: a file just opened scrolls to its first change, when that's chosen in Options
+    private void RenderDiff(ListBox list, string? text, bool newFile = false)
     {
+        bool commit = list == CommitDiffList;
+        DiffOverview marks = commit ? CommitDiffMarks : DiffMarks;
+        (commit ? CommitDiffStats : DiffStats).Show(text);
         if (text == null)
         {
             list.ItemsSource = null;
+            marks.Show(null);
             UpdateHints();
             return;
         }
@@ -659,13 +666,49 @@ public partial class MainWindow : Window
         list.ItemTemplate = Resources[templateKey] as IDataTemplate;
         ApplyDiffLayout(list);
         bool whitespace = _settings.ShowWhitespace;
-        list.ItemsSource = mode switch
+        List<DiffRow> rows = mode switch
         {
             DiffViewMode.Split => DiffRow.Split(text, whitespace),
             DiffViewMode.Raw => DiffRow.Raw(text),
             _ => DiffRow.Unified(text, whitespace)
         };
+        list.ItemsSource = rows;
+        marks.Show(rows);
+        // Once laid out, the marks learn how tall a row is
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (list.ContainerFromIndex(0) is { Bounds.Height: > 0 } row)
+            {
+                marks.RowHeight = row.Bounds.Height;
+                marks.InvalidateVisual();
+            }
+        }, DispatcherPriority.Loaded);
         UpdateHints();
+        if (newFile && _settings.JumpToFirstChange)
+            JumpToFirstChange(list, rows);
+    }
+
+    // Rows shown above the first change, so it isn't the very first line on screen
+    private const int ROWS_ABOVE_FIRST_CHANGE = 3;
+
+    private static void JumpToFirstChange(ListBox list, List<DiffRow> rows)
+    {
+        int first = rows.FindIndex(row => row.IsAdded || row.IsRemoved);
+        if (first < 0)
+            return;
+        // After layout, so the list knows its rows' height; scrolling to a row well below first puts it near the top
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (list.ItemsSource != rows)
+                return;
+            int viewportRows = list.Scroll is { } scroll && list.ContainerFromIndex(0) is { } container &&
+                               container.Bounds.Height > 0
+                ? (int)(scroll.Viewport.Height / container.Bounds.Height)
+                : 0;
+            int top = Math.Max(0, first - ROWS_ABOVE_FIRST_CHANGE);
+            list.ScrollIntoView(Math.Min(rows.Count - 1, top + Math.Max(0, viewportRows - 1)));
+            list.ScrollIntoView(top);
+        }, DispatcherPriority.Loaded);
     }
 
     private void OnDiffModeChanged(ComboBox source)

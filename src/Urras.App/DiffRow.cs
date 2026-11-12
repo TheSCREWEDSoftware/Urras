@@ -69,6 +69,14 @@ public sealed class DiffRow
     public IBrush MarkerForeground { get; private init; } = NormalBrush;
     public FontWeight Weight { get; private init; } = FontWeight.Normal;
 
+    // Whether the row adds or removes lines (a changed line in the split view does both), for the scroll bar marks
+    public bool IsAdded => ReferenceEquals(Background, AddedBackground) ||
+                           ReferenceEquals(RightBackground, AddedBackground) ||
+                           (Text.StartsWith('+') && !Text.StartsWith("+++", StringComparison.Ordinal));
+    public bool IsRemoved => ReferenceEquals(Background, RemovedBackground) ||
+                             ReferenceEquals(LeftBackground, RemovedBackground) ||
+                             (Text.StartsWith('-') && !Text.StartsWith("---", StringComparison.Ordinal));
+
     // Lines of git's output this row shows (two in a split row), for staging or discarding selected lines
     public IReadOnlyList<int> RawLines { get; private set; } = Array.Empty<int>();
 

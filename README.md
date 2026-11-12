@@ -144,8 +144,12 @@ Both use their own settings and Git configuration in a temporary folder, so they
 
 - Diffs for modified, new, deleted and renamed files, as unified (with line numbers), split (side by side) or raw
   `git` output; the choice is saved
-- Markdown, HTML and CSV/TSV files rendered, old and new side by side with changed blocks or rows marked (Preview
-  switch); HTML shows its text and structure, with Open in browser for the real page
+- Files rendered, old and new side by side with changed blocks or rows marked (Preview switch): Markdown (HTML
+  inside it included), HTML (text and structure, with Open in browser for the real page), CSV/TSV tables, Jupyter
+  notebooks, reStructuredText and AsciiDoc; pictures from the repository (or the internet, if chosen) and a full
+  screen view
+- "+406 −553" and GitHub's five squares for each diff, change marks on the diff's scroll bar, and opening a diff at
+  its first change
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
 - Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or

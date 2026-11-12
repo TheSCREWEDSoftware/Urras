@@ -28,18 +28,70 @@ public sealed class MarkdownDiffView : UserControl
     private static readonly IBrush AddedBar = Brush("#57AB5A");
     private static readonly IBrush RemovedBar = Brush("#E5534B");
 
-    private readonly Grid _columns = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*") };
+    // Pictures wider than this are shrunk to fit
+    private const double MAX_IMAGE_WIDTH = 900;
 
-    public MarkdownDiffView()
+    // Loads a picture the page refers to; newSide is false for the old version of the file
+    public delegate Task<byte[]?> ImageLoader(string source, bool newSide);
+
+    private readonly Grid _columns = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*") };
+    private readonly TextBlock _note = new TextBlock
     {
-        Content = new ScrollViewer { Content = _columns, Padding = new Thickness(16, 8) };
+        Text = "Text and structure only: no styles, scripts or layout.",
+        Foreground = MutedBrush,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    private readonly Button _browser = new Button { Content = "Open in browser", Classes = { "subtle" } };
+    private readonly Button _fullScreen = new Button { Content = "Full screen", Classes = { "subtle" } };
+    private byte[]? _before;
+    private byte[]? _after;
+    private string _path = string.Empty;
+    private ImageLoader? _loader;
+    private bool _newSide;
+    private int _generation;
+
+    public MarkdownDiffView() : this(true)
+    {
     }
 
-    // Either side may be null, for a new or deleted file; the path says how to read it
-    public void Show(byte[]? before, byte[]? after, string path = "README.md")
+    // A full-screen copy has no button to go full screen again
+    public MarkdownDiffView(bool canGoFullScreen)
     {
+        ToolTip.SetTip(_browser, "Shows this version of the page in your browser, from a temporary copy");
+        ToolTip.SetTip(_fullScreen, "Shows the preview in a window of its own (Esc closes it)");
+        _browser.Click += (_, _) => OpenInBrowser();
+        _fullScreen.Click += (_, _) => OpenFullScreen();
+        _fullScreen.IsVisible = canGoFullScreen;
+
+        DockPanel toolbar = new DockPanel { Margin = new Thickness(16, 6, 16, 0) };
+        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        buttons.Children.Add(_browser);
+        buttons.Children.Add(_fullScreen);
+        DockPanel.SetDock(buttons, Dock.Right);
+        toolbar.Children.Add(buttons);
+        toolbar.Children.Add(_note);
+
+        DockPanel root = new DockPanel();
+        DockPanel.SetDock(toolbar, Dock.Top);
+        root.Children.Add(toolbar);
+        root.Children.Add(new ScrollViewer { Content = _columns, Padding = new Thickness(16, 8) });
+        Content = root;
+    }
+
+    // Either side may be null, for a new or deleted file; the path says how to read it, the loader finds pictures
+    public void Show(byte[]? before, byte[]? after, string path = "README.md", ImageLoader? loader = null)
+    {
+        _before = before;
+        _after = after;
+        _path = path;
+        _loader = loader;
+        ++_generation;
         _columns.Children.Clear();
         PreviewKind kind = PreviewFiles.KindOf(path);
+        bool html = kind == PreviewKind.Html;
+        _note.IsVisible = html;
+        _browser.IsVisible = html && (after ?? before) != null;
+
         List<MarkdownBlock> oldBlocks = PreviewFiles.Parse(kind, path, Text(before));
         List<MarkdownBlock> newBlocks = PreviewFiles.Parse(kind, path, Text(after));
         (HashSet<int> removed, HashSet<int> added) = MarkdownDocument.Changes(oldBlocks, newBlocks);
@@ -47,56 +99,59 @@ public sealed class MarkdownDiffView : UserControl
         bool sideBySide = before != null && after != null && (removed.Count > 0 || added.Count > 0);
         if (!sideBySide)
         {
+            _newSide = after != null;
             Control page = Page(after != null ? newBlocks : oldBlocks, new HashSet<int>(), null, null);
             Grid.SetColumnSpan(page, 3);
             _columns.Children.Add(page);
-        }
-        else
-        {
-            Control left = Page(oldBlocks, removed, RemovedBackground, RemovedBar);
-            Control right = Page(newBlocks, added, AddedBackground, AddedBar);
-            Grid.SetColumn(right, 2);
-            _columns.Children.Add(left);
-            _columns.Children.Add(right);
+            return;
         }
 
-        // HTML is a reading view: say so, and offer the real thing in the browser
-        if (kind == PreviewKind.Html)
-            _columns.Children.Insert(0, HtmlNote(after ?? before, path));
-        _columns.RowDefinitions = new RowDefinitions(kind == PreviewKind.Html ? "Auto,*" : "*");
-        foreach (Control child in _columns.Children.Skip(kind == PreviewKind.Html ? 1 : 0))
-            Grid.SetRow(child, kind == PreviewKind.Html ? 1 : 0);
+        _newSide = false;
+        Control left = Page(oldBlocks, removed, RemovedBackground, RemovedBar);
+        _newSide = true;
+        Control right = Page(newBlocks, added, AddedBackground, AddedBar);
+        Grid.SetColumn(right, 2);
+        _columns.Children.Add(left);
+        _columns.Children.Add(right);
     }
 
-    private static Control HtmlNote(byte[]? contents, string path)
+    private void OpenInBrowser()
     {
-        TextBlock note = new TextBlock
+        byte[]? contents = _after ?? _before;
+        if (contents == null)
+            return;
+        // A copy in its own folder, as files next to the page (styles, pictures) aren't there anyway
+        string folder = Path.Combine(Path.GetTempPath(), "Urras", "preview");
+        Directory.CreateDirectory(folder);
+        string copy = Path.Combine(folder, Path.GetFileName(_path));
+        File.WriteAllBytes(copy, contents);
+        SystemShell.OpenFile(copy);
+    }
+
+    private void OpenFullScreen()
+    {
+        MarkdownDiffView view = new MarkdownDiffView(false);
+        Window window = new Window
         {
-            Text = "Text and structure only: no styles, scripts or layout.",
-            Foreground = MutedBrush,
-            VerticalAlignment = VerticalAlignment.Center
+            Title = "Preview: " + Path.GetFileName(_path),
+            WindowState = WindowState.Maximized,
+            Content = view
         };
-        Button open = new Button { Content = "Open in browser", IsEnabled = contents != null, Classes = { "subtle" } };
-        ToolTip.SetTip(open, "Shows this version of the page in your browser, from a temporary copy");
-        open.Click += (_, _) =>
+        window.KeyDown += (_, e) =>
         {
-            // A copy in its own folder, as files next to the page (styles, pictures) aren't there anyway
-            string folder = Path.Combine(Path.GetTempPath(), "Urras", "preview");
-            Directory.CreateDirectory(folder);
-            string copy = Path.Combine(folder, Path.GetFileName(path));
-            File.WriteAllBytes(copy, contents!);
-            SystemShell.OpenFile(copy);
+            if (e.Key == Avalonia.Input.Key.Escape)
+                window.Close();
         };
-        DockPanel bar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-        DockPanel.SetDock(open, Dock.Right);
-        bar.Children.Add(open);
-        bar.Children.Add(note);
-        Grid.SetColumnSpan(bar, 3);
-        return bar;
+        view.Show(_before, _after, _path, _loader);
+        if (TopLevel.GetTopLevel(this) is Window owner)
+            window.Show(owner);
+        else
+            window.Show();
     }
 
     public void Clear()
     {
+        ++_generation;
         _columns.Children.Clear();
     }
 
@@ -105,7 +160,7 @@ public sealed class MarkdownDiffView : UserControl
         return bytes == null ? string.Empty : Encoding.UTF8.GetString(bytes);
     }
 
-    private static Control Page(List<MarkdownBlock> blocks, HashSet<int> changed, IBrush? background, IBrush? bar)
+    private Control Page(List<MarkdownBlock> blocks, HashSet<int> changed, IBrush? background, IBrush? bar)
     {
         StackPanel page = new StackPanel { Spacing = 8 };
         for (int i = 0; i < blocks.Count; ++i)
@@ -143,7 +198,7 @@ public sealed class MarkdownDiffView : UserControl
         return page;
     }
 
-    private static Control Block(MarkdownBlock block)
+    private Control Block(MarkdownBlock block)
     {
         switch (block.Kind)
         {
@@ -198,7 +253,7 @@ public sealed class MarkdownDiffView : UserControl
         }
     }
 
-    private static Control Rows(List<MarkdownBlock> blocks, int start, int end, HashSet<int> changed,
+    private Control Rows(List<MarkdownBlock> blocks, int start, int end, HashSet<int> changed,
                                 IBrush? background)
     {
         MarkdownBlock table = new MarkdownBlock
@@ -211,12 +266,12 @@ public sealed class MarkdownDiffView : UserControl
         return Table(table, marked, background, blocks[start].Level == 0);
     }
 
-    private static Control Table(MarkdownBlock block)
+    private Control Table(MarkdownBlock block)
     {
         return Table(block, new HashSet<int>(), null, true);
     }
 
-    private static Control Table(MarkdownBlock block, HashSet<int> marked, IBrush? background, bool header)
+    private Control Table(MarkdownBlock block, HashSet<int> marked, IBrush? background, bool header)
     {
         int columns = block.Rows.Max(row => row.Count);
         Grid grid = new Grid();
@@ -254,13 +309,19 @@ public sealed class MarkdownDiffView : UserControl
     }
 
     // Styled runs; links show their address on hover, images their alt text and address
-    private static TextBlock Paragraph(List<MarkdownSpan> spans, double size)
+    private TextBlock Paragraph(List<MarkdownSpan> spans, double size)
     {
         TextBlock text = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = size };
         InlineCollection inlines = new InlineCollection();
         List<string> links = new List<string>();
         foreach (MarkdownSpan span in spans)
         {
+            if (span.Style.HasFlag(SpanStyle.Image) && _loader != null && !string.IsNullOrEmpty(span.Url))
+            {
+                inlines.Add(new InlineUIContainer(Picture(span)));
+                continue;
+            }
+
             Run run = new Run(span.Style.HasFlag(SpanStyle.Image) ? "[image: " + span.Text + "]" : span.Text);
             if (span.Style.HasFlag(SpanStyle.Bold))
                 run.FontWeight = FontWeight.Bold;
@@ -289,6 +350,54 @@ public sealed class MarkdownDiffView : UserControl
         if (links.Count > 0)
             ToolTip.SetTip(text, string.Join("\n", links));
         return text;
+    }
+
+    // The picture once it has loaded; until then, or if it can't be shown (such as an SVG), its description
+    private Control Picture(MarkdownSpan span)
+    {
+        Border holder = new Border
+        {
+            Child = new TextBlock { Text = "[image: " + span.Text + "]", Foreground = LinkBrush }
+        };
+        ToolTip.SetTip(holder, span.Text + ": " + span.Url);
+        int generation = _generation;
+        bool newSide = _newSide;
+        ImageLoader loader = _loader!;
+        _ = LoadPictureAsync();
+        return holder;
+
+        async Task LoadPictureAsync()
+        {
+            byte[]? bytes;
+            try
+            {
+                bytes = await loader(span.Url!, newSide);
+            }
+            catch (Exception exception) when (exception is IOException or HttpRequestException or
+                                                  TaskCanceledException or UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            if (bytes == null || generation != _generation)
+                return;
+            try
+            {
+                using MemoryStream stream = new MemoryStream(bytes);
+                Avalonia.Media.Imaging.Bitmap bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+                holder.Child = new Image
+                {
+                    Source = bitmap,
+                    Width = Math.Min(span.Width ?? bitmap.Size.Width, MAX_IMAGE_WIDTH),
+                    Stretch = Stretch.Uniform
+                };
+            }
+            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or
+                                                  NotSupportedException or IOException)
+            {
+                // Not a picture Avalonia can draw; the description stays
+            }
+        }
     }
 
     private static IBrush Brush(string colour)
