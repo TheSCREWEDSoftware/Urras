@@ -4,8 +4,9 @@ GitHub Desktop signs in through the browser because GitHub knows it as a registe
 it is registered on github.com, and its client id is built in (`GITHUB_CLIENT_ID` in `DeviceSignIn.cs`), so GitHub
 sign-in goes through the browser with nothing to set up. A client id is public by design; there is no secret.
 
-The steps below are for registering your own copy, a GitHub Enterprise server or GitLab. Without a registration,
-Urras asks for a personal access token instead.
+The same goes for gitlab.com: Urras is registered there too and its application id is built in
+(`GITLAB_CLIENT_ID`). The steps below are for registering your own copy, a GitHub Enterprise server or your own
+GitLab server. Without a registration, Urras asks for a personal access token instead.
 
 ## GitHub
 
@@ -42,8 +43,9 @@ Browser sign-in uses GitLab's device flow, which gitlab.com has; a server of you
    GitLab refuses the sign-in ("invalid_scope") when either is missing. `api` also covers pushing and pulling
    over HTTPS, which Urras does with the same sign-in.
 7. Select **Save application**, then copy the **Application ID** (not the Secret).
-8. In Urras, paste it under Options > Accounts > GitLab application id and save, then add the GitLab account from
-   Accounts; the browser opens with a code to confirm.
+8. In Urras, paste it under Options > Accounts > GitLab application id and save (or set `GITLAB_CLIENT_ID` in
+   `DeviceSignIn.cs`, used for gitlab.com), then add the GitLab account from Accounts; the browser opens with a
+   code to confirm.
 
 If something is off, Urras names it in the status line, such as the Confidential box, the device authorization
 grant or a missing scope, and offers a personal access token instead.

@@ -12,9 +12,9 @@ public sealed record OAuthGrant(string AccessToken, string? RefreshToken, DateTi
 // OAuth device flow (RFC 8628): the user approves a code in the browser and Urras receives a token
 public sealed class DeviceSignIn
 {
-    // Urras's registered app ids, public by design so they ship in the app; GitLab's is empty until registered
+    // Urras's registered app ids, public by design so they ship in the app; GitLab's is for gitlab.com only
     public const string GITHUB_CLIENT_ID = "Ov23lioCGrtLNlpGcwJG";
-    public const string GITLAB_CLIENT_ID = "";
+    public const string GITLAB_CLIENT_ID = "414381b94f1cec54cb62db11feebc7803a7ab01ffedbef704798b25ca85a68b4";
 
     public const string GITHUB_SCOPES = "repo read:user notifications";
     public const string GITLAB_SCOPES = "api read_user";

@@ -52,6 +52,10 @@ public static class DeviceSignInTests
                     "Gitea has no device flow");
         Assert.True(DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.example.com", http, "x") != null,
                     "a self-managed GitLab with your own app id");
+        Assert.True(DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.com", http, null) != null,
+                    "gitlab.com signs in through the browser with Urras's own app");
+        Assert.True(DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.example.com", http, null) == null,
+                    "a self-managed GitLab still needs its own app id");
     }
 
     // GitLab: renews tokens at /oauth/token and says who is signed in at /api/v4/user
