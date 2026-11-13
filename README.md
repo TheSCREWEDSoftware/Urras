@@ -171,6 +171,11 @@ demo repository with branches, beside Urras's own projects.
            alt="Screenshot: Clone: an address or a page of it, the branch, where it goes, its name, progress"><br>
       Clone: an address or a page of it, the branch, where it goes, its name, progress
     </td>
+    <td width="50%">
+      <img src="docs/screenshots/repository-tabs.png"
+           alt="Screenshot: Repository tabs: each one keeps its page, commit, file and scroll"><br>
+      Repository tabs: each one keeps its page, commit, file and scroll
+    </td>
   </tr>
 </table>
 
