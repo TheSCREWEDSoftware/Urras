@@ -75,6 +75,36 @@ public static partial class Dialogs
         return await dialog.ShowDialog<bool>(owner);
     }
 
+    // One of several actions, the first in the accent colour, then Cancel; the index chosen, or -1 for Cancel
+    public static async Task<int> PickActionAsync(Window owner, string title, string message, params string[] actions)
+    {
+        Window dialog = CreateWindow(title);
+        StackPanel buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8
+        };
+        for (int index = 0; index < actions.Length; index++)
+        {
+            int chosen = index;
+            Button button = new Button { Content = actions[index], IsDefault = index == 0 };
+            if (index == 0)
+                button.Classes.Add("accent");
+            button.Click += (_, _) => dialog.Close(chosen);
+            buttons.Children.Add(button);
+        }
+
+        Button cancel = new Button { Content = "Cancel", IsCancel = true };
+        cancel.Click += (_, _) => dialog.Close(-1);
+        buttons.Children.Add(cancel);
+
+        StackPanel body = new StackPanel { Margin = new Thickness(BODY_MARGIN), Spacing = BODY_SPACING };
+        body.Children.Add(Paragraph(message));
+        dialog.Content = Framed(body, buttons);
+        return await dialog.ShowDialog<int?>(owner) ?? -1;
+    }
+
     public static async Task<string?> PromptAsync(Window owner, string title, string label, string initialText = "")
     {
         Window dialog = CreateWindow(title);

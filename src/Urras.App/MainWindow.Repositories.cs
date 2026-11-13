@@ -303,10 +303,25 @@ public partial class MainWindow
         string? root = await GitRepository.FindRootAsync(folder);
         if (root == null)
         {
-            bool create = await Dialogs.ConfirmAsync(this, "Not a repository",
-                                                     folder + " is not a Git repository. Create one here?",
-                                                     "Create repository");
-            if (!create)
+            // A folder holding repositories was most likely meant as "add all of these", not a new repository
+            List<string> inside = await Task.Run(() => RepositoryImport.FindUnder(folder));
+            if (inside.Count > 0)
+            {
+                string found = inside.Count == 1 ? "1 repository" : inside.Count + " repositories";
+                string are = inside.Count == 1 ? " is" : " are";
+                int choice = await Dialogs.PickActionAsync(this, "Not a repository",
+                                                           folder + " isn't a Git repository itself, but " + found +
+                                                           are + " inside it. Add them, or create a new " +
+                                                           "repository in this folder?",
+                                                           "Add " + found + "…", "Create repository here");
+                if (choice == 0)
+                    await AddFoundAsync(inside, string.Empty);
+                if (choice != 1)
+                    return;
+            }
+            else if (!await Dialogs.ConfirmAsync(this, "Not a repository",
+                                                 folder + " is not a Git repository. Create one here?",
+                                                 "Create repository"))
                 return;
 
             GitResult result = await GitRepository.InitAsync(folder);
