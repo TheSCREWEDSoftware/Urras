@@ -460,16 +460,6 @@ public sealed partial class GitRepository
             .ToList();
     }
 
-    public Task<GitResult> AddRemoteAsync(string name, string url)
-    {
-        return Run("remote", "add", name, url);
-    }
-
-    public Task<GitResult> SetRemoteUrlAsync(string name, string url)
-    {
-        return Run("remote", "set-url", name, url);
-    }
-
     // The remote whose address Git couldn't find, so only a deleted origin offers publishing again, not a fork's
     public async Task<string?> RemoteNamedInAsync(string message)
     {
