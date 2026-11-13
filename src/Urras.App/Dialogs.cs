@@ -7,7 +7,7 @@ using Urras.Core.Settings;
 namespace Urras.App;
 
 // Small modal dialogs built in code, since Avalonia has no built-in message box
-public static class Dialogs
+public static partial class Dialogs
 {
     private const double DIALOG_WIDTH = 480;
     // Room around a dialog's text and between its parts, and around the footer's buttons

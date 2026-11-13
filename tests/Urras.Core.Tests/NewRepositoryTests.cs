@@ -39,6 +39,63 @@ public static class NewRepositoryTests
         Assert.Equal("b", CloneAddress.FolderName("git@gitlab.com:a/b.git"), "from SSH");
     }
 
+    public static void ReadsRepositoryPagesAsCloneAddresses()
+    {
+        CloneSource tree = CloneAddress.Parse("https://github.com/TheSCREWEDSoftware/azerothcore-wotlk/tree/master");
+        Assert.Equal("https://github.com/TheSCREWEDSoftware/azerothcore-wotlk", tree.Url, "repository of a page");
+        Assert.Equal("master", string.Join(",", tree.BranchCandidates), "branch of the page");
+        Assert.Equal("azerothcore-wotlk", CloneAddress.FolderName(tree.Url), "folder from the repository");
+
+        CloneSource file = CloneAddress.Parse("https://github.com/a/b/blob/fix/x/src/main.cpp?plain=1#L4");
+        Assert.Equal("https://github.com/a/b", file.Url, "file page");
+        Assert.Equal("fix/x/src/main.cpp,fix/x/src,fix/x,fix", string.Join(",", file.BranchCandidates),
+                     "every length, longest first");
+
+        CloneSource gitlab = CloneAddress.Parse("https://gitlab.com/group/sub/game/-/tree/dev/docs");
+        Assert.Equal("https://gitlab.com/group/sub/game", gitlab.Url, "GitLab nested groups");
+        Assert.Equal("dev/docs,dev", string.Join(",", gitlab.BranchCandidates), "GitLab branch");
+
+        CloneSource gitea = CloneAddress.Parse("https://git.example.org/a/b/src/branch/main/README.md");
+        Assert.Equal("https://git.example.org/a/b", gitea.Url, "Gitea");
+        Assert.Equal("main", gitea.BranchCandidates[^1], "Gitea branch after src/branch");
+
+        Assert.Equal("https://github.com/a/b", CloneAddress.Resolve("https://github.com/a/b/"), "trailing slash");
+        Assert.Equal("https://github.com/a/b", CloneAddress.Resolve("https://github.com/a/b/pulls"), "other page");
+        Assert.Equal("https://github.com/a/b.git", CloneAddress.Resolve("https://github.com/a/b.git"), "kept");
+        Assert.Equal(0, CloneAddress.Parse("https://github.com/a/b").BranchCandidates.Count, "no branch");
+    }
+
+    public static void MeasuresAWholeClone()
+    {
+        Assert.Equal(5.0, CloneProgress.Overall(new GitProgress("Receiving objects", 0)), "receiving starts");
+        Assert.Equal(80.0, CloneProgress.Overall(new GitProgress("Resolving deltas", 0)), "resolving starts");
+        Assert.Equal(100.0, CloneProgress.Overall(new GitProgress("Updating files", 100)), "done");
+        Assert.Equal(null, CloneProgress.Overall(new GitProgress("Enumerating objects", 50)), "not a clone step");
+    }
+
+    public static async Task ClonesTheBranchAPageShowed()
+    {
+        using TempRepository source = await TempRepository.CreateAsync();
+        source.Write("a.txt", "a");
+        await source.CommitAllAsync("first");
+        Assert.Success(await GitRunner.RunAsync(source.Path, "branch", "feature/x"), "branch");
+        string target = Path.Combine(Path.GetTempPath(), "urras-clone-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            string? branch = await GitRepository.ChooseBranchAsync(source.Path,
+                                                                   new[] { "feature/x/src", "feature/x", "feature" });
+            Assert.Equal("feature/x", branch, "the candidate the remote has");
+            List<string> lines = new List<string>();
+            Assert.Success(await GitRepository.CloneAsync(source.Path, target, branch, lines.Add), "clone");
+            Assert.Equal("feature/x", (await GitRunner.RunAsync(target, "branch", "--show-current")).Output.Trim(),
+                         "checked out");
+        }
+        finally
+        {
+            TestFolders.Delete(target);
+        }
+    }
+
     public static async Task ReadsGitHubsTemplates()
     {
         GitHubClient client = new GitHubClient(new HttpClient(new FakeTemplates()), null);

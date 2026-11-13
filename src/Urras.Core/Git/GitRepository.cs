@@ -32,18 +32,45 @@ public sealed partial class GitRepository
         return await GitRunner.RunAsync(folder, "init");
     }
 
-    public static async Task<GitResult> CloneAsync(string url, string targetFolder)
+    // Clones into targetFolder, on branch when given; progress gets Git's progress lines as they come
+    public static async Task<GitResult> CloneAsync(string url, string targetFolder, string? branch = null,
+                                                   Action<string>? progress = null,
+                                                   CancellationToken cancellationToken = default)
     {
         string? parent = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(targetFolder));
         if (parent == null)
             return new GitResult(-1, string.Empty, "Invalid target folder: " + targetFolder);
 
-        // A URL starting with - would be read as an option (such as --upload-pack, which runs a program)
-        if (url.TrimStart().StartsWith('-'))
+        // A URL or branch starting with - would be read as an option (such as --upload-pack, which runs a program)
+        if (url.TrimStart().StartsWith('-') || branch?.StartsWith('-') == true)
             return new GitResult(-1, string.Empty, "That doesn't look like a repository address: " + url);
 
         Directory.CreateDirectory(parent);
-        return await GitRunner.RunAsync(parent, "clone", "--progress", "--", url.Trim(), targetFolder);
+        List<string> arguments = new List<string> { "clone", "--progress" };
+        if (!string.IsNullOrEmpty(branch))
+            arguments.AddRange(new[] { "--branch", branch });
+        arguments.AddRange(new[] { "--", url.Trim(), targetFolder });
+        return await GitRunner.RunAsync(parent, arguments, null, cancellationToken, false, null, progress);
+    }
+
+    // The first candidate the remote has as a branch or tag; when the remote can't be asked, the shortest
+    public static async Task<string?> ChooseBranchAsync(string url, IReadOnlyList<string> candidates,
+                                                        CancellationToken cancellationToken = default)
+    {
+        if (candidates.Count == 0 || url.TrimStart().StartsWith('-'))
+            return null;
+
+        GitResult result = await GitRunner.RunAsync(System.IO.Path.GetTempPath(),
+                                                    new[] { "ls-remote", "--heads", "--tags", "--", url.Trim() },
+                                                    null, cancellationToken, true);
+        if (!result.Success)
+            return candidates[^1];
+
+        HashSet<string> names = result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(line => line.Split('\t').Last().Trim())
+                                      .Select(name => name.Replace("refs/heads/", "").Replace("refs/tags/", ""))
+                                      .ToHashSet(StringComparer.Ordinal);
+        return candidates.FirstOrDefault(names.Contains);
     }
 
     public async Task<RepositoryStatus> GetStatusAsync()

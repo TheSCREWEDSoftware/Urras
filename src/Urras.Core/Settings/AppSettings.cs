@@ -209,6 +209,9 @@ public sealed class AppSettings
     // Minutes between background fetches of every repository; 0 turns them off
     public int AutoFetchMinutes { get; set; } = DEFAULT_AUTO_FETCH_MINUTES;
 
+    // The folder the last clone went into, offered for the next one
+    public string? CloneFolder { get; set; }
+
     // Folder groups the user collapsed in the automatic layout
     public List<string> CollapsedFolders { get; set; } = new List<string>();
 
