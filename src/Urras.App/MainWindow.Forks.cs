@@ -213,14 +213,30 @@ public partial class MainWindow
 
     private void UpdateViewOnlineButton()
     {
-        RemoteIdentity? target = _repository == null ? null : OnlineTargets(_repository.Path).Target;
+        (RemoteIdentity? target, RemoteIdentity? other) = _repository == null
+            ? (null, null)
+            : OnlineTargets(_repository.Path);
         ViewOnlineButton.IsVisible = target?.WebUrl != null;
-        if (target == null)
+        if (target == null || _repository == null)
             return;
 
-        ViewOnlineButton.Content = "View on " + PlatformNameFor(target.Host);
-        ToolTip.SetTip(ViewOnlineButton, "Opens " + FullName(target) + " in the browser. For a fork, Repository " +
-                                         "settings chooses between it and its parent.");
+        string platform = PlatformNameFor(target.Host);
+        if (other == null)
+        {
+            ViewOnlineButton.Content = "View on " + platform;
+            ToolTip.SetTip(ViewOnlineButton, "Opens " + FullName(target) + " in the browser.");
+            return;
+        }
+
+        // A fork names which side it opens, and the other one, so it's clear where the button goes
+        RemoteIdentity.ReadAll(_repository.Path).TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin);
+        bool fork = target.Key == origin?.Key;
+        ViewOnlineButton.Content = (fork ? "View fork on " : "View original on ") + platform;
+        ToolTip.SetTip(ViewOnlineButton, fork
+            ? "Opens your fork, " + FullName(target) + ". The original is " + FullName(other) + "; Repository " +
+              "settings can make this button open it instead."
+            : "Opens the original, " + FullName(target) + ". Your fork is " + FullName(other) + "; Repository " +
+              "settings can make this button open it instead.");
     }
 
     private async Task ViewOnlineAsync(string? path, bool other)
