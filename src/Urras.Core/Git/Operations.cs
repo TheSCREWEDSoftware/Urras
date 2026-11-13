@@ -77,6 +77,6 @@ public sealed class StashInfo
 
     public override string ToString()
     {
-        return Reference + "  " + Message + "  (" + Date.LocalDateTime.ToString("yyyy-MM-dd HH:mm") + ")";
+        return Reference + "  " + Message + "  (" + Urras.Core.Settings.DisplayFormats.DateAndTime(Date) + ")";
     }
 }

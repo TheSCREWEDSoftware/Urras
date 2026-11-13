@@ -104,6 +104,7 @@ public sealed class CommitInfo
     public string Subject { get; }
 
     public string DateText => Urras.Core.Settings.DisplayFormats.DateAndTime(Date);
+    public string DateTip => Urras.Core.Settings.DisplayFormats.Full(Date, DateTimeOffset.Now);
 
     // On the current branch but on no remote yet, marked "Not pushed" in History
     public bool IsUnpushed { get; set; }

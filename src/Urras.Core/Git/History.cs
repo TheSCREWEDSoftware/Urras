@@ -102,7 +102,7 @@ public sealed class ReflogEntry
 
     public override string ToString()
     {
-        return ShortHash + "  " + Selector + "  " + Action + "  (" + Date.LocalDateTime.ToString("yyyy-MM-dd HH:mm") +
-               ")";
+        return ShortHash + "  " + Selector + "  " + Action + "  (" +
+               Urras.Core.Settings.DisplayFormats.DateAndTime(Date) + ")";
     }
 }

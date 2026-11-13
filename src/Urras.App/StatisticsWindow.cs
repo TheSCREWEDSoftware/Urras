@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Urras.Core.Git;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -64,7 +65,7 @@ public sealed class StatisticsWindow : Window
             return;
         }
 
-        string span = stats.First!.Value.ToString("yyyy-MM-dd") + " to " + stats.Last!.Value.ToString("yyyy-MM-dd");
+        string span = DisplayFormats.Date(stats.First!.Value) + " to " + DisplayFormats.Date(stats.Last!.Value);
         _content.Children.Add(new TextBlock
         {
             Text = $"{stats.Commits:N0} commits by {stats.Contributors.Count} people, {span}.  " +

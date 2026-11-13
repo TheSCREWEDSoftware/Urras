@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Urras.Core.Settings;
 
@@ -52,6 +53,14 @@ public partial class MainWindow
     }
 
     private const string MAIN_CLASS = "main-window";
+    // The resource the History rows and title take the date column's width from
+    private const string DATE_COLUMN_WIDTH = "Urras.HistoryDateWidth";
+    // The space between columns, plus a little so the last digit never touches the edge
+    private const double DATE_COLUMN_ROOM = 20;
+    private const double MIN_DATE_COLUMN = 120;
+    // A wide date: two-digit day and month, a long month name, a late hour
+    private static readonly DateTimeOffset DATE_COLUMN_SAMPLE = new DateTimeOffset(2026, 12, 28, 22, 58, 48,
+                                                                                    TimeSpan.Zero);
 
     // Adds or removes an application style, so a setting applies to every window, open or not
     private static void UseStyle<T>(Styles styles, bool wanted) where T : Style, new()
@@ -66,6 +75,23 @@ public partial class MainWindow
         }
     }
 
+    // The date column is titled with the chosen format and made wide enough for it at the current text size
+    private void ShowDateColumn()
+    {
+        HistoryDateHeader.Text = DisplayFormats.Heading();
+        string widest = DisplayFormats.DateAndTime(DATE_COLUMN_SAMPLE);
+        double width = Math.Max(TextWidth(widest), TextWidth(HistoryDateHeader.Text)) + DATE_COLUMN_ROOM;
+        Resources[DATE_COLUMN_WIDTH] = new GridLength(Math.Max(MIN_DATE_COLUMN, Math.Ceiling(width)));
+    }
+
+    private double TextWidth(string text)
+    {
+        FormattedText formatted = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture,
+                                                    FlowDirection.LeftToRight, new Typeface(FontFamily), FontSize,
+                                                    null);
+        return formatted.Width;
+    }
+
     // Formats, tab size, theme and the summary counter, at startup and after Options is saved
     private void ApplyPreferences()
     {
@@ -73,6 +99,7 @@ public partial class MainWindow
                                                                                         : DisplayFormats.DEFAULT_DATE;
         DisplayFormats.TimeFormat = DisplayFormats.Times.Contains(_settings.TimeFormat) ? _settings.TimeFormat
                                                                                         : DisplayFormats.DEFAULT_TIME;
+        ShowDateColumn();
         DiffRow.TabWidth = Math.Clamp(_settings.TabSize, 1, 16);
         if (Application.Current != null)
         {

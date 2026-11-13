@@ -181,6 +181,8 @@
   </Window.Styles>
 
   <Window.Resources>
+    <!-- History's date column; MainWindow sizes it for the chosen date format -->
+    <GridLength x:Key="Urras.HistoryDateWidth">150</GridLength>
     <!-- Diff row templates; MainWindow picks one by the diff view setting -->
     <DataTemplate x:Key="RawDiffTemplate">
       <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" Classes="mono" Margin="6,0" />
@@ -621,11 +623,18 @@ Esc clears it" />
             <!-- Column titles; the padding matches the list items below so the columns line up -->
             <Border Grid.Row="1" Margin="0,6,0,0" Padding="8,4" Background="{DynamicResource Urras.Raised}"
                     CornerRadius="6">
-              <Grid ColumnDefinitions="*,170,80,150">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="170" />
+                  <ColumnDefinition Width="80" />
+                  <ColumnDefinition Width="{DynamicResource Urras.HistoryDateWidth}" />
+                </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Classes="columnHeader" Text="Graph and summary" />
                 <TextBlock Grid.Column="1" Classes="columnHeader" Text="Username" Margin="8,0,0,0" />
                 <TextBlock Grid.Column="2" Classes="columnHeader" Text="Commit" Margin="8,0,0,0" />
-                <TextBlock Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM" Margin="8,0,0,0" />
+                <TextBlock x:Name="HistoryDateHeader" Grid.Column="3" Classes="columnHeader" Text="YYYY-MM-DD HH:MM"
+                           Margin="8,0,0,0" />
               </Grid>
             </Border>
             <TextBlock x:Name="HistoryHint" Grid.Row="2" Classes="hint" Text="No commits yet" ZIndex="1" />
@@ -636,7 +645,13 @@ Esc clears it" />
                      ToolTip.Tip="Select two commits (Ctrl+click) to compare them">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,170,80,150" Height="28">
+                  <Grid Height="28">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="170" />
+                      <ColumnDefinition Width="80" />
+                      <ColumnDefinition Width="{DynamicResource Urras.HistoryDateWidth}" />
+                    </Grid.ColumnDefinitions>
                     <DockPanel Grid.Column="0">
                       <!-- The graph, with the author's picture inside each commit's ring -->
                       <Panel DockPanel.Dock="Left" Margin="0,0,4,0">
@@ -693,7 +708,7 @@ Esc clears it" />
                                Margin="8,0,0,0" VerticalAlignment="Center" Tag="commit"
                                ToolTip.Tip="Open this commit on the website" />
                     <TextBlock Grid.Column="3" Text="{Binding DateText}" Opacity="0.7" Margin="8,0,0,0"
-                               VerticalAlignment="Center" />
+                               VerticalAlignment="Center" ToolTip.Tip="{Binding DateTip}" />
                   </Grid>
                 </DataTemplate>
               </ListBox.ItemTemplate>

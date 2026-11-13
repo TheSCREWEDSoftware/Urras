@@ -87,6 +87,23 @@ public static class DisplayFormats
         return date.LocalDateTime.ToString(DateFormat + " " + TimeFormat, CultureInfo.InvariantCulture);
     }
 
+    // The whole moment for a tooltip: "Friday, 13-11-2026 01:59:12 (UTC+00:00), 3 hours ago"
+    public static string Full(DateTimeOffset date, DateTimeOffset now)
+    {
+        string time = TimeFormat.Contains(":ss", StringComparison.Ordinal) ? TimeFormat
+                                                                            : TimeFormat.Replace(":mm", ":mm:ss");
+        DateTime local = date.LocalDateTime;
+        return local.ToString("dddd, " + DateFormat + " " + time, CultureInfo.InvariantCulture) + " (UTC" +
+               date.ToLocalTime().ToString("zzz", CultureInfo.InvariantCulture) + "), " +
+               RelativeTime.Describe(date, now);
+    }
+
+    // The column title showing the chosen format, such as "DD-MM-YYYY HH:MM:SS"
+    public static string Heading()
+    {
+        return (DateFormat + " " + TimeFormat).Replace("tt", "AM").ToUpperInvariant();
+    }
+
     // "2026-11-08 (yyyy-MM-dd)", for the options list
     public static string Example(string format)
     {

@@ -151,9 +151,11 @@ public partial class MainWindow
     // Commits, their labels (branches, tags) and stashes; a change in any of them redraws the history
     private static string HistorySignature(IEnumerable<CommitInfo> history)
     {
-        return string.Join("\n", history.Select(commit => commit.Hash + "\t" + commit.Refs + "\t" +
-                                                          commit.Stash?.Reference + "\t" + commit.IsUnpushed +
-                                                          commit.IsLocalOnly));
+        // The date format is part of it, so rows show a format chosen in Options straight away
+        string format = DisplayFormats.DateFormat + DisplayFormats.TimeFormat + "\n";
+        return format + string.Join("\n", history.Select(commit => commit.Hash + "\t" + commit.Refs + "\t" +
+                                                                   commit.Stash?.Reference + "\t" +
+                                                                   commit.IsUnpushed + commit.IsLocalOnly));
     }
 
     private void UpdateHints()

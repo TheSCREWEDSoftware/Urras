@@ -13,7 +13,7 @@ public sealed record LfsLock(string Id, string Path, string Owner, DateTimeOffse
 {
     public override string ToString()
     {
-        return Path + "  ·  locked by " + Owner + "  ·  " + LockedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm");
+        return Path + "  ·  locked by " + Owner + "  ·  " + Urras.Core.Settings.DisplayFormats.DateAndTime(LockedAt);
     }
 }
 

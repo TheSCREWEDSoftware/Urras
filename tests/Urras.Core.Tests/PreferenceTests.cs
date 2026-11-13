@@ -17,6 +17,12 @@ public static class PreferenceTests
             Assert.Equal("08/11/2026 2:30 PM", DisplayFormats.DateAndTime(date), "chosen formats");
             Assert.Equal("08/11/2026", DisplayFormats.Date(date), "date only");
             Assert.Equal("08/11/2026  (dd/MM/yyyy)", DisplayFormats.Example("dd/MM/yyyy"), "example for the list");
+            Assert.Equal("DD/MM/YYYY H:MM AM", DisplayFormats.Heading(), "column title");
+            Assert.True(DisplayFormats.Full(date, date.AddHours(3))
+                                      .StartsWith("Sunday, 08/11/2026 2:30:00 PM (UTC", StringComparison.Ordinal),
+                        "tooltip in the chosen format, with seconds");
+            Assert.True(DisplayFormats.Full(date, date.AddHours(3))
+                                      .EndsWith("), 3 hours ago", StringComparison.Ordinal), "and how long ago");
         }
         finally
         {
