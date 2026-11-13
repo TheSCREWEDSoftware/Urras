@@ -330,7 +330,8 @@
 
     <!-- Repository tabs, shown once two or more repositories are open -->
     <Border x:Name="RepositoryTabsBar" DockPanel.Dock="Top" Padding="12,2,12,0" IsVisible="False">
-      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+      <ScrollViewer x:Name="RepositoryTabsScroll" HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Disabled">
         <StackPanel x:Name="RepositoryTabsPanel" Orientation="Horizontal" Spacing="2" />
       </ScrollViewer>
     </Border>
@@ -419,9 +420,11 @@
           <Button x:Name="StashMenuButton" Content="Stash ▾" Classes="subtle"
                   ToolTip.Tip="Stash changes, or manage stashes" />
         </StackPanel>
-        <!-- Pinned repositories and folders, one click away -->
-        <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                      Margin="12,0,12,0">
+        <!-- Pinned repositories and folders, one click away; the wheel scrolls them and » lists those cut off -->
+        <Button x:Name="PinnedMoreButton" DockPanel.Dock="Right" Content="»" Classes="subtle" IsVisible="False"
+                Margin="0,0,12,0" ToolTip.Tip="Every pinned repository and folder" />
+        <ScrollViewer x:Name="PinnedScroll" HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Disabled" Margin="12,0,4,0">
           <StackPanel x:Name="PinnedBar" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" />
         </ScrollViewer>
         </DockPanel>

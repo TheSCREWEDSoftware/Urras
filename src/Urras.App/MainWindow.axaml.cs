@@ -71,6 +71,7 @@ public partial class MainWindow : Window
         InitializeFileMenu();
         InitializeExit();
         InitializeMissingPanel();
+        InitializePinnedBar();
         InitializeWorktreeSwitcher();
         RefreshButton.Click += async (_, _) => await RefreshAsync();
 
