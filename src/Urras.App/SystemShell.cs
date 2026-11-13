@@ -112,11 +112,17 @@ public static class SystemShell
                   Urras.Core.Settings.ProgramChoice.CUSTOM }
         : new[] { DEFAULT, Urras.Core.Settings.ProgramChoice.CUSTOM };
 
+    // Editors that open files only: given a folder, Notepad++ opens every file in it
+    private static readonly HashSet<string> FileOnlyEditors = new HashSet<string> { "Notepad++" };
+
     // Opens a folder or file in the chosen editor
     public static string? OpenInEditor(Urras.Core.Settings.ProgramChoice editor, string path)
     {
         if (editor.IsCustom)
             return StartCustom(editor, path);
+        if (FileOnlyEditors.Contains(editor.Name) && Directory.Exists(path))
+            return editor.Name + " opens files, not whole repositories: right-click a file and choose Open in " +
+                   editor.Name + ", or pick another editor for repositories in Options.";
 
         (string Name, string Windows, string Unix, bool Script) known =
             KnownEditors.FirstOrDefault(item => item.Name == editor.Name);
