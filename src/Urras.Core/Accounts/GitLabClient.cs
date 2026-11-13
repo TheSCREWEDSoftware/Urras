@@ -182,6 +182,23 @@ public sealed class GitLabClient : PlatformClient
         return "merge-requests/" + number + "/head";
     }
 
+    // The jobs of the pipelines that ran on the commit
+    public override async Task<CommitChecks?> GetChecksAsync(string owner, string repository, string hash)
+    {
+        string path = Project(owner, repository) + "/repository/commits/" + hash + "/statuses?per_page=" + PAGE_SIZE;
+        using JsonDocument result = await GetAsync(path);
+        IEnumerable<CheckState> states = result.RootElement.EnumerateArray().Select(job =>
+            Text(job, "status") switch
+            {
+                "success" => CheckState.Passed,
+                // A job allowed to fail doesn't fail the pipeline
+                "failed" => Flag(job, "allow_failure") ? CheckState.Passed : CheckState.Failed,
+                "canceled" or "skipped" or "manual" => CheckState.Skipped,
+                _ => CheckState.Running
+            }).ToList();
+        return CommitChecks.Count(states, WebUrl + "/" + owner + "/" + repository + "/-/commit/" + hash + "/pipelines");
+    }
+
     private static string Project(string owner, string repository)
     {
         return "/projects/" + Uri.EscapeDataString(owner + "/" + repository);

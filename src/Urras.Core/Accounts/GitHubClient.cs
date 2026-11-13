@@ -182,6 +182,44 @@ public sealed class GitHubClient : PlatformClient
         }
     }
 
+    // Check runs (GitHub Actions and apps) and the older commit statuses together
+    public override async Task<CommitChecks?> GetChecksAsync(string owner, string repository, string hash)
+    {
+        string commit = "/repos/" + owner + "/" + repository + "/commits/" + hash;
+        List<CheckState> states = new List<CheckState>();
+        using (JsonDocument runs = await GetAsync(commit + "/check-runs?per_page=" + PAGE_SIZE))
+        {
+            if (runs.RootElement.TryGetProperty("check_runs", out JsonElement list))
+                states.AddRange(list.EnumerateArray().Select(run => Text(run, "status") != "completed"
+                                                                 ? CheckState.Running
+                                                                 : RunState(Text(run, "conclusion"))));
+        }
+
+        using (JsonDocument combined = await GetAsync(commit + "/status"))
+        {
+            if (combined.RootElement.TryGetProperty("statuses", out JsonElement list))
+                states.AddRange(list.EnumerateArray().Select(status => Text(status, "state") switch
+                {
+                    "success" => CheckState.Passed,
+                    "pending" => CheckState.Running,
+                    _ => CheckState.Failed
+                }));
+        }
+
+        return CommitChecks.Count(states, WebUrl + "/" + owner + "/" + repository + "/commit/" + hash);
+    }
+
+    // Cancelled and stale runs are left out of the verdict, as GitHub's own summary does
+    private static CheckState RunState(string? conclusion)
+    {
+        return conclusion switch
+        {
+            "success" or "neutral" => CheckState.Passed,
+            "skipped" or "cancelled" or "stale" => CheckState.Skipped,
+            _ => CheckState.Failed
+        };
+    }
+
     public override async Task<List<PlatformNotification>> GetNotificationsAsync()
     {
         using JsonDocument result = await GetAsync("/notifications?per_page=" + PAGE_SIZE);

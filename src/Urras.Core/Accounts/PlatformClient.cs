@@ -80,6 +80,12 @@ public abstract class PlatformClient
         return Task.FromResult<PlatformUser?>(null);
     }
 
+    // CI results for a commit, or null when the platform has none for it or doesn't report them
+    public virtual Task<CommitChecks?> GetChecksAsync(string owner, string repository, string hash)
+    {
+        return Task.FromResult<CommitChecks?>(null);
+    }
+
     public virtual Task<List<PlatformNotification>> GetNotificationsAsync()
     {
         return Task.FromResult(new List<PlatformNotification>());

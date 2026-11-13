@@ -214,4 +214,40 @@ public static class PlatformTests
                 TestFolders.Delete(clonePath);
         }
     }
+
+    public static async Task ReadsCiChecksForACommit()
+    {
+        (GitHubClient github, _) = Create(http => new GitHubClient(http, "t"), new Dictionary<string, string>
+        {
+            ["/repos/ryan/game/commits/abc/check-runs"] =
+                "{\"check_runs\":[{\"status\":\"completed\",\"conclusion\":\"success\"}," +
+                "{\"status\":\"completed\",\"conclusion\":\"failure\"}," +
+                "{\"status\":\"in_progress\",\"conclusion\":null}," +
+                "{\"status\":\"completed\",\"conclusion\":\"skipped\"}]}",
+            ["/repos/ryan/game/commits/abc/status"] = "{\"statuses\":[{\"state\":\"success\"}]}"
+        });
+        CommitChecks checks = (await github.GetChecksAsync("ryan", "game", "abc"))!;
+        Assert.Equal((2, 1, 1, 1), (checks.Passed, checks.Failed, checks.Running, checks.Skipped),
+                     "check runs and statuses together");
+        Assert.Equal(CheckState.Failed, checks.State, "a failure decides");
+        Assert.Equal("1 of 5 checks failed", checks.Summary, "summary");
+        Assert.Equal("https://github.com/ryan/game/commit/abc", checks.WebUrl, "where to read more");
+
+        (GitLabClient gitlab, _) = Create(http => new GitLabClient(http, "t", "https://gitlab.com/api/v4"),
+                                          new Dictionary<string, string>
+        {
+            ["/api/v4/projects/ryan%2Fgame/repository/commits/abc/statuses"] =
+                "[{\"status\":\"success\"},{\"status\":\"failed\",\"allow_failure\":true}," +
+                "{\"status\":\"manual\"}]"
+        });
+        CommitChecks pipeline = (await gitlab.GetChecksAsync("ryan", "game", "abc"))!;
+        Assert.Equal(CheckState.Passed, pipeline.State, "a job allowed to fail doesn't fail it");
+        Assert.Equal("2 checks passed, 1 skipped", pipeline.Summary, "summary");
+        Assert.Equal("https://gitlab.com/ryan/game/-/commit/abc/pipelines", pipeline.WebUrl, "pipelines page");
+
+        Assert.True(CommitChecks.Count(Array.Empty<CheckState>(), "x") == null, "no CI, nothing shown");
+        Assert.Equal("3 of 4 checks running",
+                     CommitChecks.Count(new[] { CheckState.Running, CheckState.Running, CheckState.Running,
+                                                CheckState.Passed }, "x")!.Summary, "still going");
+    }
 }
