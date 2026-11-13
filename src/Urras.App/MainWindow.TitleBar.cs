@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Urras.Core.Settings;
 
 namespace Urras.App;
 
@@ -74,11 +75,24 @@ public partial class MainWindow
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     }
 
-    // "cnc-exoduscommunity.github.io - Urras" in the title bar and the taskbar
-    private void ShowWindowTitle(string? repository)
+    // "AC 335 (GitHub) - Urras": where the repository lives, so similar names on different hosts stand apart
+    private void ShowWindowTitle(string? repository, string? path = null)
     {
-        string title = string.IsNullOrEmpty(repository) ? "Urras" : repository + " - Urras";
+        string where = path == null ? string.Empty : " (" + WhereItLives(path) + ")";
+        string title = string.IsNullOrEmpty(repository) ? "Urras" : repository + where + " - Urras";
         Title = title;
         WindowTitle.Text = title;
+    }
+
+    // GitHub, GitLab, Bitbucket or another host from the origin remote (or the first), or "Local" with none
+    private string WhereItLives(string path)
+    {
+        Dictionary<string, RemoteIdentity> remotes = RemoteIdentity.ReadAll(path);
+        if (remotes.Count == 0)
+            return "Local";
+        RemoteIdentity remote = remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin)
+            ? origin
+            : remotes.Values.First();
+        return PlatformNameFor(remote.Host);
     }
 }

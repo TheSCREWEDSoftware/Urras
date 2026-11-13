@@ -224,7 +224,7 @@ public partial class MainWindow : Window
             try
             {
                 RepositoryTitle.Text = status.IsDetached ? _repository.Name + " (detached HEAD)" : _repository.Name;
-                ShowWindowTitle(_repository.Name);
+                ShowWindowTitle(_repository.Name, _repository.Path);
                 ToolTip.SetTip(RepositoryTitle, _repository.Path);
                 ShowFileLists();
 
