@@ -148,9 +148,18 @@ public sealed class DeviceSignIn
         {
             using HttpResponseMessage response = await _http.SendAsync(request);
             string text = await response.Content.ReadAsStringAsync();
-            return JsonDocument.Parse(text.Length == 0 ? "{}" : text);
+            try
+            {
+                return JsonDocument.Parse(text.Length == 0 ? "{}" : text);
+            }
+            catch (JsonException)
+            {
+                // A web page instead of an answer: the server has no device sign-in at this address
+                throw new PlatformException(new Uri(url).Host + " doesn't offer browser sign-in (answered " +
+                                            (int)response.StatusCode + "); GitLab needs version 17.3 or later");
+            }
         }
-        catch (Exception exception) when (exception is HttpRequestException or JsonException)
+        catch (HttpRequestException exception)
         {
             throw new PlatformException("Couldn't reach " + new Uri(url).Host + ": " + exception.Message);
         }
@@ -167,9 +176,18 @@ public sealed class DeviceSignIn
         return new OAuthGrant(token, Text(root, "refresh_token"), expires);
     }
 
+    // The platform's reason, with what to change for the mistakes registering an application usually makes
     private static string? Error(JsonElement root)
     {
-        return Text(root, "error_description") ?? Text(root, "error");
+        string? reason = Text(root, "error_description") ?? Text(root, "error");
+        string? fix = Text(root, "error") switch
+        {
+            "invalid_client" => "check the application id; on GitLab the application must not be Confidential",
+            "invalid_scope" => "on GitLab, tick the api and read_user scopes on the application",
+            "unauthorized_client" => "on GitHub, tick Enable Device Flow on the OAuth app",
+            _ => null
+        };
+        return fix == null ? reason : reason + " (" + fix + ")";
     }
 
     private static string? Text(JsonElement element, string name)

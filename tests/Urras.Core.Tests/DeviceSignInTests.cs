@@ -115,4 +115,45 @@ public static class DeviceSignInTests
             File.Delete(settingsFile);
         }
     }
+
+    // Answers every request with the same body and status
+    private sealed class FakeAnswer(HttpStatusCode status, string body, string type) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+                                                               CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, Encoding.UTF8, type)
+            });
+        }
+    }
+
+    public static async Task SaysWhatToFixWhenGitLabRefuses()
+    {
+        string confidential = await StartErrorAsync(HttpStatusCode.Unauthorized,
+                                                    "{\"error\":\"invalid_client\",\"error_description\":\"Client " +
+                                                    "authentication failed\"}", "application/json");
+        Assert.True(confidential.Contains("must not be Confidential"), "an application marked Confidential");
+        string scopes = await StartErrorAsync(HttpStatusCode.BadRequest, "{\"error\":\"invalid_scope\"}",
+                                              "application/json");
+        Assert.True(scopes.Contains("api and read_user"), "missing scopes");
+        string old = await StartErrorAsync(HttpStatusCode.NotFound, "<html>Not found</html>", "text/html");
+        Assert.True(old.Contains("doesn't offer browser sign-in") && old.Contains("404"), "a GitLab too old");
+    }
+
+    private static async Task<string> StartErrorAsync(HttpStatusCode status, string body, string type)
+    {
+        DeviceSignIn flow = DeviceSignIn.For(AccountKind.GitLab, "https://gitlab.com",
+                                             new HttpClient(new FakeAnswer(status, body, type)), "lab-app")!;
+        try
+        {
+            await flow.StartAsync();
+            return "no error";
+        }
+        catch (PlatformException exception)
+        {
+            return exception.Message;
+        }
+    }
 }
