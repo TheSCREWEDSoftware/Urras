@@ -184,6 +184,8 @@ public sealed class CodeColourer
             return SyntaxKind.Emphasis;
         if (Is("markup.inline.raw") || Is("markup.fenced_code") || Is("markup.raw"))
             return SyntaxKind.Code;
+        if (Is("entity.name.function") || Is("support.function") || Is("meta.function-call.name"))
+            return SyntaxKind.Function;
         if (Is("keyword.type") || Is("storage.type") || Is("entity.name.type") || Is("entity.name.class") ||
             Is("support.type") || Is("support.class"))
             return SyntaxKind.Type;

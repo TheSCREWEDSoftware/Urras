@@ -14,7 +14,9 @@ public enum SyntaxKind : byte
     Attribute,
     Heading,
     Emphasis,
-    Code
+    Code,
+    // Function and method names, which VS Code's grammars find (Urras's own rules don't)
+    Function
 }
 
 public enum SyntaxFamily

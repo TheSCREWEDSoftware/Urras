@@ -49,6 +49,7 @@ public static class ThemeColours
     public const string SYNTAX_PREPROCESSOR = "SyntaxPreprocessor";
     public const string SYNTAX_ATTRIBUTE = "SyntaxAttribute";
     public const string SYNTAX_EMPHASIS = "SyntaxEmphasis";
+    public const string SYNTAX_FUNCTION = "SyntaxFunction";
 
     public static readonly IReadOnlyList<ThemeColour> All = new List<ThemeColour>
     {
@@ -90,7 +91,8 @@ public static class ThemeColours
         new ThemeColour(SYNTAX_COMMENT, "Code: comments", "#7CA668", "#6E7781"),
         new ThemeColour(SYNTAX_PREPROCESSOR, "Code: preprocessor lines", "#C586C0", "#8250DF"),
         new ThemeColour(SYNTAX_ATTRIBUTE, "Code: attributes", "#9CDCFE", "#0550AE"),
-        new ThemeColour(SYNTAX_EMPHASIS, "Code: emphasis in Markdown", "#DCDCAA", "#953800")
+        new ThemeColour(SYNTAX_EMPHASIS, "Code: emphasis in Markdown", "#DCDCAA", "#953800"),
+        new ThemeColour(SYNTAX_FUNCTION, "Code: function and method names", "#DCDCAA", "#8250DF")
     };
 
     // #RGB, #RRGGBB or #AARRGGBB

@@ -44,6 +44,7 @@ public sealed class DiffRow
             SyntaxKind.Preprocessor => ThemeColours.SYNTAX_PREPROCESSOR,
             SyntaxKind.Attribute => ThemeColours.SYNTAX_ATTRIBUTE,
             SyntaxKind.Emphasis => ThemeColours.SYNTAX_EMPHASIS,
+            SyntaxKind.Function => ThemeColours.SYNTAX_FUNCTION,
             _ => null
         };
         return key == null ? null : ThemeBrushes.Get(key);

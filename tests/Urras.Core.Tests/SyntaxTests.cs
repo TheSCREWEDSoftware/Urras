@@ -162,6 +162,7 @@ public static class SyntaxTests
             const string LINE = "public static int Count(string name) => 42; // done";
             Assert.Equal(SyntaxKind.Keyword, ColourOf("Main.cs", LINE, "public").Kind, "keyword");
             Assert.Equal(SyntaxKind.Type, ColourOf("Main.cs", LINE, "int").Kind, "type");
+            Assert.Equal(SyntaxKind.Function, ColourOf("Main.cs", LINE, "Count").Kind, "function name");
             Assert.Equal(SyntaxKind.Number, ColourOf("Main.cs", LINE, "42").Kind, "number");
             Assert.Equal(SyntaxKind.Comment, ColourOf("Main.cs", LINE, "done").Kind, "comment");
             Assert.True(!ColourOf("Main.cs", LINE, "public").HasRgb, "following the theme leaves the colour to it");
