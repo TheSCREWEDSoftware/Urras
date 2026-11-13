@@ -193,10 +193,15 @@ public partial class MainWindow
         if (commit is not { IsStash: false } || _repository == null)
             return;
 
+        CommitDetails.DataContext = commit;
+        CommitBody.Text = string.Empty;
         string message = await _repository.GetCommitMessageAsync(commit.Hash) ?? string.Empty;
+        // Another commit may have been picked while the message loaded
+        if (!ReferenceEquals(CommitDetails.DataContext, commit))
+            return;
+
         int firstBreak = message.IndexOf('\n');
         string body = firstBreak < 0 ? string.Empty : message[(firstBreak + 1)..].Trim('\n', '\r');
-        CommitDetails.DataContext = commit;
         CommitBody.Text = body;
         CommitBodyToggle.IsVisible = body.Length > 0;
         FoldCommitBody();

@@ -66,7 +66,7 @@ public static partial class Dialogs
         void TargetChanged()
         {
             string path = TargetPath();
-            bool taken = path.Length > 0 && Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any();
+            bool taken = path.Length > 0 && HasEntries(path);
             target.Text = path.Length == 0 ? "Choose a folder and a name."
                         : taken ? path + " already exists and isn't empty."
                         : "Clones into " + path;
@@ -137,9 +137,8 @@ public static partial class Dialogs
                 return;
             }
 
-            // A clone stopped halfway leaves a folder that can't be used; remove it unless it was there before
-            if (!existed)
-                RemoveFolder(path);
+            // A clone stopped halfway leaves files that can't be used; an empty folder chosen for it is kept
+            RemoveFolder(path, existed);
             if (!dialog.IsVisible)
                 return;
 
@@ -210,8 +209,21 @@ public static partial class Dialogs
         });
     }
 
-    // Git marks its object files read-only, which stops Directory.Delete on Windows
-    private static void RemoveFolder(string path)
+    // A folder that can't be read counts as taken, so a clone never goes where it can't look first
+    private static bool HasEntries(string path)
+    {
+        try
+        {
+            return Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
+    }
+
+    // Git marks its object files read-only, which stops Directory.Delete on Windows; keepFolder empties it instead
+    private static void RemoveFolder(string path, bool keepFolder)
     {
         try
         {
@@ -219,7 +231,16 @@ public static partial class Dialogs
                 return;
             foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
                 File.SetAttributes(file, FileAttributes.Normal);
-            Directory.Delete(path, true);
+            if (!keepFolder)
+            {
+                Directory.Delete(path, true);
+                return;
+            }
+
+            foreach (string folder in Directory.EnumerateDirectories(path))
+                Directory.Delete(folder, true);
+            foreach (string file in Directory.EnumerateFiles(path))
+                File.Delete(file);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

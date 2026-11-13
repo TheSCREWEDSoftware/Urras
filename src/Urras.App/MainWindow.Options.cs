@@ -27,6 +27,9 @@ public partial class MainWindow
             return;
 
         ApplyPreferences();
+        // A diff on screen is only rebuilt when its text changes, so a new layout forgets the old text
+        if (_settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap)
+            _changesDiffText = null;
         RestartAutoFetch();
         // The choice for all forks may have changed, so each fork's effective choice is read again
         _forkSettings.Clear();
@@ -34,7 +37,7 @@ public partial class MainWindow
         UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();
-        // The open commit was laid out with the old tab size or file gaps; the refresh redraws the Changes diff
+        // The open commit was laid out with the old tab size or file gaps
         if ((_settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap) &&
             HistoryList.SelectedItem is CommitInfo commit)
             await ShowCommitAsync(commit);

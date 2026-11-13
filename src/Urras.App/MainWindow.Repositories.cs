@@ -304,7 +304,9 @@ public partial class MainWindow
         if (root == null)
         {
             // A folder holding repositories was most likely meant as "add all of these", not a new repository
+            SetStatus("Looking for repositories in " + folder + "…", false);
             List<string> inside = await Task.Run(() => RepositoryImport.FindUnder(folder));
+            SetStatus(string.Empty, false);
             if (inside.Count > 0)
             {
                 string found = inside.Count == 1 ? "1 repository" : inside.Count + " repositories";
