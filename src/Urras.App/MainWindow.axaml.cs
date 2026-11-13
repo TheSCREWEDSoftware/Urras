@@ -673,7 +673,19 @@ public partial class MainWindow : Window
             _ => "UnifiedDiffTemplate"
         };
         // Parsing and colouring a large diff takes a moment, so it happens away from the interface
-        DiffRow.Prepared? prepared = mode == DiffViewMode.Raw ? null : await Task.Run(() => DiffRow.Prepare(text));
+        DiffRow.Prepared? prepared = null;
+        try
+        {
+            if (mode != DiffViewMode.Raw)
+                prepared = await Task.Run(() => DiffRow.Prepare(text));
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            // A diff that can't be read shows as git wrote it rather than not at all
+            mode = DiffViewMode.Raw;
+            templateKey = "RawDiffTemplate";
+        }
+
         if (_renders[list] != render)
             return;
 

@@ -155,7 +155,8 @@ public static class ProgramIcons
             return stored;
         }
         catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException
-                                              or ExternalException)
+                                              or ExternalException or ArgumentException
+                                              or InvalidOperationException)
         {
             return null;
         }
