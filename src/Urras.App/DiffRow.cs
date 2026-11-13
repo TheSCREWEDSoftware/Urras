@@ -127,11 +127,33 @@ public sealed class DiffRow
         return rows;
     }
 
-    public static List<DiffRow> Unified(string text, bool showWhitespace)
+    // The slow part of showing a diff, with nothing of the interface in it, so it can run in the background
+    public sealed record Prepared(List<DiffLine> Lines, List<SplitDiffRow> SplitRows,
+                                  Dictionary<DiffLine, List<InlineSegment>> Words,
+                                  Dictionary<DiffLine, SyntaxColour[]> Syntax);
+
+    // Parses the diff, finds the changed words and colours the code
+    public static Prepared Prepare(string text)
     {
         List<DiffLine> lines = DiffParser.Parse(text);
-        Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(DiffParser.ToSplit(lines));
-        Dictionary<DiffLine, SyntaxColour[]> syntax = SyntaxColours(lines);
+        List<SplitDiffRow> splitRows = DiffParser.ToSplit(lines);
+        return new Prepared(lines, splitRows, WordHighlights(splitRows), SyntaxColours(lines));
+    }
+
+    public static List<DiffRow> Unified(string text, bool showWhitespace)
+    {
+        return Unified(Prepare(text), showWhitespace);
+    }
+
+    public static List<DiffRow> Split(string text, bool showWhitespace)
+    {
+        return Split(Prepare(text), showWhitespace);
+    }
+
+    public static List<DiffRow> Unified(Prepared prepared, bool showWhitespace)
+    {
+        (List<DiffLine> lines, _, Dictionary<DiffLine, List<InlineSegment>> words,
+         Dictionary<DiffLine, SyntaxColour[]> syntax) = prepared;
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (DiffLine line in lines)
@@ -152,12 +174,10 @@ public sealed class DiffRow
         return rows;
     }
 
-    public static List<DiffRow> Split(string text, bool showWhitespace)
+    public static List<DiffRow> Split(Prepared prepared, bool showWhitespace)
     {
-        List<DiffLine> lines = DiffParser.Parse(text);
-        List<SplitDiffRow> splitRows = DiffParser.ToSplit(lines);
-        Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(splitRows);
-        Dictionary<DiffLine, SyntaxColour[]> syntax = SyntaxColours(lines);
+        (_, List<SplitDiffRow> splitRows, Dictionary<DiffLine, List<InlineSegment>> words,
+         Dictionary<DiffLine, SyntaxColour[]> syntax) = prepared;
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (SplitDiffRow splitRow in splitRows)
@@ -203,7 +223,8 @@ public sealed class DiffRow
         CodeState oldState = new CodeState();
         CodeState newState = new CodeState();
 
-        foreach (DiffLine line in lines)
+        // Lines past what the view shows aren't coloured
+        foreach (DiffLine line in lines.Take(MAX_ROWS))
         {
             if (line.Kind == DiffLineKind.FileHeader)
                 colourer = CodeColourer.For(line.Text);

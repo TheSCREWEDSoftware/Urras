@@ -645,6 +645,15 @@ public partial class MainWindow : Window
     // newFile: a file just opened scrolls to its first change, when that's chosen in Options
     private void RenderDiff(ListBox list, string? text, bool newFile = false)
     {
+        _ = RenderDiffAsync(list, text, newFile);
+    }
+
+    // Which render of each diff list is the latest, so a slower earlier one is dropped when it finishes
+    private readonly Dictionary<ListBox, int> _renders = new Dictionary<ListBox, int>();
+
+    private async Task RenderDiffAsync(ListBox list, string? text, bool newFile)
+    {
+        int render = _renders[list] = _renders.GetValueOrDefault(list) + 1;
         bool commit = list == CommitDiffList;
         DiffOverview marks = commit ? CommitDiffMarks : DiffMarks;
         (commit ? CommitDiffStats : DiffStats).Show(text);
@@ -663,6 +672,11 @@ public partial class MainWindow : Window
             DiffViewMode.Raw => "RawDiffTemplate",
             _ => "UnifiedDiffTemplate"
         };
+        // Parsing and colouring a large diff takes a moment, so it happens away from the interface
+        DiffRow.Prepared? prepared = mode == DiffViewMode.Raw ? null : await Task.Run(() => DiffRow.Prepare(text));
+        if (_renders[list] != render)
+            return;
+
         // Cleared first so no row is reused with the previous view's template
         list.ItemsSource = null;
         list.ItemTemplate = Resources[templateKey] as IDataTemplate;
@@ -670,9 +684,9 @@ public partial class MainWindow : Window
         bool whitespace = _settings.ShowWhitespace;
         List<DiffRow> rows = mode switch
         {
-            DiffViewMode.Split => DiffRow.Split(text, whitespace),
+            DiffViewMode.Split => DiffRow.Split(prepared!, whitespace),
             DiffViewMode.Raw => DiffRow.Raw(text),
-            _ => DiffRow.Unified(text, whitespace)
+            _ => DiffRow.Unified(prepared!, whitespace)
         };
         list.ItemsSource = rows;
         marks.Show(rows);

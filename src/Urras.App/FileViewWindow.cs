@@ -45,11 +45,26 @@ public sealed class FileViewWindow : Window
         if (lines.Count > 1 && lines[^1].Length == 0)
             lines.RemoveAt(lines.Count - 1);
 
-        List<SyntaxColour[]>? kinds = CodeColourer.For(path)?.ColourLines(lines);
-        List<NumberedLine> numbered = lines.Select((text, index) =>
-            new NumberedLine(index + 1, Segments(text, kinds?[index]))).ToList();
+        ListBox list = new ListBox
+        {
+            ItemsSource = Numbered(lines, null),
+            ItemTemplate = new FuncDataTemplate<NumberedLine>(Row)
+        };
+        _ = ColourAsync(list, path, lines);
+        return list;
+    }
 
-        return new ListBox { ItemsSource = numbered, ItemTemplate = new FuncDataTemplate<NumberedLine>(Row) };
+    // The file shows at once in plain text; colouring a long one takes a moment, so it follows from the background
+    private static async Task ColourAsync(ListBox list, string path, List<string> lines)
+    {
+        List<SyntaxColour[]>? colours = await Task.Run(() => CodeColourer.For(path)?.ColourLines(lines));
+        if (colours != null)
+            list.ItemsSource = Numbered(lines, colours);
+    }
+
+    private static List<NumberedLine> Numbered(List<string> lines, List<SyntaxColour[]>? colours)
+    {
+        return lines.Select((text, index) => new NumberedLine(index + 1, Segments(text, colours?[index]))).ToList();
     }
 
     private static Control Row(NumberedLine? line, INameScope scope)
