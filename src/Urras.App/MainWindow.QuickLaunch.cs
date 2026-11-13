@@ -57,6 +57,8 @@ public partial class MainWindow
             AddCommand(items, "Rename branch…", RenameBranchAsync);
             AddCommand(items, "Delete branch…", DeleteBranchAsync);
             AddCommand(items, "Remotes…", ManageRemotesAsync);
+            AddCommand(items, "Clean up branches…", CleanUpBranchesAsync);
+            AddCommand(items, "Apply a patch…", ApplyPatchAsync);
             AddCommand(items, "Merge a branch into the current one…", MergeBranchAsync);
             AddCommand(items, "Rebase the current branch onto…", RebaseBranchAsync);
             AddCommand(items, "Compare with a branch…", CompareWithBranchAsync);

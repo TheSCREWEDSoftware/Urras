@@ -28,6 +28,7 @@ public partial class MainWindow
         AddMenuItem(menu, "New branch…", CreateBranchAsync);
         AddMenuItem(menu, "Rename branch…", RenameBranchAsync);
         AddMenuItem(menu, "Delete branch…", DeleteBranchAsync);
+        AddMenuItem(menu, "Clean up branches…", CleanUpBranchesAsync);
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Merge a branch into the current one…", MergeBranchAsync);
         AddMenuItem(menu, "Rebase the current branch onto…", RebaseBranchAsync);
@@ -36,6 +37,7 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Tags…", ManageTagsAsync);
         AddMenuItem(menu, "Remotes…", ManageRemotesAsync);
+        AddMenuItem(menu, "Apply a patch…", ApplyPatchAsync);
         AddMenuItem(menu, "Reflog (find lost commits)…", ShowReflogAsync);
         AddMenuItem(menu, "Submodules…", ManageSubmodulesAsync);
         AddMenuItem(menu, "Worktrees…", ManageWorktreesAsync);
@@ -75,6 +77,8 @@ public partial class MainWindow
         AddMenuItem(menu, "Check out this commit…", () => CheckoutCommitAsync(commit));
         AddMenuItem(menu, "Revert this commit…", () => RevertCommitAsync(commit));
         AddMenuItem(menu, "Reset the current branch to this commit…", () => ResetToCommitAsync(commit));
+        AddMenuItem(menu, "Save as a patch…", () => SaveCommitPatchAsync(commit));
+        AddMenuItem(menu, "Export the files as a zip…", () => ExportZipAsync(commit));
         AddMenuItem(menu, "Cherry-pick into the current branch…", () => CherryPickAsync(commit));
         AddMenuItem(menu, "Interactive rebase of the commits after this one…", () => InteractiveRebaseAsync(commit));
     }

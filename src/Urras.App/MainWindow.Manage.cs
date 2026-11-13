@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Urras.Core.Accounts;
 using Urras.Core.Git;
 using Urras.Core.Settings;
@@ -229,6 +230,134 @@ public partial class MainWindow
         Dictionary<string, RemoteIdentity> remotes = RemoteIdentity.ReadAll(path);
         return remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin) ? origin
              : remotes.Values.FirstOrDefault();
+    }
+
+    // Stash these files, or save their changes as a patch, from the Changes right-click menu
+    private void AddSelectionItems(ContextMenu menu, ListBox list)
+    {
+        List<FileChange> chosen = Selected(list);
+        if (chosen.Count == 0)
+            return;
+
+        string these = chosen.Count == 1 ? "this file" : "these " + chosen.Count + " files";
+        AddMenuItem(menu, "Stash " + these + "…", () => StashFilesAsync(chosen));
+        // A patch can't hold a file Git doesn't know about yet
+        if (chosen.Any(change => change.Kind != ChangeKind.Untracked))
+            AddMenuItem(menu, "Save the changes to " + these + " as a patch…",
+                        () => SaveChangesPatchAsync(chosen, list == StagedList));
+        menu.Items.Add(new Separator());
+    }
+
+    private async Task StashFilesAsync(List<FileChange> files)
+    {
+        string? message = await Dialogs.PromptAsync(this, "Stash files",
+                                                    "A name for the stash (optional), to find it again under " +
+                                                    "Stash > Stashes:");
+        List<string> paths = files.Select(change => change.Path).ToList();
+        await RunGitAsync("Stashing…", repository => repository.StashFilesAsync(paths, message),
+                          "Stashed " + (paths.Count == 1 ? paths[0] : paths.Count + " files") + ".");
+    }
+
+    private async Task SaveChangesPatchAsync(List<FileChange> files, bool staged)
+    {
+        if (await PickSaveFileAsync("Save the changes as a patch", "changes.patch") is not { } file)
+            return;
+        List<string> paths = files.Where(change => change.Kind != ChangeKind.Untracked)
+                                  .Select(change => change.Path).ToList();
+        await RunGitAsync("Saving the patch…", repository => repository.SaveChangesPatchAsync(paths, staged, file),
+                          "Saved " + file + ".");
+    }
+
+    private async Task SaveCommitPatchAsync(CommitInfo commit)
+    {
+        if (await PickSaveFileAsync("Save the commit as a patch", commit.ShortHash + ".patch") is not { } file)
+            return;
+        await RunGitAsync("Saving the patch…", repository => repository.SaveCommitPatchAsync(commit.Hash, file),
+                          "Saved " + file + ".");
+    }
+
+    private async Task ExportZipAsync(CommitInfo commit)
+    {
+        string name = (_repository == null ? "files" : Path.GetFileName(_repository.Path)) + "-" + commit.ShortHash;
+        if (await PickSaveFileAsync("Export the files as a zip", name + ".zip") is not { } file)
+            return;
+        await RunGitAsync("Exporting…", repository => repository.ExportZipAsync(commit.Hash, file),
+                          "Saved the files at " + commit.ShortHash + " to " + file + ".");
+    }
+
+    // A patch from git format-patch can become commits again; any patch can be applied as changes
+    private async Task ApplyPatchAsync()
+    {
+        IReadOnlyList<IStorageFile> picked = await StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions { Title = "Apply a patch", AllowMultiple = false });
+        if (picked.Count == 0 || picked[0].TryGetLocalPath() is not { } file)
+            return;
+
+        bool asCommits = false;
+        if (GitRepository.IsMailPatch(file))
+        {
+            int choice = await Dialogs.PickActionAsync(this, "Apply a patch",
+                                                       Path.GetFileName(file) + " holds commits with their " +
+                                                       "messages and authors. Make them commits on the current " +
+                                                       "branch, or apply only the changes?", null,
+                                                       "Make the commits", "Only the changes");
+            if (choice < 0)
+                return;
+            asCommits = choice == 0;
+        }
+
+        await RunGitAsync("Applying the patch…", repository => repository.ApplyPatchAsync(file, asCommits),
+                          asCommits ? "Applied the commits." : "Applied the changes; they're in Changes.");
+    }
+
+    // Branches merged into the main branch, or gone from the remote, ticked and deleted together
+    private async Task CleanUpBranchesAsync()
+    {
+        if (_repository == null)
+            return;
+
+        List<BranchCleanup> candidates = await _repository.GetCleanupCandidatesAsync();
+        if (candidates.Count == 0)
+        {
+            SetStatus("No branches to clean up: none are merged into the main branch or gone from the remote.",
+                      false);
+            return;
+        }
+
+        // A branch only gone from the remote may hold commits merged nowhere, so it starts unticked
+        List<BranchCleanup>? chosen = await Dialogs.ChooseManyAsync(this, "Clean up branches",
+                                                                    "Local branches merged into the main branch, " +
+                                                                    "or whose branch on the remote was deleted:",
+                                                                    candidates, "Delete", branch => branch.Merged);
+        if (chosen == null || chosen.Count == 0)
+            return;
+
+        List<BranchCleanup> unmerged = chosen.Where(branch => !branch.Merged).ToList();
+        if (unmerged.Count > 0 &&
+            !await Dialogs.ConfirmAsync(this, "Not merged",
+                                        string.Join(", ", unmerged.Select(branch => branch.Name)) +
+                                        (unmerged.Count == 1 ? " isn't" : " aren't") + " merged into the main " +
+                                        "branch. Their commits are lost unless they're somewhere else too.",
+                                        "Delete anyway"))
+            return;
+
+        List<string> failed = new List<string>();
+        foreach (BranchCleanup branch in chosen)
+        {
+            if (!(await _repository.DeleteBranchAsync(branch.Name, !branch.Merged)).Success)
+                failed.Add(branch.Name);
+        }
+
+        SetStatus(failed.Count == 0 ? "Deleted " + chosen.Count + (chosen.Count == 1 ? " branch." : " branches.")
+                                    : "Couldn't delete " + string.Join(", ", failed) + ".", failed.Count > 0);
+        await RefreshAsync();
+    }
+
+    private async Task<string?> PickSaveFileAsync(string title, string suggestedName)
+    {
+        IStorageFile? file = await StorageProvider.SaveFilePickerAsync(
+            new FilePickerSaveOptions { Title = title, SuggestedFileName = suggestedName });
+        return file?.TryGetLocalPath();
     }
 
     private async Task ManageRemotesAsync()
