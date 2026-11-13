@@ -49,6 +49,25 @@ public sealed class DiffRow
         return key == null ? null : ThemeBrushes.Get(key);
     }
 
+    // A colour scheme's own colour when one is chosen in Options, otherwise the theme's colour for the kind
+    public static IBrush? ColourBrush(SyntaxColour colour)
+    {
+        if (!colour.HasRgb)
+            return SyntaxBrush(colour.Kind);
+        lock (SchemeBrushes)
+        {
+            if (!SchemeBrushes.TryGetValue(colour.Rgb, out IBrush? brush))
+            {
+                brush = new SolidColorBrush(Color.FromRgb(colour.Red, colour.Green, colour.Blue));
+                SchemeBrushes[colour.Rgb] = brush;
+            }
+
+            return brush;
+        }
+    }
+
+    private static readonly Dictionary<int, IBrush> SchemeBrushes = new Dictionary<int, IBrush>();
+
     public string OldNumber { get; private init; } = string.Empty;
     public string NewNumber { get; private init; } = string.Empty;
     public string Marker { get; private init; } = string.Empty;
@@ -112,7 +131,7 @@ public sealed class DiffRow
     {
         List<DiffLine> lines = DiffParser.Parse(text);
         Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(DiffParser.ToSplit(lines));
-        Dictionary<DiffLine, SyntaxKind[]> syntax = SyntaxColours(lines);
+        Dictionary<DiffLine, SyntaxColour[]> syntax = SyntaxColours(lines);
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (DiffLine line in lines)
@@ -138,7 +157,7 @@ public sealed class DiffRow
         List<DiffLine> lines = DiffParser.Parse(text);
         List<SplitDiffRow> splitRows = DiffParser.ToSplit(lines);
         Dictionary<DiffLine, List<InlineSegment>> words = WordHighlights(splitRows);
-        Dictionary<DiffLine, SyntaxKind[]> syntax = SyntaxColours(lines);
+        Dictionary<DiffLine, SyntaxColour[]> syntax = SyntaxColours(lines);
         List<DiffRow> rows = new List<DiffRow>();
 
         foreach (SplitDiffRow splitRow in splitRows)
@@ -176,36 +195,36 @@ public sealed class DiffRow
         return rows;
     }
 
-    // Each file uses its own language, and each side carries its own state (such as an open comment)
-    private static Dictionary<DiffLine, SyntaxKind[]> SyntaxColours(IEnumerable<DiffLine> lines)
+    // Each file uses its own grammar, and each side carries its own state (such as an open comment)
+    private static Dictionary<DiffLine, SyntaxColour[]> SyntaxColours(IEnumerable<DiffLine> lines)
     {
-        Dictionary<DiffLine, SyntaxKind[]> colours = new Dictionary<DiffLine, SyntaxKind[]>();
-        SyntaxLanguage? language = null;
-        SyntaxState oldState = default;
-        SyntaxState newState = default;
+        Dictionary<DiffLine, SyntaxColour[]> colours = new Dictionary<DiffLine, SyntaxColour[]>();
+        CodeColourer? colourer = null;
+        CodeState oldState = new CodeState();
+        CodeState newState = new CodeState();
 
         foreach (DiffLine line in lines)
         {
             if (line.Kind == DiffLineKind.FileHeader)
-                language = SyntaxLanguage.ForPath(line.Text);
+                colourer = CodeColourer.For(line.Text);
             if (line.Kind is DiffLineKind.FileHeader or DiffLineKind.HunkHeader)
             {
-                oldState = default;
-                newState = default;
+                oldState = new CodeState();
+                newState = new CodeState();
             }
 
-            if (language == null || !line.IsCode)
+            if (colourer == null || !line.IsCode)
                 continue;
 
             if (line.Kind == DiffLineKind.Removed)
             {
-                colours[line] = SyntaxHighlighter.Classify(line.Text, language, ref oldState);
+                colours[line] = colourer.Colour(line.Text, oldState);
                 continue;
             }
 
             if (line.Kind == DiffLineKind.Context)
-                SyntaxHighlighter.Classify(line.Text, language, ref oldState);
-            colours[line] = SyntaxHighlighter.Classify(line.Text, language, ref newState);
+                colourer.Colour(line.Text, oldState);
+            colours[line] = colourer.Colour(line.Text, newState);
         }
 
         return colours;
@@ -229,7 +248,7 @@ public sealed class DiffRow
         return words;
     }
 
-    private static DiffRow UnifiedCode(DiffLine line, List<InlineSegment>? words, SyntaxKind[]? syntax,
+    private static DiffRow UnifiedCode(DiffLine line, List<InlineSegment>? words, SyntaxColour[]? syntax,
                                        bool showWhitespace)
     {
         IReadOnlyList<TextSegment> segments = BuildSegments(line, words, syntax, showWhitespace);
@@ -262,7 +281,7 @@ public sealed class DiffRow
 
     // Splits a line into coloured segments: syntax, changed words, whitespace markers and trailing whitespace
     private static IReadOnlyList<TextSegment> BuildSegments(DiffLine line, List<InlineSegment>? words,
-                                                             SyntaxKind[]? syntax, bool showWhitespace)
+                                                             SyntaxColour[]? syntax, bool showWhitespace)
     {
         string text = line.Text;
         IBrush? wordBackground = line.Kind switch
@@ -287,15 +306,15 @@ public sealed class DiffRow
         int trailingStart = text.TrimEnd(' ', '\t').Length;
         List<TextSegment> segments = new List<TextSegment>();
         StringBuilder current = new StringBuilder();
-        (bool Changed, bool Whitespace, bool Trailing, SyntaxKind Kind) currentStyle = default;
+        (bool Changed, bool Whitespace, bool Trailing, SyntaxColour Colour) currentStyle = default;
 
         for (int i = 0; i < text.Length; ++i)
         {
             char character = text[i];
             bool whitespace = showWhitespace && (character == ' ' || character == '\t');
             bool trailing = showWhitespace && i >= trailingStart;
-            SyntaxKind kind = syntax != null && i < syntax.Length ? syntax[i] : SyntaxKind.Plain;
-            (bool, bool, bool, SyntaxKind) style = (changed[i], whitespace, trailing, kind);
+            SyntaxColour colour = syntax != null && i < syntax.Length ? syntax[i] : default;
+            (bool, bool, bool, SyntaxColour) style = (changed[i], whitespace, trailing, colour);
 
             if (current.Length > 0 && style != currentStyle)
             {
@@ -326,12 +345,12 @@ public sealed class DiffRow
     }
 
     private static TextSegment Segment(string text,
-                                       (bool Changed, bool Whitespace, bool Trailing, SyntaxKind Kind) style,
+                                       (bool Changed, bool Whitespace, bool Trailing, SyntaxColour Colour) style,
                                        IBrush? wordBackground)
     {
         IBrush? background = style.Trailing ? TrailingWhitespaceBackground :
                              style.Changed ? wordBackground : null;
-        return new TextSegment(text, style.Whitespace ? WhitespaceBrush : SyntaxBrush(style.Kind), background);
+        return new TextSegment(text, style.Whitespace ? WhitespaceBrush : ColourBrush(style.Colour), background);
     }
 
     private static void AddGapBefore(List<DiffRow> rows, DiffLine line)

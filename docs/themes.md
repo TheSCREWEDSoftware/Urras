@@ -50,3 +50,23 @@ out. When a newer version of Urras adds colours, it writes them into every theme
 base's values, so a theme never misses one. Colours that aren't valid are replaced the same way.
 
 The editor lists every colour with what it's used for; the names are the keys in the file.
+
+## Code colours
+
+Code in diffs is coloured with Visual Studio Code's language grammars (through TextMateSharp). With **Code
+colours** in Options > Appearance on "Follow the theme", comments, strings, keywords and the rest take the
+theme's `Syntax...` colours. A theme file can instead name a colour scheme of its own, used while Options follows
+the theme:
+
+```json
+{
+  "Name": "Sunset",
+  "Base": "Dark",
+  "CodeColours": "Monokai",
+  "Colours": { }
+}
+```
+
+The schemes are the ones listed in Options, written without spaces: `DarkPlus`, `LightPlus`, `Monokai`,
+`DimmedMonokai`, `SolarizedDark`, `SolarizedLight`, `Dracula`, `OneDark`, `AtomOneDark`, `AtomOneLight`,
+`VisualStudioDark`, `VisualStudioLight` and more. Choosing a scheme in Options uses it with every theme.

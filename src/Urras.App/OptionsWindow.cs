@@ -9,6 +9,7 @@ using Urras.Core.Accounts;
 using Urras.Core.Assistant;
 using Urras.Core.Git;
 using Urras.Core.Settings;
+using Urras.Core.Syntax;
 
 namespace Urras.App;
 
@@ -47,6 +48,7 @@ public sealed class OptionsWindow : Window
     private const double SITE_ICON_SIZE = 18;
     private const double BUTTON_ICON_SIZE = 16;
     private const double PROGRAM_ICON_SIZE = 16;
+    private const string FOLLOW_THEME_LABEL = "Follow the theme";
     // An account's picture, and the ring around it
     private const double ACCOUNT_PICTURE = 36;
     private const double RING_WIDTH = 2;
@@ -102,6 +104,7 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _tabSize;
     private readonly CheckBox _jumpToChange;
     private readonly CheckBox _fileGap;
+    private readonly ComboBox _codeColours;
     private readonly ComboBox _previewImages;
     private readonly ComboBox _font;
     private readonly ComboBox _fontSize;
@@ -184,6 +187,9 @@ public sealed class OptionsWindow : Window
         _tabSize.SelectedIndex = Math.Max(0, Array.IndexOf(TabSizes, settings.TabSize));
         _jumpToChange = Check("Scroll to the first change when opening a file's diff", settings.JumpToFirstChange);
         _fileGap = Check("Leave a gap before each file in the Combined view", settings.CombinedFileGap);
+        _codeColours = Combo(CodeColourer.Schemes.Select(CodeColourer.Describe).Prepend(FOLLOW_THEME_LABEL).ToList(),
+                             settings.CodeColours.Length == 0 ? FOLLOW_THEME_LABEL
+                                                              : CodeColourer.Describe(settings.CodeColours));
         _previewImages = Combo(new List<string>
         {
             "Don't show pictures", "Pictures from the repository", "Pictures from the repository and the internet"
@@ -346,6 +352,7 @@ public sealed class OptionsWindow : Window
         _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
         _tracker.Track(APPEARANCE, "Scroll to the first change", () => OnOff(_jumpToChange));
         _tracker.Track(APPEARANCE, "Gap before each file", () => OnOff(_fileGap));
+        _tracker.Track(APPEARANCE, "Code colours", () => _codeColours.SelectedItem as string ?? string.Empty);
         _tracker.Track(APPEARANCE, "Pictures in previews", () => Selected(_previewImages));
         _tracker.Track(APPEARANCE, "Font", () => Selected(_font));
         _tracker.Track(APPEARANCE, "Text size", () => Selected(_fontSize));
@@ -705,7 +712,10 @@ public sealed class OptionsWindow : Window
                          "the other themes' own choices. Fonts are the ones installed on this computer."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize,
-                    _jumpToChange, _fileGap,
+                    _jumpToChange, _fileGap, Label("Code colours"), _codeColours,
+                    Note("Code in diffs is coloured with Visual Studio Code's language grammars. \"" +
+                         FOLLOW_THEME_LABEL + "\" uses the theme's colours (or a scheme the theme names); a " +
+                         "scheme uses its own colours with any theme, so pick one that suits a dark or light look."),
                     Label("Pictures in Markdown and HTML previews"), _previewImages,
                     Note("Pictures from the internet, such as README badges, are downloaded when shown, so their " +
                          "sites can see that. SVG pictures show as their description."),
@@ -983,6 +993,8 @@ public sealed class OptionsWindow : Window
         _settings.TabSize = TabSizes[Math.Max(0, _tabSize.SelectedIndex)];
         _settings.JumpToFirstChange = _jumpToChange.IsChecked == true;
         _settings.CombinedFileGap = _fileGap.IsChecked == true;
+        _settings.CodeColours = _codeColours.SelectedIndex > 0 ? CodeColourer.Schemes[_codeColours.SelectedIndex - 1]
+                                                                : string.Empty;
         _settings.PreviewImages = (PreviewImages)Math.Max(0, _previewImages.SelectedIndex);
         _settings.FontFamily = TextLook.ChosenFont(_font) ?? string.Empty;
         _settings.FontSize = TextLook.ChosenSize(_fontSize, false) ?? AppSettings.DEFAULT_FONT_SIZE;

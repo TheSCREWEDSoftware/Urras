@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Urras.Core.Git;
 using Urras.Core.Settings;
+using Urras.Core.Syntax;
 
 namespace Urras.App;
 
@@ -23,12 +24,15 @@ public partial class MainWindow
         OptionsWindow window = new OptionsWindow(_settings, _accounts, AddAccountAsync, section);
         int tabSize = _settings.TabSize;
         bool fileGap = _settings.CombinedFileGap;
+        string scheme = CodeColourer.Scheme;
         if (!await window.ShowDialog<bool>(this))
             return;
 
         ApplyPreferences();
         // A diff on screen is only rebuilt when its text changes, so a new layout forgets the old text
-        if (_settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap)
+        bool layout = _settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap ||
+                      CodeColourer.Scheme != scheme;
+        if (layout)
             _changesDiffText = null;
         RestartAutoFetch();
         // The choice for all forks may have changed, so each fork's effective choice is read again
@@ -37,9 +41,8 @@ public partial class MainWindow
         UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();
-        // The open commit was laid out with the old tab size or file gaps
-        if ((_settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap) &&
-            HistoryList.SelectedItem is CommitInfo commit)
+        // The open commit was laid out with the old tab size, file gaps or code colours
+        if (layout && HistoryList.SelectedItem is CommitInfo commit)
             await ShowCommitAsync(commit);
         await UpdateNotificationCountAsync();
     }
@@ -128,6 +131,8 @@ public partial class MainWindow
                 Application.Current.RequestedThemeVariant = theme.Base == ThemeBase.Light ? ThemeVariant.Light
                                                                                           : ThemeVariant.Dark;
             ThemeBrushes.Use(theme, Application.Current.Resources);
+            CodeColourer.Scheme = _settings.CodeColours.Length > 0 ? _settings.CodeColours
+                                  : theme.CodeColours ?? CodeColourer.FOLLOW_THEME;
             TextLook.Apply(_settings, Application.Current.Resources);
 
             // A style belongs to one application, so each gets its own (the interface tests start several)

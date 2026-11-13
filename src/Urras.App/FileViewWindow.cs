@@ -45,8 +45,7 @@ public sealed class FileViewWindow : Window
         if (lines.Count > 1 && lines[^1].Length == 0)
             lines.RemoveAt(lines.Count - 1);
 
-        SyntaxLanguage? language = SyntaxLanguage.ForPath(path);
-        List<SyntaxKind[]>? kinds = language == null ? null : SyntaxHighlighter.ClassifyLines(lines, language);
+        List<SyntaxColour[]>? kinds = CodeColourer.For(path)?.ColourLines(lines);
         List<NumberedLine> numbered = lines.Select((text, index) =>
             new NumberedLine(index + 1, Segments(text, kinds?[index]))).ToList();
 
@@ -76,7 +75,7 @@ public sealed class FileViewWindow : Window
     }
 
     // Runs of one syntax colour; tabs become four spaces
-    private static IReadOnlyList<TextSegment> Segments(string text, SyntaxKind[]? kinds)
+    private static IReadOnlyList<TextSegment> Segments(string text, SyntaxColour[]? kinds)
     {
         List<TextSegment> segments = new List<TextSegment>();
         int start = 0;
@@ -85,7 +84,7 @@ public sealed class FileViewWindow : Window
             if (i < text.Length && (kinds == null || kinds[i] == kinds[start]))
                 continue;
 
-            IBrush? brush = kinds == null ? null : DiffRow.SyntaxBrush(kinds[start]);
+            IBrush? brush = kinds == null ? null : DiffRow.ColourBrush(kinds[start]);
             segments.Add(new TextSegment(text[start..i].Replace("\t", new string(' ', DiffRow.TabWidth)), brush));
             start = i;
         }

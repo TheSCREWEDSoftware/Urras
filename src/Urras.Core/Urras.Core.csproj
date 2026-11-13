@@ -7,4 +7,9 @@
     <RootNamespace>Urras.Core</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Visual Studio Code's language grammars and colour schemes, for colouring code in diffs (MIT) -->
+    <PackageReference Include="TextMateSharp.Grammars" Version="2.0.5" />
+  </ItemGroup>
+
 </Project>

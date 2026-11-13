@@ -142,4 +142,52 @@ public static class SyntaxTests
         Assert.True(SyntaxHighlighter.Classify(line, SyntaxLanguage.Cpp, ref state).All(k => k == SyntaxKind.Plain),
                     "too long to colour");
     }
+
+    // The colour of the first character of `part` on one line of a file
+    private static SyntaxColour ColourOf(string path, string line, string part)
+    {
+        CodeColourer colourer = CodeColourer.For(path)!;
+        SyntaxColour[] colours = colourer.Colour(line, new CodeState());
+        int index = line.IndexOf(part, StringComparison.Ordinal);
+        Assert.True(index >= 0, "'" + part + "' is in the line");
+        return colours[index];
+    }
+
+    public static void ColoursWithVisualStudioCodesGrammars()
+    {
+        string scheme = CodeColourer.Scheme;
+        try
+        {
+            CodeColourer.Scheme = CodeColourer.FOLLOW_THEME;
+            const string LINE = "public static int Count(string name) => 42; // done";
+            Assert.Equal(SyntaxKind.Keyword, ColourOf("Main.cs", LINE, "public").Kind, "keyword");
+            Assert.Equal(SyntaxKind.Type, ColourOf("Main.cs", LINE, "int").Kind, "type");
+            Assert.Equal(SyntaxKind.Number, ColourOf("Main.cs", LINE, "42").Kind, "number");
+            Assert.Equal(SyntaxKind.Comment, ColourOf("Main.cs", LINE, "done").Kind, "comment");
+            Assert.True(!ColourOf("Main.cs", LINE, "public").HasRgb, "following the theme leaves the colour to it");
+            Assert.Equal(SyntaxKind.Comment, ColourOf("Player.rs", "let x = 5; // rust", "rust").Kind,
+                         "a language Urras's own rules don't know");
+
+            CodeState state = new CodeState();
+            CodeColourer cs = CodeColourer.For("Main.cs")!;
+            cs.Colour("/* opens", state);
+            Assert.Equal(SyntaxKind.Comment, cs.Colour("still inside */ int x;", state)[0].Kind, "state carries");
+
+            CodeColourer.Scheme = "Monokai";
+            SyntaxColour keyword = ColourOf("Main.cs", LINE, "public");
+            Assert.True(keyword.HasRgb, "a scheme brings its own colour");
+            Assert.True(keyword != ColourOf("Main.cs", LINE, "42"), "keywords and numbers differ");
+
+            CodeColourer.Scheme = CodeColourer.FOLLOW_THEME;
+            Assert.Equal(SyntaxKind.Keyword, ColourOf("CMakeLists.txt", "add_library(game STATIC x.cpp)",
+                                                      "add_library").Kind, "no grammar: Urras's own rules");
+            Assert.True(CodeColourer.For("photo.png") == null, "nothing for a picture");
+            Assert.Equal("Dark Plus", CodeColourer.Describe("DarkPlus"), "menu name");
+            Assert.Equal("Visual Studio Dark", CodeColourer.Describe("VisualStudioDark"), "menu name with words");
+        }
+        finally
+        {
+            CodeColourer.Scheme = scheme;
+        }
+    }
 }

@@ -138,6 +138,10 @@ public sealed class Theme
 
     public Dictionary<string, string> Colours { get; set; } = new Dictionary<string, string>();
 
+    // A code colour scheme of its own, such as "Monokai", used when Options follows the theme; null for none
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CodeColours { get; set; }
+
     [JsonIgnore]
     // Dark, Light and the ready-made themes, which aren't files
     public bool IsBuiltIn => Name is DARK or LIGHT || ThemePresets.IsPreset(Name);

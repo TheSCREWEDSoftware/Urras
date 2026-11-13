@@ -112,6 +112,9 @@ public sealed class AppSettings
     // A blank line before each file's header when a whole commit is shown as one diff
     public bool CombinedFileGap { get; set; } = true;
 
+    // A code colour scheme such as "Monokai", or empty to follow the theme (its own scheme or its colours)
+    public string CodeColours { get; set; } = string.Empty;
+
     // Each repository's first commits, by folder, so forks of one project group together without asking Git again
     public Dictionary<string, List<string>> RootCommits { get; set; } = new Dictionary<string, List<string>>();
 

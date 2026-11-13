@@ -232,7 +232,8 @@ demo repository with branches, beside Urras's own projects.
 - "+406 −553" and GitHub's five squares for each diff
 - A column of change marks beside each diff and preview: hovering one names its lines ("Lines from 12 - 18 added"),
   clicking it goes there; a file opens at its first change
-- Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
+- Syntax colours for 60+ languages from Visual Studio Code's grammars, in the theme's colours or a scheme such
+  as Dark Plus or Monokai (Options > Appearance), word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
 - Commits shown per file (a list of changed files) or combined; images compared side by side, as a swipe or
   as an onion skin
@@ -586,6 +587,8 @@ request template.
 ## Credits
 
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia) (MIT) for the user interface.
+- [TextMateSharp](https://github.com/danipen/TextMateSharp) (MIT) for colouring code with Visual Studio Code's
+  language grammars and colour schemes, which come with it under their own licences.
 
 ## License
 
