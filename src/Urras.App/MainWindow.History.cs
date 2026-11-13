@@ -19,13 +19,18 @@ public partial class MainWindow
             if (!e.GetCurrentPoint(HistoryList).Properties.IsLeftButtonPressed)
                 return;
 
+            // A co-author's picture is inside the row, so the person is found first and the commit further up
+            CommitPerson? person = null;
             for (Control? control = e.Source as Control; control != null && control != HistoryList;
                  control = control.Parent as Control)
             {
+                if (control is { Tag: "person", DataContext: CommitPerson picked })
+                    person = picked;
                 if (control.Tag is not string link || control.DataContext is not CommitInfo commit || commit.IsStash)
                     continue;
 
-                string? url = link == "author" ? AuthorUrl(commit) : CommitUrl(commit.Hash);
+                string? url = link != "author" ? CommitUrl(commit.Hash)
+                            : person != null ? PersonUrl(person, commit) : AuthorUrl(commit);
                 if (url == null)
                     return;
                 e.Handled = true;

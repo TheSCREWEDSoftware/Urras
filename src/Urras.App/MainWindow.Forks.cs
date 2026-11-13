@@ -271,7 +271,13 @@ public partial class MainWindow
     // The author's profile when a GitHub private address says who they are, otherwise the commit (which links them)
     private string? AuthorUrl(CommitInfo commit)
     {
-        if (GitHubClient.FromNoreplyEmail(commit.Email) is { } user)
+        return PersonUrl(commit.People[0], commit);
+    }
+
+    // Their GitHub profile when the address gives it away, otherwise the commit
+    private string? PersonUrl(CommitPerson person, CommitInfo commit)
+    {
+        if (GitHubClient.FromNoreplyEmail(person.Email) is { } user)
             return "https://github.com/" + Uri.EscapeDataString(user.Login);
         return CommitUrl(commit.Hash);
     }

@@ -130,6 +130,26 @@ public sealed class CommitInfo
     public IReadOnlyList<RefBadge> RefBadges => _refBadges ??= RefBadge.Parse(Refs);
     private List<RefBadge>? _refBadges;
 
+    // People named in "Co-authored-by:" lines, besides the author
+    public IReadOnlyList<CommitPerson> CoAuthors { get; init; } = Array.Empty<CommitPerson>();
+
+    // The author then the co-authors
+    public IReadOnlyList<CommitPerson> People => _people ??= new[] { new CommitPerson(Author, Email) }
+                                                                 .Concat(CoAuthors).ToList();
+    private List<CommitPerson>? _people;
+
+    // Up to three pictures, drawn overlapping
+    public IReadOnlyList<CommitPerson> Pictures => People.Take(CommitPerson.MAX_PICTURES).ToList();
+
+    // "Crow", "Crow, Claude Opus 5.5" or "3 people"
+    public string PeopleText => CommitPerson.Describe(People);
+
+    // Everyone by name and address, author first
+    public string PeopleTip => CoAuthors.Count == 0
+        ? "Open their profile, or this commit when the profile isn't known"
+        : "Authored by " + People[0] + "\nwith " + string.Join("\n", CoAuthors) +
+          "\n\nClick to open the author's profile";
+
     // Full hashes of the parent commits: none for the first commit, two or more for a merge
     public IReadOnlyList<string> Parents { get; init; } = Array.Empty<string>();
 

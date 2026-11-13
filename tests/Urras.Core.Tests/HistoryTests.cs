@@ -124,4 +124,25 @@ public static class HistoryTests
         Assert.Success(await temp.Repository.CreateBranchAtAsync("rescued", entry.Hash), "branch at the entry");
         Assert.True((await temp.Repository.GetBranchesAsync()).Any(branch => branch.Name == "rescued"), "rescued");
     }
+
+    public static async Task ReadsCoAuthorsLikeGitHub()
+    {
+        using TempRepository repository = await TempRepository.CreateAsync();
+        repository.Write("a.txt", "a");
+        Assert.Success(await repository.Repository.StageAllAsync(), "stage");
+        string message = "fix(Scripts): Reset Attumen\n\nBody.\n\n" +
+                         "Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>\n" +
+                         "Co-Authored-By: Kitty <1+kitty@users.noreply.github.com>\n" +
+                         "Co-authored-by: Urras Test <test@example.com>\n" +
+                         "Co-authored-by: Claude Opus 5.5 <NOREPLY@anthropic.com>";
+        Assert.Success(await repository.Repository.CommitAsync(message, false), "commit");
+
+        CommitInfo commit = (await repository.Repository.GetHistoryAsync(10))[0];
+        Assert.Equal("Claude Opus 5.5 <noreply@anthropic.com>,Kitty <1+kitty@users.noreply.github.com>",
+                     string.Join(",", commit.CoAuthors), "each once, any spelling of the key, not the author");
+        Assert.Equal("3 people", commit.PeopleText, "three or more");
+        Assert.Equal(3, commit.Pictures.Count, "a picture each");
+        Assert.Equal("Urras Test", CommitPerson.Describe(commit.People.Take(1).ToList()), "one");
+        Assert.Equal("Urras Test, Kitty", CommitPerson.Describe(new[] { commit.People[0], commit.People[2] }), "two");
+    }
 }
