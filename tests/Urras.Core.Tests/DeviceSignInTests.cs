@@ -138,6 +138,9 @@ public static class DeviceSignInTests
         string scopes = await StartErrorAsync(HttpStatusCode.BadRequest, "{\"error\":\"invalid_scope\"}",
                                               "application/json");
         Assert.True(scopes.Contains("api and read_user"), "missing scopes");
+        string grant = await StartErrorAsync(HttpStatusCode.BadRequest, "{\"error\":\"unauthorized_client\"}",
+                                             "application/json");
+        Assert.True(grant.Contains("Device authorization grant"), "the device grant box left unticked");
         string old = await StartErrorAsync(HttpStatusCode.NotFound, "<html>Not found</html>", "text/html");
         Assert.True(old.Contains("doesn't offer browser sign-in") && old.Contains("404"), "a GitLab too old");
     }

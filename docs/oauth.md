@@ -37,14 +37,16 @@ Browser sign-in uses GitLab's device flow, which gitlab.com has; a server of you
    flow never opens it).
 4. **Untick Confidential.** It is ticked to start with, and a confidential application needs a secret, which a
    desktop app can't keep; GitLab then refuses with "Client authentication failed".
-5. Scopes: tick **api** and **read_user**, both. Urras asks for exactly these, and GitLab refuses the sign-in
-   ("invalid_scope") when either is missing.
-6. Select **Save application**, then copy the **Application ID** (not the Secret).
-7. In Urras, paste it under Options > Accounts > GitLab application id and save, then add the GitLab account from
+5. **Tick Device authorization grant.** Without it GitLab won't hand out the code Urras shows in the browser.
+6. Scopes: tick **api** and **read_user**, both, and nothing else is needed. Urras asks for exactly these, and
+   GitLab refuses the sign-in ("invalid_scope") when either is missing. `api` also covers pushing and pulling
+   over HTTPS, which Urras does with the same sign-in.
+7. Select **Save application**, then copy the **Application ID** (not the Secret).
+8. In Urras, paste it under Options > Accounts > GitLab application id and save, then add the GitLab account from
    Accounts; the browser opens with a code to confirm.
 
-If something is off, Urras names it in the status line, such as the Confidential box or a missing scope, and
-offers a personal access token instead.
+If something is off, Urras names it in the status line, such as the Confidential box, the device authorization
+grant or a missing scope, and offers a personal access token instead.
 
 ## Other platforms
 

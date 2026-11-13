@@ -184,7 +184,8 @@ public sealed class DeviceSignIn
         {
             "invalid_client" => "check the application id; on GitLab the application must not be Confidential",
             "invalid_scope" => "on GitLab, tick the api and read_user scopes on the application",
-            "unauthorized_client" => "on GitHub, tick Enable Device Flow on the OAuth app",
+            "unauthorized_client" => "turn on the device flow for the app: GitHub's Enable Device Flow, or " +
+                                     "GitLab's Device authorization grant",
             _ => null
         };
         return fix == null ? reason : reason + " (" + fix + ")";
