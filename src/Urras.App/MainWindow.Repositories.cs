@@ -313,6 +313,8 @@ public partial class MainWindow
                                                            folder + " isn't a Git repository itself, but " + found +
                                                            are + " inside it. Add them, or create a new " +
                                                            "repository in this folder?",
+                                                           inside.Select(path => Path.GetRelativePath(folder, path))
+                                                                 .ToList(),
                                                            "Add " + found + "…", "Create repository here");
                 if (choice == 0)
                     await AddFoundAsync(inside, string.Empty);

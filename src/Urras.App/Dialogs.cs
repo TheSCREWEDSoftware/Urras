@@ -75,8 +75,10 @@ public static partial class Dialogs
         return await dialog.ShowDialog<bool>(owner);
     }
 
-    // One of several actions, the first in the accent colour, then Cancel; the index chosen, or -1 for Cancel
-    public static async Task<int> PickActionAsync(Window owner, string title, string message, params string[] actions)
+    // One of several actions, the first in the accent colour, then Cancel; the index chosen, or -1 for Cancel.
+    // details, when given, is a list folded under the message, such as the folders an action would use
+    public static async Task<int> PickActionAsync(Window owner, string title, string message,
+                                                  IReadOnlyList<string>? details, params string[] actions)
     {
         Window dialog = CreateWindow(title);
         StackPanel buttons = new StackPanel
@@ -101,6 +103,19 @@ public static partial class Dialogs
 
         StackPanel body = new StackPanel { Margin = new Thickness(BODY_MARGIN), Spacing = BODY_SPACING };
         body.Children.Add(Paragraph(message));
+        if (details is { Count: > 0 })
+        {
+            StackPanel list = new StackPanel { Spacing = 2 };
+            foreach (string detail in details)
+                list.Children.Add(new TextBlock { Text = detail, TextWrapping = TextWrapping.Wrap });
+            body.Children.Add(new Expander
+            {
+                Header = details.Count == 1 ? "1 folder" : details.Count + " folders",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Content = new ScrollViewer { Content = list, MaxHeight = LIST_HEIGHT }
+            });
+        }
+
         dialog.Content = Framed(body, buttons);
         return await dialog.ShowDialog<int?>(owner) ?? -1;
     }
