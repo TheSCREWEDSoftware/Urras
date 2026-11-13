@@ -710,11 +710,13 @@ Esc clears it" />
                                                 VerticalAlignment="Center" />
                     </DockPanel>
                     <DockPanel Grid.Column="1" Margin="8,0,0,0">
+                      <!-- A transparent background keeps the gaps between spread pictures inside the hover -->
                       <ItemsControl DockPanel.Dock="Left" Classes="people" ItemsSource="{Binding Pictures}"
-                                    Margin="0,0,6,0" VerticalAlignment="Center" Tag="author">
+                                    Margin="0,0,6,0" VerticalAlignment="Center" Tag="author"
+                                    Background="Transparent">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
+                            <StackPanel Orientation="Horizontal" Background="Transparent" />
                           </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
