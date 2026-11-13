@@ -74,7 +74,8 @@ public sealed class CodeColourer
         SyntaxLanguage? own = SyntaxLanguage.ForPath(path);
         if (grammar == null && own == null)
             return null;
-        return new CodeColourer(grammar, scheme == FOLLOW_THEME ? null : theme, grammar == null ? own : null);
+        // Urras's own rules stay ready for a line the grammar trips over
+        return new CodeColourer(grammar, scheme == FOLLOW_THEME ? null : theme, own);
     }
 
     public SyntaxColour[] Colour(string line, CodeState state)
@@ -233,6 +234,11 @@ public sealed class CodeColourer
                                                   or BadImageFormatException or EntryPointNotFoundException)
             {
                 _textMateFailed = true;
+                return (null, null);
+            }
+            catch (Exception exception) when (exception is not OutOfMemoryException)
+            {
+                // One grammar that won't load leaves its files to Urras's own rules; the others still work
                 return (null, null);
             }
         }

@@ -39,6 +39,16 @@ public static class RepositoryTabsTests
         Assert.Equal(null, tabs.ActivePath, "no tabs once every repository is gone");
     }
 
+    public static void FollowsAMovedRepository()
+    {
+        RepositoryTabs tabs = new RepositoryTabs(new[] { "/r/a", "/r/b", "/r/c" }, 1, null);
+        tabs.Move("/r/b", "/s/b");
+        Assert.Equal("/r/a,/s/b,/r/c", string.Join(",", tabs.Paths), "a moved repository keeps its tab");
+        Assert.Equal("/s/b", tabs.ActivePath, "and still shows");
+        tabs.Move("/r/c", "/s/b");
+        Assert.Equal("/r/a,/s/b", string.Join(",", tabs.Paths), "moving onto an open one leaves one tab");
+    }
+
     public static void RestoresTheSavedTabs()
     {
         RepositoryTabs tabs = new RepositoryTabs(new[] { "/r/a", "/r/b", "/r/a" }, 1, "/r/b");

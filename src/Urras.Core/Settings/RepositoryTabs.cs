@@ -87,6 +87,18 @@ public sealed class RepositoryTabs
         Close(index);
     }
 
+    // A repository found in a new folder keeps its tab, or leaves it if the new folder already has one
+    public void Move(string from, string to)
+    {
+        int index = IndexOf(from);
+        if (index < 0)
+            return;
+        if (Contains(to))
+            Forget(from);
+        else
+            _paths[index] = to;
+    }
+
     public bool Contains(string path)
     {
         return IndexOf(path) >= 0;

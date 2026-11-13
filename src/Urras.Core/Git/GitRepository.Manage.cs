@@ -15,6 +15,7 @@ public sealed record RemoteInfo(string Name, string Url);
 public sealed partial class GitRepository
 {
     private const string GITIGNORE = ".gitignore";
+    private const string FETCH_MARK = " (fetch)";
 
     // The commit HEAD is on, or null in a repository with no commits yet
     public async Task<string?> GetHeadAsync()
@@ -40,7 +41,8 @@ public sealed partial class GitRepository
             ResetMode.Hard => "--hard",
             _ => "--mixed"
         };
-        return Run("reset", "-q", option, hash);
+        // The "--" keeps a commit from being read as a file of the same name
+        return Run("reset", "-q", option, hash, "--");
     }
 
     // Renames a local branch; with renameRemote, its branch on the remote is renamed too and tracked again
@@ -104,10 +106,10 @@ public sealed partial class GitRepository
         List<RemoteInfo> remotes = new List<RemoteInfo>();
         foreach (string line in result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            // "origin", a tab, the address, then "(fetch)"; the push line repeats it
-            string[] parts = line.Split('\t', ' ');
-            if (parts.Length >= 2 && line.TrimEnd().EndsWith("(fetch)", StringComparison.Ordinal))
-                remotes.Add(new RemoteInfo(parts[0], parts[1]));
+            // "origin", a tab, the address, then " (fetch)"; the push line repeats it, and addresses can hold spaces
+            string[] parts = line.TrimEnd('\r').Split('\t', 2);
+            if (parts.Length == 2 && parts[1].EndsWith(FETCH_MARK, StringComparison.Ordinal))
+                remotes.Add(new RemoteInfo(parts[0], parts[1][..^FETCH_MARK.Length]));
         }
 
         return remotes;
@@ -198,8 +200,21 @@ public sealed partial class GitRepository
         }
         finally
         {
+            DeleteQuietly(folder);
+        }
+    }
+
+    // A temporary folder that can't be removed is left for the system to clear
+    private static void DeleteQuietly(string folder)
+    {
+        try
+        {
             if (Directory.Exists(folder))
                 Directory.Delete(folder, true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Nothing to report: the patch was saved, and the system clears its temporary folder in time
         }
     }
 

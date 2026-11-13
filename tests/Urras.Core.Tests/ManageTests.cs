@@ -93,6 +93,10 @@ public static class ManageTests
         Assert.Success(await repository.Repository.SetRemoteUrlAsync("upstream", "https://example.org/b.git"), "url");
         RemoteInfo remote = (await repository.Repository.GetRemoteListAsync()).Single();
         Assert.Equal(new RemoteInfo("upstream", "https://example.org/b.git"), remote, "listed");
+        Assert.Success(await repository.Repository.AddRemoteAsync("disk", "F:/Echo Flint Engine/Urras"), "a path");
+        Assert.Equal("F:/Echo Flint Engine/Urras", (await repository.Repository.GetRemoteListAsync())
+                         .Single(listed => listed.Name == "disk").Url, "an address with spaces is kept whole");
+        Assert.Success(await repository.Repository.RemoveRemoteAsync("disk"), "remove the path");
         Assert.Success(await repository.Repository.RemoveRemoteAsync("upstream"), "remove");
         Assert.Equal(0, (await repository.Repository.GetRemoteListAsync()).Count, "gone");
     }
