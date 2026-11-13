@@ -150,7 +150,7 @@ public sealed class CommitInfo
     // Everyone by name and address, author first
     public string PeopleTip => CoAuthors.Count == 0
         ? "Open their profile, or this commit when the profile isn't known"
-        : "Authored by " + People[0] + "\nwith " + string.Join("\n", CoAuthors) +
+        : "Authored by " + People[0] + "\n\nCo-authored by\n" + string.Join("\n", CoAuthors) +
           "\n\nClick to open the author's profile";
 
     // Full hashes of the parent commits: none for the first commit, two or more for a merge
