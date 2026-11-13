@@ -75,8 +75,7 @@ public static partial class Dialogs
         return await dialog.ShowDialog<bool>(owner);
     }
 
-    // One of several actions, the first in the accent colour, then Cancel; the index chosen, or -1 for Cancel.
-    // details, when given, is a list folded under the message, such as the folders an action would use
+    // Several actions then Cancel, with details folded under the message; the index chosen, or -1 for Cancel
     public static async Task<int> PickActionAsync(Window owner, string title, string message,
                                                   IReadOnlyList<string>? details, params string[] actions)
     {
