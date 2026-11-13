@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Urras.Core.Git;
 using Urras.Core.Settings;
 
 namespace Urras.App;
@@ -20,6 +21,7 @@ public partial class MainWindow
             return;
 
         OptionsWindow window = new OptionsWindow(_settings, _accounts, AddAccountAsync, section);
+        int tabSize = _settings.TabSize;
         if (!await window.ShowDialog<bool>(this))
             return;
 
@@ -31,6 +33,9 @@ public partial class MainWindow
         UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();
+        // The open commit was laid out with the old tab size; the Changes diff is redrawn by the refresh
+        if (_settings.TabSize != tabSize && HistoryList.SelectedItem is CommitInfo commit)
+            await ShowCommitAsync(commit);
         await UpdateNotificationCountAsync();
     }
 
@@ -86,9 +91,12 @@ public partial class MainWindow
 
     private double TextWidth(string text)
     {
+        // The font Options chose, read from the settings since the window may not have taken it up yet
+        string family = _settings.FontFamilyFor(_settings.ThemeKey);
         FormattedText formatted = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture,
-                                                    FlowDirection.LeftToRight, new Typeface(FontFamily), FontSize,
-                                                    null);
+                                                    FlowDirection.LeftToRight,
+                                                    new Typeface(family.Length > 0 ? family : TextLook.DEFAULT_FONTS),
+                                                    _settings.FontSizeFor(_settings.ThemeKey), null);
         return formatted.Width;
     }
 
@@ -99,7 +107,6 @@ public partial class MainWindow
                                                                                         : DisplayFormats.DEFAULT_DATE;
         DisplayFormats.TimeFormat = DisplayFormats.Times.Contains(_settings.TimeFormat) ? _settings.TimeFormat
                                                                                         : DisplayFormats.DEFAULT_TIME;
-        ShowDateColumn();
         DiffRow.TabWidth = Math.Clamp(_settings.TabSize, 1, 16);
         if (Application.Current != null)
         {
@@ -123,6 +130,8 @@ public partial class MainWindow
             UseStyle<OneTaskbarEntryStyle>(styles, !_settings.ShowWindowsInTaskbar);
         }
 
+        // Measured after the text size is applied, so a larger font gets a wider column
+        ShowDateColumn();
         SubjectCounter.IsVisible = _settings.Prompts.ShowCommitLengthWarning;
         HideUntrackedBox.IsChecked = _settings.HideUntracked;
     }
