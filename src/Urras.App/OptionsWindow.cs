@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -164,6 +165,8 @@ public sealed class OptionsWindow : Window
 
         _editor = Combo(SystemShell.EditorNames, settings.Editor.Name);
         _shell = Combo(SystemShell.ShellNames, settings.Shell.Name);
+        _editor.ItemTemplate = ProgramTemplate;
+        _shell.ItemTemplate = ProgramTemplate;
         _editorPath.Text = settings.Editor.Path;
         _editorArguments.Text = settings.Editor.Arguments;
         _shellPath.Text = settings.Shell.Path;
@@ -1088,6 +1091,21 @@ public sealed class OptionsWindow : Window
     {
         return new RadioButton { Content = text, GroupName = group };
     }
+
+    // Each editor or shell with its own icon, from the copy installed here; the space stays when there's none
+    private static readonly FuncDataTemplate<string> ProgramTemplate = new FuncDataTemplate<string>((name, _) =>
+    {
+        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        row.Children.Add(new Image
+        {
+            Source = name == null ? null : ProgramIcons.For(name),
+            Width = PROGRAM_ICON_SIZE,
+            Height = PROGRAM_ICON_SIZE,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        row.Children.Add(new TextBlock { Text = name ?? string.Empty, VerticalAlignment = VerticalAlignment.Center });
+        return row;
+    });
 
     private static ComboBox Combo(IReadOnlyList<string> items, string? selected)
     {
