@@ -13,9 +13,6 @@ public partial class MainWindow
     private DiffSource? _shownSource;
     private const string STAGED_NOTE = "  (staged)";
     private const string RENAME_ARROW = "  →  ";
-    // Lines of a long commit message shown before it's opened, and the height of one as a share of the text size
-    private const int FOLDED_BODY_LINES = 6;
-    private const double BODY_LINE_SPACING = 1.4;
 
     private void InitializeDiffOptions()
     {
@@ -201,19 +198,16 @@ public partial class MainWindow
         string body = firstBreak < 0 ? string.Empty : message[(firstBreak + 1)..].Trim('\n', '\r');
         CommitDetails.DataContext = commit;
         CommitBody.Text = body;
-        CommitBodyScroll.IsVisible = body.Length > 0;
-        int lines = body.Split('\n').Length;
-        CommitBodyToggle.IsVisible = lines > FOLDED_BODY_LINES;
-        CommitBodyToggle.IsChecked = false;
+        CommitBodyToggle.IsVisible = body.Length > 0;
         FoldCommitBody();
     }
 
-    // A long message shows its first few lines until the toggle opens it all
+    // The rest of the message stays folded until the toggle opens it, and stays open for the next commit
     private void FoldCommitBody()
     {
-        double lineHeight = CommitBody.FontSize * BODY_LINE_SPACING;
-        CommitBodyScroll.MaxHeight = CommitBodyToggle.IsChecked == true ? double.PositiveInfinity
-                                                                         : lineHeight * FOLDED_BODY_LINES;
+        bool open = CommitBodyToggle.IsChecked == true;
+        CommitBodyScroll.IsVisible = open && CommitBody.Text?.Length > 0;
+        ToolTip.SetTip(CommitBodyToggle, open ? "Hide the rest of the message" : "Show the whole message");
     }
 
     private async Task ShowSourceAsync(DiffSource source)
