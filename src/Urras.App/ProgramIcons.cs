@@ -148,6 +148,8 @@ public static class ProgramIcons
             {
                 if (icon != IntPtr.Zero)
                     DestroyIcon(icon);
+                // Cleared first, so the finally can't free it a second time if the shell call fails
+                icon = IntPtr.Zero;
                 icon = ShellIcon(program);
                 return icon == IntPtr.Zero ? null : ToBitmap(icon);
             }

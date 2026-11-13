@@ -31,6 +31,14 @@ public partial class MainWindow
         List<string> known = _settings.OpenTabs.Where(path => _settings.Repositories.Contains(
                                                           path, RepositoryLayout.PathComparer)).ToList();
         _tabs = new RepositoryTabs(known, _settings.ActiveTab, _repository?.Path);
+        // The last repository may have gone from the list while its tabs stayed, so the active tab opens instead
+        if (_repository == null && _tabs.ActivePath is { } active)
+        {
+            _repository = new GitRepository(active);
+            _settings.LastRepository = active;
+            WatchRepository(active);
+            _ = UpdateForkSafelyAsync(active, false);
+        }
         ShowTabs();
     }
 
@@ -129,8 +137,9 @@ public partial class MainWindow
     {
         if (_tabs.Paths.Count < 2)
             return;
-        int target = ((_tabs.Active + direction) % _tabs.Paths.Count + _tabs.Paths.Count) % _tabs.Paths.Count;
-        await SwitchTabAsync(target);
+        _tabs.Step(direction);
+        await OpenRepositoryAsync(_tabs.ActivePath);
+        SelectCurrentRepositoryNode();
     }
 
     private async Task CloseTabAsync(int index)
@@ -177,6 +186,21 @@ public partial class MainWindow
         RepositoryTabsBar.IsVisible = _tabs.Paths.Count > 1;
         for (int index = 0; index < _tabs.Paths.Count; index++)
             RepositoryTabsPanel.Children.Add(TabButton(index));
+        if (_tabs.Active >= 0)
+        {
+            Control shown = RepositoryTabsPanel.Children[_tabs.Active];
+            Dispatcher.UIThread.Post(() => shown.BringIntoView(), DispatcherPriority.Loaded);
+        }
+    }
+
+    // Two tabs with the same folder name also show the folder above, so they can be told apart
+    private string TabName(string path)
+    {
+        string name = Path.GetFileName(path.TrimEnd('/', '\\'));
+        bool shared = _tabs.Paths.Any(other => !RepositoryLayout.PathComparer.Equals(other, path) &&
+                                                 Path.GetFileName(other.TrimEnd('/', '\\')) == name);
+        string? parent = Path.GetFileName(Path.GetDirectoryName(path.TrimEnd('/', '\\')));
+        return shared && !string.IsNullOrEmpty(parent) ? parent + "/" + name : name;
     }
 
     private Control TabButton(int index)
@@ -185,7 +209,7 @@ public partial class MainWindow
         bool active = index == _tabs.Active;
         TextBlock name = new TextBlock
         {
-            Text = Path.GetFileName(path.TrimEnd('/', '\\')),
+            Text = TabName(path),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
             FontWeight = active ? FontWeight.SemiBold : FontWeight.Normal

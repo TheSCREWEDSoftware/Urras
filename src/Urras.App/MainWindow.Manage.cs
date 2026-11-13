@@ -252,7 +252,10 @@ public partial class MainWindow
     {
         string? message = await Dialogs.PromptAsync(this, "Stash files",
                                                     "A name for the stash (optional), to find it again under " +
-                                                    "Stash > Stashes:");
+                                                    "Stash > Stashes:", optional: true);
+        // Cancel leaves the files alone; OK with no name stashes them without one
+        if (message == null)
+            return;
         List<string> paths = files.Select(change => change.Path).ToList();
         await RunGitAsync("Stashing…", repository => repository.StashFilesAsync(paths, message),
                           "Stashed " + (paths.Count == 1 ? paths[0] : paths.Count + " files") + ".");
@@ -344,7 +347,8 @@ public partial class MainWindow
         List<string> failed = new List<string>();
         foreach (BranchCleanup branch in chosen)
         {
-            if (!(await _repository.DeleteBranchAsync(branch.Name, !branch.Merged)).Success)
+            // Merged was checked against the remote's main branch, which branch -d ignores; unmerged were confirmed
+            if (!(await _repository.DeleteBranchAsync(branch.Name, true)).Success)
                 failed.Add(branch.Name);
         }
 

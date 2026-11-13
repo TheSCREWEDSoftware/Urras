@@ -123,18 +123,22 @@ public static partial class Dialogs
         return await dialog.ShowDialog<int?>(owner) ?? -1;
     }
 
-    public static async Task<string?> PromptAsync(Window owner, string title, string label, string initialText = "")
+    // Null when cancelled; with optional, a blank answer comes back empty instead of counting as cancelled
+    public static async Task<string?> PromptAsync(Window owner, string title, string label, string initialText = "",
+                                                  bool optional = false)
     {
         Window dialog = CreateWindow(title);
         TextBox input = new TextBox { Text = initialText };
         Button ok = new Button { Content = "OK", IsDefault = true };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
-        ok.Click += (_, _) => dialog.Close(input.Text?.Trim());
+        ok.Click += (_, _) => dialog.Close(input.Text?.Trim() ?? string.Empty);
         cancel.Click += (_, _) => dialog.Close(null);
         dialog.Opened += (_, _) => input.Focus();
 
         dialog.Content = Layout(new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap }, input, ok, cancel);
         string? result = await dialog.ShowDialog<string?>(owner);
+        if (optional && result != null)
+            return result;
         return string.IsNullOrWhiteSpace(result) ? null : result;
     }
 
@@ -240,7 +244,7 @@ public static partial class Dialogs
         };
         Button ok = new Button { Content = "OK" };
         Button cancel = new Button { Content = "Cancel", IsCancel = true };
-        ok.Click += (_, _) => dialog.Close(input.Text?.Trim());
+        ok.Click += (_, _) => dialog.Close(input.Text?.Trim() ?? string.Empty);
         cancel.Click += (_, _) => dialog.Close(null);
         dialog.Opened += (_, _) => input.Focus();
 

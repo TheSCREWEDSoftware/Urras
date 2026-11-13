@@ -59,6 +59,8 @@ public partial class MainWindow
 
         _settings.MoveRepository(missing, root);
         _settings.Save();
+        _tabs.Move(missing, root);
+        _places.Remove(missing);
         BuildRepositoryTree();
         await OpenRepositoryAsync(root);
     }
