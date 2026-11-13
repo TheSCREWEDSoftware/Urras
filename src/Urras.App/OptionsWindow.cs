@@ -45,6 +45,11 @@ public sealed class OptionsWindow : Window
     // A site's own icon beside the account's name
     private const double SITE_ICON_SIZE = 18;
     private const double BUTTON_ICON_SIZE = 16;
+    private const double PROGRAM_ICON_SIZE = 16;
+    // An account's picture, and the ring around it
+    private const double ACCOUNT_PICTURE = 36;
+    private const double RING_WIDTH = 2;
+    private const double RING_GAP = 2;
 
     // Space around each page, inside its scroll area (the scroll area's own padding cut off the end of long lines)
     private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
@@ -510,13 +515,22 @@ public sealed class OptionsWindow : Window
             names.Children.Add(new TextBlock { Text = "@" + account.Username + "  ·  " + account.WebHost,
                                                Foreground = MutedBrush });
             DockPanel row = new DockPanel();
-            AvatarView avatar = new AvatarView
+            // A ring with a small gap, so a dark or busy picture still stands out from the page
+            Border avatar = new Border
             {
-                Url = account.AvatarUrl,
-                PersonName = account.Name ?? account.Username,
-                Width = 36,
-                Height = 36,
-                Margin = new Thickness(0, 0, 10, 0)
+                CornerRadius = new CornerRadius(ACCOUNT_PICTURE / 2 + RING_GAP + RING_WIDTH),
+                BorderThickness = new Thickness(RING_WIDTH),
+                BorderBrush = ThemeBrushes.Get(ThemeColours.MUTED_TEXT),
+                Padding = new Thickness(RING_GAP),
+                Margin = new Thickness(0, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new AvatarView
+                {
+                    Url = account.AvatarUrl,
+                    PersonName = account.Name ?? account.Username,
+                    Width = ACCOUNT_PICTURE,
+                    Height = ACCOUNT_PICTURE
+                }
             };
             DockPanel.SetDock(avatar, Dock.Left);
             DockPanel.SetDock(signOut, Dock.Right);
