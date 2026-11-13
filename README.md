@@ -164,8 +164,9 @@ demo repository with branches, beside Urras's own projects.
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/screenshots/clone.png" alt="Screenshot: Clone: an address, or owner/name for GitHub"><br>
-      Clone: an address, or owner/name for GitHub
+      <img src="docs/screenshots/clone.png"
+           alt="Screenshot: Clone: an address or a page of it, the branch, where it goes, its name, progress"><br>
+      Clone: an address or a page of it, the branch, where it goes, its name, progress
     </td>
   </tr>
 </table>
@@ -216,6 +217,11 @@ demo repository with branches, beside Urras's own projects.
     <td width="50%">
       <img src="docs/screenshots/stashes.png" alt="Screenshot: Stashes: apply, pop, show or drop"><br>
       Stashes: apply, pop, show or drop
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/undo-commit.png"
+           alt="Screenshot: Undo right after committing: the changes go back to staged, the message to the boxes"><br>
+      Undo right after committing: the changes go back to staged, the message to the boxes
     </td>
   </tr>
 </table>
@@ -282,6 +288,11 @@ demo repository with branches, beside Urras's own projects.
       <img src="docs/screenshots/rst-preview.png" alt="Screenshot: reStructuredText (and AsciiDoc) rendered"><br>
       reStructuredText (and AsciiDoc) rendered
     </td>
+    <td width="50%">
+      <img src="docs/screenshots/code-colours.png"
+           alt="Screenshot: Code coloured with Visual Studio Code's grammars, here in the Monokai scheme"><br>
+      Code coloured with Visual Studio Code's grammars, here in the Monokai scheme
+    </td>
   </tr>
 </table>
 
@@ -341,6 +352,13 @@ demo repository with branches, beside Urras's own projects.
     <td width="50%">
       <img src="docs/screenshots/reflog.png" alt="Screenshot: The reflog, for finding lost commits"><br>
       The reflog, for finding lost commits
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/commit-details.png"
+           alt="Screenshot: A commit's details: its message, author and co-authors, hash, parent and CI result"><br>
+      A commit's details: its message, author and co-authors, hash, parent and CI result
     </td>
   </tr>
 </table>
@@ -418,6 +436,25 @@ demo repository with branches, beside Urras's own projects.
       Worktrees: open, add and remove
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/reset.png"
+           alt="Screenshot: Resetting to a commit: keep the changes staged or unstaged, or throw them away"><br>
+      Resetting to a commit: keep the changes staged or unstaged, or throw them away
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/branch-cleanup.png"
+           alt="Screenshot: Cleaning up branches merged into main or gone from the remote"><br>
+      Cleaning up branches merged into main or gone from the remote
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/remotes.png"
+           alt="Screenshot: Remotes: add, rename, change the address of or remove"><br>
+      Remotes: add, rename, change the address of or remove
+    </td>
+  </tr>
 </table>
 
 </details>
@@ -428,7 +465,8 @@ demo repository with branches, beside Urras's own projects.
 - Accounts on GitHub, GitHub Enterprise, GitLab, Gitea (Forgejo, Codeberg), Bitbucket and Bitbucket Server,
   with tokens in the system's credential store: profile pictures, pull requests (list, check out, create),
   notifications, and cloning your repositories
-- Sign in to GitHub through the browser, like GitHub Desktop; GitLab and GitHub Enterprise too once registered
+- Sign in to GitHub and gitlab.com through the browser, like GitHub Desktop; GitHub Enterprise and your own
+  GitLab too once registered
   ([docs/oauth.md](docs/oauth.md)), and a personal access token for everything else
 - View a repository on GitHub, GitLab, Bitbucket or Codeberg; forks ask once, like GitHub Desktop, whether they
   contribute to the parent or are for your own purposes, and say what you can push to

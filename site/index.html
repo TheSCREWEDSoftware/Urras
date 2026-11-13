@@ -129,8 +129,8 @@
     </div>
     <div class="card">
       <h3>Changes, line by line</h3>
-      <p>Stage, unstage or discard single lines or hunks. Unified, split or raw diffs with syntax colours,
-        word-level highlights, Markdown rendered and images compared.</p>
+      <p>Stage, unstage or discard single lines or hunks, stash just some files, and undo a commit right after.
+        Unified, split or raw diffs coloured with VS Code's grammars, word-level highlights and images compared.</p>
     </div>
     <div class="card">
       <h3>See files rendered</h3>
@@ -140,13 +140,13 @@
     </div>
     <div class="card">
       <h3>History and the past</h3>
-      <p>A commit graph across every branch with lanes in colour, authors' pictures and what isn't pushed yet;
-        blame, file history, searching commits, comparing commits and branches, and the reflog for lost work.</p>
+      <p>A commit graph across every branch with lanes in colour, authors' and co-authors' pictures and what isn't
+        pushed yet; each commit's details and CI result, blame, file history, search, compare and the reflog.</p>
     </div>
     <div class="card">
       <h3>The big Git jobs</h3>
-      <p>Merge, rebase and interactive rebase, a conflict resolver you can edit, bisect, stashes, tags,
-        submodules, worktrees and Git LFS.</p>
+      <p>Merge, rebase and interactive rebase, reset, a conflict resolver you can edit, bisect, stashes, tags,
+        patches, branch clean-up, remotes, submodules, worktrees and Git LFS.</p>
     </div>
     <div class="card">
       <h3>GitHub, GitLab and more</h3>
@@ -197,6 +197,12 @@
         <img src="thumbs/stashes.jpg" width="720" height="450" loading="lazy"
              alt="Stashes: apply, pop, show or drop"></a>
       <figcaption>Stashes: apply, pop, show or drop</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/undo-commit.png" class="shot">
+        <img src="thumbs/undo-commit.jpg" width="720" height="450" loading="lazy"
+             alt="Undo right after committing: the changes go back to staged, the message to the boxes"></a>
+      <figcaption>Undo right after committing: the changes go back to staged, the message to the boxes</figcaption>
     </figure>
     <figure>
       <a href="screenshots/file-filter.png" class="shot">
@@ -255,6 +261,12 @@
              alt="reStructuredText and AsciiDoc rendered"></a>
       <figcaption>reStructuredText and AsciiDoc rendered</figcaption>
     </figure>
+    <figure>
+      <a href="screenshots/code-colours.png" class="shot">
+        <img src="thumbs/code-colours.jpg" width="720" height="450" loading="lazy"
+             alt="Code coloured with Visual Studio Code's grammars, here in the Monokai scheme"></a>
+      <figcaption>Code coloured with Visual Studio Code's grammars, here in the Monokai scheme</figcaption>
+    </figure>
   </div>
   <h3 class="group">History</h3>
   <div class="gallery">
@@ -305,6 +317,12 @@
         <img src="thumbs/reflog.jpg" width="720" height="450" loading="lazy"
              alt="The reflog, for finding lost commits"></a>
       <figcaption>The reflog, for finding lost commits</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/commit-details.png" class="shot">
+        <img src="thumbs/commit-details.jpg" width="720" height="450" loading="lazy"
+             alt="A commit's details: its message, author and co-authors, hash, parent and CI result"></a>
+      <figcaption>A commit's details: its message, author and co-authors, hash, parent and CI result</figcaption>
     </figure>
   </div>
   <h3 class="group">Branches, merging and rebasing</h3>
@@ -357,6 +375,24 @@
              alt="Worktrees: open, add and remove"></a>
       <figcaption>Worktrees: open, add and remove</figcaption>
     </figure>
+    <figure>
+      <a href="screenshots/reset.png" class="shot">
+        <img src="thumbs/reset.jpg" width="720" height="450" loading="lazy"
+             alt="Resetting to a commit: keep the changes staged or unstaged, or throw them away"></a>
+      <figcaption>Resetting to a commit: keep the changes staged or unstaged, or throw them away</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/branch-cleanup.png" class="shot">
+        <img src="thumbs/branch-cleanup.jpg" width="720" height="450" loading="lazy"
+             alt="Cleaning up branches merged into main or gone from the remote"></a>
+      <figcaption>Cleaning up branches merged into main or gone from the remote</figcaption>
+    </figure>
+    <figure>
+      <a href="screenshots/remotes.png" class="shot">
+        <img src="thumbs/remotes.jpg" width="720" height="450" loading="lazy"
+             alt="Remotes: add, rename, change the address of or remove"></a>
+      <figcaption>Remotes: add, rename, change the address of or remove</figcaption>
+    </figure>
   </div>
   <h3 class="group">Repositories</h3>
   <div class="gallery">
@@ -381,8 +417,8 @@
     <figure>
       <a href="screenshots/clone.png" class="shot">
         <img src="thumbs/clone.jpg" width="720" height="450" loading="lazy"
-             alt="Clone: an address, or owner/name for GitHub"></a>
-      <figcaption>Clone: an address, or owner/name for GitHub</figcaption>
+             alt="Clone: an address or a page of it, the branch, where it goes, its name, progress"></a>
+      <figcaption>Clone: an address or a page of it, the branch, where it goes, its name, progress</figcaption>
     </figure>
     <figure>
       <a href="screenshots/import-dialog.png" class="shot">
