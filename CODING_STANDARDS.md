@@ -131,6 +131,7 @@ The app must build and run on Windows and Linux.
 
 - Write it as plain sentences that say what happened and what to do next.
 - No emoji. Use words, or plain markers such as `[P]` for pinned.
+- No long dashes (the en dash or em dash) anywhere, in code, text or docs. Use the plain hyphen: "Lines from 12 - 18".
 - Keep user-facing text in the App layer (or returned from Core as messages), so it can be collected for
   translation later.
 

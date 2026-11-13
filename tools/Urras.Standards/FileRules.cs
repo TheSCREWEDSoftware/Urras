@@ -7,6 +7,9 @@ namespace Urras.Standards;
 public static partial class FileRules
 {
     public const int MAX_LINE_LENGTH = 120;
+    // Long dashes read as machine-written; text uses the plain hyphen
+    private const char EN_DASH = '\u2013';
+    private const char EM_DASH = '\u2014';
 
     private static readonly string[] TextExtensions =
     {
@@ -99,6 +102,8 @@ public static partial class FileRules
                                          $"{line.Length} columns; wrap at {MAX_LINE_LENGTH}."));
         if (EmojiRegex().IsMatch(line))
             violations.Add(new Violation(path, number, "emoji", "Use words or plain markers instead of emoji."));
+        if (line.Contains(EN_DASH) || line.Contains(EM_DASH))
+            violations.Add(new Violation(path, number, "dashes", "Use a plain hyphen (-), not a long dash."));
     }
 
     // Removes strings, characters and comments, so the rules only look at code

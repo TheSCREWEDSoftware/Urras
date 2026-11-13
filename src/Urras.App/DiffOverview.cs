@@ -72,7 +72,7 @@ public sealed class DiffOverview : Control
                              : null;
     }
 
-    // "Lines 12–18 added" or "Line 12 removed (old file)", from the line numbers the rows show
+    // "Lines from 12 - 18 added" or "Line 12 removed (old file)", from the line numbers the rows show
     private static string Lines(IReadOnlyList<DiffRow> rows, int first, int last, Kind kind)
     {
         bool old = kind == Kind.Removed;
@@ -89,7 +89,7 @@ public sealed class DiffOverview : Control
             return what;
         return numbers.Count == 1 || numbers[0] == numbers[^1]
             ? $"Line {numbers[0]} {what}"
-            : $"Lines {numbers[0]}–{numbers[^1]} {what}";
+            : $"Lines from {numbers[0]} - {numbers[^1]} {what}";
     }
 
     private double EffectiveRowHeight => _rows.Count == 0 ? 0 : Math.Min(Bounds.Height / _rows.Count, RowHeight);

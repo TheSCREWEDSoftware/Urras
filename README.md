@@ -230,7 +230,7 @@ demo repository with branches, beside Urras's own projects.
   notebooks (with their output and charts), reStructuredText and AsciiDoc; pictures from the repository (or the
   internet, if chosen), and a Full screen view for previews and images
 - "+406 −553" and GitHub's five squares for each diff
-- A column of change marks beside each diff and preview: hovering one names its lines ("Lines 12–18 added"),
+- A column of change marks beside each diff and preview: hovering one names its lines ("Lines from 12 - 18 added"),
   clicking it goes there; a file opens at its first change
 - Syntax colours for common languages, word-level highlights in changed lines, optional whitespace and
   CRLF/LF markers, wrapped or scrolling lines
