@@ -247,8 +247,13 @@ public partial class MainWindow
         _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote, _rewritten, RemoteMissing);
         BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
         bool counts = SyncState.BranchHasCounts(status);
-        BranchCountsBadgeText.Text = counts ? SyncState.BranchCounts(status) : string.Empty;
-        BranchCountsBadge.IsVisible = counts;
+        string unpublished = SyncState.UnpublishedCounts(status);
+        BranchCountsBadgeText.Text = counts ? SyncState.BranchCounts(status) : unpublished;
+        BranchCountsBadge.IsVisible = counts || unpublished.Length > 0;
+        ToolTip.SetTip(BranchCountsBadge, unpublished.Length > 0
+            ? status.Unpublished + (status.Unpublished == 1 ? " commit isn't" : " commits aren't") +
+              " on any remote yet; Publish branch sends them"
+            : null);
         BranchCounts.Text = counts ? string.Empty : SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;
         SyncDetail.Text = _sync.Detail;
