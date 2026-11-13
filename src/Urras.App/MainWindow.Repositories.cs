@@ -54,7 +54,16 @@ public partial class MainWindow
         // Right-clicking an item selects it, so the menu acts on what was clicked
         RepositoryTree.AddHandler(PointerPressedEvent, (_, e) =>
         {
-            if (!e.GetCurrentPoint(RepositoryTree).Properties.IsRightButtonPressed)
+            PointerPointProperties pressed = e.GetCurrentPoint(RepositoryTree).Properties;
+            // A middle click opens the repository in a new tab, as a link does in a browser
+            if (pressed.IsMiddleButtonPressed &&
+                (e.Source as Control)?.DataContext is RepositoryNode { Path: { } path })
+            {
+                e.Handled = true;
+                _ = OpenInNewTabAsync(path);
+                return;
+            }
+            if (!pressed.IsRightButtonPressed)
                 return;
 
             _contextNode = (e.Source as Control)?.DataContext as RepositoryNode;
@@ -70,6 +79,7 @@ public partial class MainWindow
             _ = UpdateForkSafelyAsync(last, false);
         }
 
+        InitializeTabs();
         BuildRepositoryTree();
     }
 
@@ -186,6 +196,8 @@ public partial class MainWindow
 
     private async Task OpenRepositoryAsync(string? path)
     {
+        LeaveTab();
+        EnterTab(path);
         _repository = path == null ? null : new GitRepository(path);
         _status = null;
         _settings.LastRepository = path;
@@ -386,10 +398,8 @@ public partial class MainWindow
         _settings.RemoveRepository(node.Path);
         _settings.Save();
 
-        bool wasOpen = _repository != null && RepositoryLayout.PathComparer.Equals(_repository.Path, node.Path);
         BuildRepositoryTree();
-        if (wasOpen)
-            await OpenRepositoryAsync(null);
+        await ForgetTabAsync(node.Path);
     }
 
     // Context menu
@@ -407,6 +417,8 @@ public partial class MainWindow
             return;
         }
 
+        if (node.Path != null)
+            AddMenuItem(menu, "Open in a new tab", () => OpenInNewTabAsync(node.Path));
         AddOpenItems(menu, node);
 
         string scope = node.IsGroup ? " all" : string.Empty;

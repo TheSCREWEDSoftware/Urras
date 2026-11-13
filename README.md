@@ -116,6 +116,9 @@ demo repository with branches, beside Urras's own projects.
   and uncommitted changes
 - Import many repositories at once: everything in a folder, GitHub Desktop's list, or cloned from GitHub
 - Open repositories and files in the file explorer, a terminal or VS Code; copy paths and commit SHAs
+- Repository tabs, as in Fork: open several repositories side by side (middle-click or "Open in a new tab"),
+  switch with Ctrl+Tab, close with Ctrl+W; each tab keeps its page, selections and scroll, and they come back
+  after a restart
 - Quick Launch (Ctrl+P): open a repository, switch branch or run a command by typing a few letters
 - Search the repository list (Ctrl+F) by name, folder or group; Enter opens the first one found
 - Refreshes when something changes on disk, not every time the window comes back, so it stays quick with many

@@ -65,6 +65,29 @@
     <Style Selector="Button.caption.close:pointerover Path">
       <Setter Property="Stroke" Value="White" />
     </Style>
+    <Style Selector="Border.repositoryTab">
+      <Setter Property="CornerRadius" Value="6,6,0,0" />
+      <Setter Property="Padding" Value="10,3,4,3" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.repositoryTab:pointerover">
+      <Setter Property="Background" Value="{DynamicResource Urras.Hover}" />
+    </Style>
+    <Style Selector="Border.repositoryTab.active">
+      <Setter Property="Background" Value="{DynamicResource Urras.Raised}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Urras.Accent}" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+    </Style>
+    <Style Selector="Button.tabClose">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="Button.tabClose:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="Border.refBadge">
       <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Padding" Value="5,0" />
@@ -304,6 +327,13 @@
         </MenuItem>
       </Menu>
     </Grid>
+
+    <!-- Repository tabs, shown once two or more repositories are open -->
+    <Border x:Name="RepositoryTabsBar" DockPanel.Dock="Top" Padding="12,2,12,0" IsVisible="False">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="RepositoryTabsPanel" Orientation="Horizontal" Spacing="2" />
+      </ScrollViewer>
+    </Border>
 
     <!-- Toolbar -->
     <Border DockPanel.Dock="Top" Padding="12,4,12,10">

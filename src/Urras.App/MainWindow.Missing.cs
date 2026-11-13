@@ -84,6 +84,6 @@ public partial class MainWindow
         _settings.RemoveRepository(missing);
         _settings.Save();
         BuildRepositoryTree();
-        await OpenRepositoryAsync(null);
+        await ForgetTabAsync(missing);
     }
 }

@@ -237,7 +237,7 @@ public partial class MainWindow
         _suppressSelection = true;
         CommitFilesHeader.Text = files.Count == 1 ? "1 changed file" : files.Count.ToString("N0") + " changed files";
         CommitFilesList.ItemsSource = files;
-        CommitFilesList.SelectedItem = files.FirstOrDefault();
+        CommitFilesList.SelectedItem = TakePendingCommitFile(files) ?? files.FirstOrDefault();
         _suppressSelection = false;
 
         if (files.Count == 0)

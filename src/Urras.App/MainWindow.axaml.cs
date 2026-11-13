@@ -271,6 +271,7 @@ public partial class MainWindow : Window
         }
 
         UpdateButtons();
+        RestorePendingTab();
     }
 
     private void ShowEmptyState()
@@ -943,6 +944,16 @@ public partial class MainWindow : Window
         {
             e.Handled = true;
             _ = action();
+        }
+        else if (e.Key == Key.Tab && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+            _ = StepTabAsync(e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? -1 : 1);
+        }
+        else if (e.Key == Key.W && e.KeyModifiers == KeyModifiers.Control && _tabs.Paths.Count > 1)
+        {
+            e.Handled = true;
+            _ = CloseTabAsync(_tabs.Active);
         }
         else if (e.Key == Key.B && e.KeyModifiers.HasFlag(KeyModifiers.Control))
         {
