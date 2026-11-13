@@ -82,4 +82,21 @@ public static class RemoteHealthTests
             TestFolders.Delete(folder);
         }
     }
+
+    public static void FindsRemoteBranchesDifferingInCapitals()
+    {
+        string message = "error: cannot lock ref 'refs/remotes/fork/refactor(Scripts/Northrend)spellscripts': " +
+                         "Unable to create 'C:/x/.git/refs/remotes/fork/refactor(Scripts/Northrend)spellscripts" +
+                         ".lock': File exists.";
+        string? failed = RefNameClash.RefIn(message);
+        Assert.Equal("refs/remotes/fork/refactor(Scripts/Northrend)spellscripts", failed, "the ref");
+        List<string> refs = new List<string>
+        {
+            "refs/remotes/fork/refactor(Scripts/Northrend)SpellScripts",
+            "refs/remotes/fork/refactor(Scripts/Northrend)spellscripts",
+            "refs/remotes/fork/master"
+        };
+        Assert.Equal(2, RefNameClash.Matching(refs, failed!).Count, "both spellings");
+        Assert.Equal(null, RefNameClash.RefIn("error: cannot lock ref 'refs/heads/main': x"), "local branches kept");
+    }
 }

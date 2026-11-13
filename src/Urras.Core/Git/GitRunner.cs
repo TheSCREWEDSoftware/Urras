@@ -15,6 +15,9 @@ public static class GitRunner
     // Settings added to every command, as -c name=value (see CredentialSetup)
     public static IReadOnlyList<string> ExtraSettings { get; set; } = Array.Empty<string>();
 
+    // How long to wait for another Git to finish with a lock before trying again
+    private static readonly TimeSpan LOCK_WAIT = TimeSpan.FromSeconds(3);
+
     // Commands that can safely run again after a stale lock stopped them; a half-done merge or rebase can't
     private static readonly HashSet<string> Repeatable = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -31,11 +34,42 @@ public static class GitRunner
         List<string> given = arguments.ToList();
         GitResult result = await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet,
                                               environment, progress);
-        if (result.Success || !given.Any(Repeatable.Contains) || !StaleLock.TryClear(result.Message, workingDirectory))
+        if (result.Success || !given.Any(Repeatable.Contains) ||
+            !await FreeLockAsync(result.Message, workingDirectory, cancellationToken))
             return result;
 
         return await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet, environment,
                                   progress);
+    }
+
+    // True when the lock in Git's "File exists" message is out of the way and the command is worth running again
+    private static async Task<bool> FreeLockAsync(string message, string workingDirectory,
+                                                  CancellationToken cancellationToken)
+    {
+        if (StaleLock.PathIn(message, workingDirectory) is not { } path)
+            return false;
+        if (StaleLock.TryClear(message, workingDirectory))
+            return true;
+
+        // A young lock belongs to a Git still running, such as a fetch started elsewhere; give it a moment
+        if (File.Exists(path))
+        {
+            await Task.Delay(LOCK_WAIT, cancellationToken);
+            return true;
+        }
+
+        // Git removed its own lock, so it clashed with itself: two remote branches differing only in capitals
+        if (RefNameClash.RefIn(message) is not { } failed)
+            return true;
+        GitResult refs = await RunOnceAsync(workingDirectory, new[] { "for-each-ref", "--format=%(refname)",
+                                                                      RefNameClash.REMOTE_REFS },
+                                            null, cancellationToken, true, null, null);
+        List<string> clashing = RefNameClash.Matching(refs.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries |
+                                                                               StringSplitOptions.TrimEntries), failed);
+        foreach (string name in clashing)
+            await RunOnceAsync(workingDirectory, new[] { "update-ref", "-d", name }, null, cancellationToken, false,
+                               null, null);
+        return true;
     }
 
     private static async Task<GitResult> RunOnceAsync(string workingDirectory, IEnumerable<string> arguments,
@@ -88,6 +122,8 @@ public static class GitRunner
         {
             using Process process = new Process { StartInfo = startInfo };
             process.Start();
+            // A cancelled clone or fetch stops Git itself, not only the wait for it
+            using CancellationTokenRegistration stop = cancellationToken.Register(() => StopProcess(process));
 
             Task<string> outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
             Task<string> errorTask = progress == null ? process.StandardError.ReadToEndAsync(cancellationToken)
@@ -112,6 +148,19 @@ public static class GitRunner
 
         CommandFinished?.Invoke(commandLine, result, quiet);
         return result;
+    }
+
+    private static void StopProcess(Process process)
+    {
+        try
+        {
+            process.Kill(true);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or
+                                                       System.ComponentModel.Win32Exception)
+        {
+            // Already finished
+        }
     }
 
     // Each progress line goes to progress as Git rewrites it; only other lines are kept, so errors stay readable
