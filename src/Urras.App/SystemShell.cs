@@ -90,8 +90,14 @@ public static class SystemShell
     private static readonly (string Name, string Windows, string Unix, bool Script)[] KnownEditors =
     {
         ("Visual Studio Code", "code", "code", true),
+        ("Visual Studio Code Insiders", "code-insiders", "code-insiders", true),
+        ("VSCodium", "codium", "codium", true),
+        ("Cursor", "cursor", "cursor", true),
+        ("Windsurf", "windsurf", "windsurf", true),
         ("Visual Studio", "devenv", "", false),
         ("JetBrains Rider", "rider64", "rider", false),
+        ("IntelliJ IDEA", "idea64", "idea", false),
+        ("CLion", "clion64", "clion", false),
         ("Notepad++", "notepad++", "", false),
         ("Sublime Text", "subl", "subl", false),
         ("Zed", "zed", "zed", false)
@@ -102,7 +108,7 @@ public static class SystemShell
         .Select(editor => editor.Name).Append(Urras.Core.Settings.ProgramChoice.CUSTOM).ToList();
 
     public static IReadOnlyList<string> ShellNames => OperatingSystem.IsWindows()
-        ? new[] { DEFAULT, "Command Prompt", "PowerShell", "Git Bash", "Windows Terminal",
+        ? new[] { DEFAULT, "Command Prompt", "PowerShell", "PowerShell 7", "Git Bash", "WSL", "Windows Terminal",
                   Urras.Core.Settings.ProgramChoice.CUSTOM }
         : new[] { DEFAULT, Urras.Core.Settings.ProgramChoice.CUSTOM };
 
@@ -116,6 +122,10 @@ public static class SystemShell
             KnownEditors.FirstOrDefault(item => item.Name == editor.Name);
         if (known.Name == null)
             return OpenInVisualStudioCode(path);
+
+        // The copy found where it installs works even when its folder isn't on PATH (such as a Toolbox install)
+        if (ProgramIcons.Find(known.Name) is { } installed)
+            return Start(installed, path);
 
         string program = OperatingSystem.IsWindows() ? known.Windows : known.Unix;
         if (OperatingSystem.IsWindows() && known.Script)
@@ -142,6 +152,13 @@ public static class SystemShell
                                                                          UseShellExecute = true }),
             "PowerShell" => Start(new ProcessStartInfo("powershell.exe") { WorkingDirectory = folder,
                                                                             UseShellExecute = true }),
+            "PowerShell 7" => Start(new ProcessStartInfo(ProgramIcons.Find(shell.Name) ?? "pwsh.exe")
+            {
+                WorkingDirectory = folder,
+                UseShellExecute = true
+            }),
+            // A Linux shell in the same folder, which WSL reaches through /mnt
+            "WSL" => Start(new ProcessStartInfo("wsl.exe", "--cd \"" + folder + "\"") { UseShellExecute = true }),
             "Git Bash" => Start(GitBash(), "--cd=" + folder),
             "Windows Terminal" => Start("wt.exe", "-d", folder),
             _ => OpenTerminal(folder)

@@ -14,62 +14,117 @@ public static class ProgramIcons
     private const uint DIB_RGB_COLORS = 0;
     private const double SCREEN_DPI = 96;
 
-    private static readonly Dictionary<string, Bitmap?> Cache = new Dictionary<string, Bitmap?>();
+    private static readonly Dictionary<string, Task<Bitmap?>> Icons = new Dictionary<string, Task<Bitmap?>>();
+    private static readonly Dictionary<string, string?> Found = new Dictionary<string, string?>();
 
-    // The icon for an editor or shell Urras knows, or null when it isn't installed or the icon can't be read
-    public static Bitmap? For(string name)
+    // The icon for a known editor or shell, read in the background; null when it isn't installed or can't be read
+    public static Task<Bitmap?> ForAsync(string name)
     {
         if (!OperatingSystem.IsWindows())
-            return null;
+            return Task.FromResult<Bitmap?>(null);
 
-        lock (Cache)
+        lock (Icons)
         {
-            if (!Cache.TryGetValue(name, out Bitmap? icon))
+            if (!Icons.TryGetValue(name, out Task<Bitmap?>? icon))
             {
-                icon = Locate(name) is { } program ? Extract(program) : null;
-                Cache[name] = icon;
+                icon = Task.Run(() => Find(name) is { } program ? Extract(program) : null);
+                Icons[name] = icon;
             }
 
             return icon;
         }
     }
 
-    // Where each known program is usually installed; the first that exists is used
-    private static string? Locate(string name)
+    // Whether Urras knows where this program installs, so a missing one can be told apart from a custom one
+    public static bool IsKnown(string name)
+    {
+        return OperatingSystem.IsWindows() && Candidates(name).Any();
+    }
+
+    // The installed program, or null when it isn't in any of the places it usually goes
+    public static string? Find(string name)
+    {
+        if (!OperatingSystem.IsWindows())
+            return null;
+
+        lock (Found)
+        {
+            if (!Found.TryGetValue(name, out string? program))
+            {
+                program = Candidates(name).FirstOrDefault(File.Exists);
+                Found[name] = program;
+            }
+
+            return program;
+        }
+    }
+
+    // Where each known program is usually installed, in order of preference; only these places are looked at
+    private static IEnumerable<string> Candidates(string name)
     {
         string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string programs = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        string programs32 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         string system = Environment.GetFolderPath(Environment.SpecialFolder.System);
-        IEnumerable<string> candidates = name switch
+        string[] roots = { programs, programs32 };
+        return name switch
         {
             "Visual Studio Code" => new[]
             {
                 Path.Combine(local, "Programs", "Microsoft VS Code", "Code.exe"),
                 Path.Combine(programs, "Microsoft VS Code", "Code.exe")
             },
-            "Visual Studio" => Matching(Path.Combine(programs, "Microsoft Visual Studio"), "devenv.exe"),
-            "JetBrains Rider" => Matching(Path.Combine(programs, "JetBrains"), "rider64.exe")
-                .Prepend(Path.Combine(local, "Programs", "Rider", "bin", "rider64.exe")),
-            "Notepad++" => new[] { Path.Combine(programs, "Notepad++", "notepad++.exe") },
-            "Sublime Text" => new[] { Path.Combine(programs, "Sublime Text", "sublime_text.exe") },
+            "Visual Studio Code Insiders" => new[]
+            {
+                Path.Combine(local, "Programs", "Microsoft VS Code Insiders", "Code - Insiders.exe"),
+                Path.Combine(programs, "Microsoft VS Code Insiders", "Code - Insiders.exe")
+            },
+            "VSCodium" => new[]
+            {
+                Path.Combine(local, "Programs", "VSCodium", "VSCodium.exe"),
+                Path.Combine(programs, "VSCodium", "VSCodium.exe")
+            },
+            "Cursor" => new[] { Path.Combine(local, "Programs", "cursor", "Cursor.exe") },
+            "Windsurf" => new[] { Path.Combine(local, "Programs", "Windsurf", "Windsurf.exe") },
+            // Program Files\Microsoft Visual Studio\<version>\<edition>\Common7\IDE\devenv.exe
+            "Visual Studio" => roots.SelectMany(root => Under(Path.Combine(root, "Microsoft Visual Studio"), 2,
+                                                              Path.Combine("Common7", "IDE", "devenv.exe"))),
+            "JetBrains Rider" => JetBrains(local, roots, "Rider", "rider64.exe"),
+            "IntelliJ IDEA" => JetBrains(local, roots, "IntelliJ IDEA", "idea64.exe"),
+            "CLion" => JetBrains(local, roots, "CLion", "clion64.exe"),
+            "Notepad++" => roots.Select(root => Path.Combine(root, "Notepad++", "notepad++.exe")),
+            "Sublime Text" => roots.Select(root => Path.Combine(root, "Sublime Text", "sublime_text.exe")),
             "Zed" => new[] { Path.Combine(local, "Programs", "Zed", "Zed.exe") },
             "Command Prompt" => new[] { Path.Combine(system, "cmd.exe") },
             "PowerShell" => new[] { Path.Combine(system, "WindowsPowerShell", "v1.0", "powershell.exe") },
-            "Git Bash" => new[] { Path.Combine(programs, "Git", "git-bash.exe") },
+            "PowerShell 7" => new[] { Path.Combine(programs, "PowerShell", "7", "pwsh.exe") },
+            "Git Bash" => roots.Select(root => Path.Combine(root, "Git", "git-bash.exe")),
+            "WSL" => new[] { Path.Combine(system, "wsl.exe") },
             "Windows Terminal" => new[] { Path.Combine(local, "Microsoft", "WindowsApps", "wt.exe") },
             _ => Array.Empty<string>()
         };
-        return candidates.FirstOrDefault(File.Exists);
     }
 
-    // A program somewhere under a folder (several versions of Visual Studio or Rider), newest folder first
-    private static IEnumerable<string> Matching(string folder, string file)
+    // A JetBrains IDE from the Toolbox (in the user's programs) or a standalone install (Program Files\JetBrains)
+    private static IEnumerable<string> JetBrains(string local, string[] roots, string product, string program)
+    {
+        string inBin = Path.Combine("bin", program);
+        return Under(Path.Combine(local, "Programs"), 1, inBin)
+            .Where(path => path.Contains(product, StringComparison.OrdinalIgnoreCase))
+            .Concat(roots.SelectMany(root => Under(Path.Combine(root, "JetBrains"), 1, inBin)
+                                             .Where(path => path.Contains(product,
+                                                                          StringComparison.OrdinalIgnoreCase))));
+    }
+
+    // relative inside each folder exactly depth levels below folder, newest-named first (2026 before 2022)
+    private static IEnumerable<string> Under(string folder, int depth, string relative)
     {
         try
         {
-            return Directory.Exists(folder)
-                ? Directory.EnumerateFiles(folder, file, SearchOption.AllDirectories).OrderDescending().ToList()
-                : Enumerable.Empty<string>();
+            IEnumerable<string> level = new[] { folder };
+            for (int step = 0; step < depth; step++)
+                level = level.Where(Directory.Exists).SelectMany(Directory.EnumerateDirectories).ToList();
+            return level.OrderDescending().Select(found => Path.Combine(found, relative)).ToList();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

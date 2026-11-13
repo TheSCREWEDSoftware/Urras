@@ -48,6 +48,7 @@ public sealed class OptionsWindow : Window
     private const double SITE_ICON_SIZE = 18;
     private const double BUTTON_ICON_SIZE = 16;
     private const double PROGRAM_ICON_SIZE = 16;
+    private const double NOT_INSTALLED_OPACITY = 0.55;
     private const string FOLLOW_THEME_LABEL = "Follow the theme";
     // An account's picture, and the ring around it
     private const double ACCOUNT_PICTURE = 36;
@@ -1105,19 +1106,32 @@ public sealed class OptionsWindow : Window
     }
 
     // Each editor or shell with its own icon, from the copy installed here; the space stays when there's none
-    private static readonly FuncDataTemplate<string> ProgramTemplate = new FuncDataTemplate<string>((name, _) =>
+    private static readonly FuncDataTemplate<string> ProgramTemplate = new FuncDataTemplate<string>((name, scope) =>
     {
         StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(new Image
+        Image icon = new Image
         {
-            Source = name == null ? null : ProgramIcons.For(name),
             Width = PROGRAM_ICON_SIZE,
             Height = PROGRAM_ICON_SIZE,
             VerticalAlignment = VerticalAlignment.Center
-        });
-        row.Children.Add(new TextBlock { Text = name ?? string.Empty, VerticalAlignment = VerticalAlignment.Center });
+        };
+        TextBlock label = new TextBlock { Text = name ?? string.Empty, VerticalAlignment = VerticalAlignment.Center };
+        row.Children.Add(icon);
+        row.Children.Add(label);
+        if (name != null)
+            _ = ShowProgramAsync(name, icon, label);
         return row;
     });
+
+    // The icon arrives from the background; a known program that isn't installed is dimmed, as GitHub Desktop does
+    private static async Task ShowProgramAsync(string name, Image icon, TextBlock label)
+    {
+        icon.Source = await ProgramIcons.ForAsync(name);
+        if (icon.Source != null || !ProgramIcons.IsKnown(name) || ProgramIcons.Find(name) != null)
+            return;
+        label.Opacity = NOT_INSTALLED_OPACITY;
+        ToolTip.SetTip(label, "Not found where it usually installs; Urras will still try to start it by name");
+    }
 
     private static ComboBox Combo(IReadOnlyList<string> items, string? selected)
     {
