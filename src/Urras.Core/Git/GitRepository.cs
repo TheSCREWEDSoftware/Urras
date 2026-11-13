@@ -42,8 +42,10 @@ public sealed partial class GitRepository
             return new GitResult(-1, string.Empty, "Invalid target folder: " + targetFolder);
 
         // A URL or branch starting with - would be read as an option (such as --upload-pack, which runs a program)
-        if (url.TrimStart().StartsWith('-') || branch?.StartsWith('-') == true)
+        if (url.TrimStart().StartsWith('-'))
             return new GitResult(-1, string.Empty, "That doesn't look like a repository address: " + url);
+        if (branch?.StartsWith('-') == true)
+            return new GitResult(-1, string.Empty, "That doesn't look like a branch name: " + branch);
 
         Directory.CreateDirectory(parent);
         List<string> arguments = new List<string> { "clone", "--progress" };
@@ -68,9 +70,17 @@ public sealed partial class GitRepository
 
         HashSet<string> names = result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                                       .Select(line => line.Split('\t').Last().Trim())
-                                      .Select(name => name.Replace("refs/heads/", "").Replace("refs/tags/", ""))
+                                      .Select(name => StripPrefix(StripPrefix(name, HEADS), TAGS))
                                       .ToHashSet(StringComparer.Ordinal);
         return candidates.FirstOrDefault(names.Contains);
+    }
+
+    private const string HEADS = "refs/heads/";
+    private const string TAGS = "refs/tags/";
+
+    private static string StripPrefix(string name, string prefix)
+    {
+        return name.StartsWith(prefix, StringComparison.Ordinal) ? name[prefix.Length..] : name;
     }
 
     public async Task<RepositoryStatus> GetStatusAsync()

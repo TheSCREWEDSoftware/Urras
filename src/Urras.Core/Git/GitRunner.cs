@@ -34,12 +34,30 @@ public static class GitRunner
         List<string> given = arguments.ToList();
         GitResult result = await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet,
                                               environment, progress);
-        if (result.Success || !given.Any(Repeatable.Contains) ||
+        if (result.Success || CommandOf(given) is not { } command || !Repeatable.Contains(command) ||
             !await FreeLockAsync(result.Message, workingDirectory, cancellationToken))
             return result;
 
         return await RunOnceAsync(workingDirectory, given, standardInput, cancellationToken, quiet, environment,
                                   progress);
+    }
+
+    // The Git command itself, past any -c settings and options, so a branch named "push" isn't taken for one
+    private static string? CommandOf(List<string> arguments)
+    {
+        for (int index = 0; index < arguments.Count; index++)
+        {
+            if (arguments[index] == "-c" || arguments[index] == "-C")
+            {
+                index++;
+                continue;
+            }
+
+            if (!arguments[index].StartsWith('-'))
+                return arguments[index];
+        }
+
+        return null;
     }
 
     // True when the lock in Git's "File exists" message is out of the way and the command is worth running again
