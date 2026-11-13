@@ -72,6 +72,10 @@ public sealed class AppSettings
     public List<string> Repositories { get; set; } = new List<string>();
     public string? LastRepository { get; set; }
 
+    // Repositories open in tabs, and which tab was showing
+    public List<string> OpenTabs { get; set; } = new List<string>();
+    public int ActiveTab { get; set; }
+
     // Saved by name, so the settings file stays readable
     [JsonConverter(typeof(JsonStringEnumConverter<DiffViewMode>))]
     public DiffViewMode DiffView { get; set; } = DiffViewMode.Unified;
