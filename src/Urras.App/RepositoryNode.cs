@@ -61,6 +61,21 @@ public sealed class RepositoryNode : INotifyPropertyChanged
         }
     }
 
+    // "16 ↑" in a badge at the row's end, as on the branch and push buttons; empty when level with the remote
+    public string Counts
+    {
+        get => _counts;
+        private set
+        {
+            _counts = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasCounts));
+        }
+    }
+
+    public bool HasCounts => _counts.Length > 0;
+    private string _counts = string.Empty;
+
     public string Detail
     {
         get => _detail;
@@ -91,13 +106,14 @@ public sealed class RepositoryNode : INotifyPropertyChanged
         }
     }
 
-    // "main · origin ↑1 ↓2 · ●3", "main · local only", "missing: folder not found"
+    // "main · origin · ●3" with "1 ↑  2 ↓" in a badge, "main · local only", "missing: folder not found"
     public void ApplySummary(RepositorySummary summary)
     {
         if (summary.State == RepositoryState.Missing)
         {
             Detail = "missing: folder not found";
             DetailBrush = MissingBrush;
+            Counts = string.Empty;
             ItemOpacity = MISSING_OPACITY;
             return;
         }
@@ -105,6 +121,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
         ItemOpacity = 1.0;
         string branch = summary.IsDetached ? "detached" : summary.Branch ?? "?";
         string text;
+        string counts = string.Empty;
         IBrush brush = MutedBrush;
 
         switch (summary.State)
@@ -124,10 +141,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
             default:
             {
                 text = branch + " · " + summary.UpstreamRemote;
-                if (summary.Ahead > 0)
-                    text += " ↑" + summary.Ahead;
-                if (summary.Behind > 0)
-                    text += " ↓" + summary.Behind;
+                counts = SyncState.Counts(summary.Ahead, summary.Behind);
                 if (summary.Ahead > 0 || summary.Behind > 0)
                     brush = AttentionBrush;
                 break;
@@ -142,6 +156,7 @@ public sealed class RepositoryNode : INotifyPropertyChanged
 
         Detail = text;
         DetailBrush = brush;
+        Counts = counts;
     }
 
     // "4 repositories · 2 need attention"

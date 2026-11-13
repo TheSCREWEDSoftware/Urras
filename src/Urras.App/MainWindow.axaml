@@ -449,8 +449,15 @@ Esc clears it" />
                   <StackPanel Margin="0,2" Opacity="{Binding ItemOpacity}">
                     <TextBlock Text="{Binding Name}" FontWeight="{Binding NameWeight}"
                                TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
-                               TextTrimming="CharacterEllipsis" />
+                    <DockPanel>
+                      <Border DockPanel.Dock="Right" IsVisible="{Binding HasCounts}" Margin="6,0,0,0"
+                              Background="{DynamicResource Urras.Badge}" CornerRadius="8" Padding="6,0"
+                              VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Counts}" FontSize="10" FontWeight="SemiBold" />
+                      </Border>
+                      <TextBlock Text="{Binding Detail}" Foreground="{Binding DetailBrush}" FontSize="11"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
                   </StackPanel>
                 </local:TreeGuides>
               </TreeDataTemplate>

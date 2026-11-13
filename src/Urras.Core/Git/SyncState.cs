@@ -64,7 +64,7 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
     }
 
     // "13 ↑  2 ↓": the number, then the arrow, the same on the branch and push buttons
-    private static string Counts(int ahead, int behind)
+    public static string Counts(int ahead, int behind)
     {
         List<string> parts = new List<string>();
         if (ahead > 0)
