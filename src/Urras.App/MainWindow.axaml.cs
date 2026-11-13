@@ -838,6 +838,21 @@ public partial class MainWindow : Window
         }
     }
 
+    // Called off the interface thread with Git's progress: "Cloning game (2 of 5)…  48%" in the status line
+    private Action<string> CloneStatus(string text)
+    {
+        return line =>
+        {
+            if (GitProgress.Parse(line) is not { } progress || CloneProgress.Overall(progress) is not { } overall)
+                return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_busy)
+                    StatusText.Text = text + "  " + (int)overall + "%";
+            });
+        };
+    }
+
     private void SetBusy(bool busy, string? text)
     {
         _busy = busy;

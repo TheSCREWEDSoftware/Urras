@@ -149,7 +149,8 @@ public partial class MainWindow
             }
 
             string target = Path.Combine(parent, owner, repository.Name);
-            SetBusy(true, $"Cloning {repository.FullName} ({++done} of {chosen.Count})…");
+            string busy = $"Cloning {repository.FullName} ({++done} of {chosen.Count})…";
+            SetBusy(true, busy);
             if (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any())
             {
                 if (RepositoryImport.IsRepository(target))
@@ -159,7 +160,7 @@ public partial class MainWindow
                 continue;
             }
 
-            GitResult result = await GitRepository.CloneAsync(repository.CloneUrl, target);
+            GitResult result = await GitRepository.CloneAsync(repository.CloneUrl, target, null, CloneStatus(busy));
             if (result.Success)
                 _settings.AddRepository(target);
             else

@@ -68,8 +68,9 @@ public partial class MainWindow
         if (_missingPath is not { } missing || CloneAddressOf(missing) is not { } address)
             return;
 
-        SetBusy(true, "Cloning " + address + "…");
-        GitResult result = await GitRepository.CloneAsync(address, missing);
+        string busy = "Cloning " + address + "…";
+        SetBusy(true, busy);
+        GitResult result = await GitRepository.CloneAsync(address, missing, null, CloneStatus(busy));
         SetBusy(false, null);
         if (ReportResult(result, "Cloned into " + missing + "."))
             await OpenRepositoryAsync(missing);
