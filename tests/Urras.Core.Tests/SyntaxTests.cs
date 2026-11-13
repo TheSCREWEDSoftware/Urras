@@ -82,6 +82,20 @@ public static class SyntaxTests
         Assert.Equal(SyntaxKind.Attribute, KindOf("max_line_length = 120", "max", SyntaxLanguage.Config), "ini key");
     }
 
+    public static void ColoursSql()
+    {
+        SyntaxLanguage sql = SyntaxLanguage.ForPath("data/sql/updates/db_world/2026_11_12_00.sql")!;
+        Assert.Equal("SQL", sql.Name, "picked by extension");
+        const string LINE = "CREATE TABLE IF NOT EXISTS `guild_rewards` (`entry` int unsigned DEFAULT '0'); -- note";
+        Assert.Equal(SyntaxKind.Keyword, KindOf(LINE, "CREATE", sql), "keyword in capitals");
+        Assert.Equal(SyntaxKind.String, KindOf(LINE, "`guild", sql), "backtick name");
+        Assert.Equal(SyntaxKind.Type, KindOf(LINE, "int", sql), "column type");
+        Assert.Equal(SyntaxKind.String, KindOf(LINE, "'0'", sql), "string");
+        Assert.Equal(SyntaxKind.Comment, KindOf(LINE, "note", sql), "-- comment");
+        Assert.Equal(SyntaxKind.Keyword, KindOf("delete from t where id = 5; # gone", "delete", sql), "lower case");
+        Assert.Equal(SyntaxKind.Comment, KindOf("delete from t where id = 5; # gone", "gone", sql), "# comment");
+    }
+
     public static void ColoursMarkup()
     {
         SyntaxLanguage xml = SyntaxLanguage.Xml;

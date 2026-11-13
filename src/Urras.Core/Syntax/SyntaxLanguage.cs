@@ -87,6 +87,7 @@ public sealed class SyntaxLanguage
             ".yml" or ".yaml" => Yaml,
             ".toml" or ".ini" or ".cfg" => Config,
             ".lua" => Lua,
+            ".sql" => Sql,
             ".glsl" or ".vert" or ".frag" or ".hlsl" or ".shader" => Cpp,
             _ => null
         };
@@ -196,6 +197,25 @@ public sealed class SyntaxLanguage
         LineComments = new[] { "#" },
         BlockComment = ("<#", "#>"),
         DollarVariables = true,
+        IgnoreCase = true
+    };
+
+    // Standard SQL with MySQL's and MariaDB's extras (# comments, backtick names), as AzerothCore uses
+    public static readonly SyntaxLanguage Sql = new SyntaxLanguage("SQL")
+    {
+        Keywords = Words("add all alter and as asc auto_increment begin between by cascade case change character " +
+                         "charset check collate column commit constraint create cross database default delete " +
+                         "desc distinct drop else end engine exists foreign from full group having if ignore in " +
+                         "index inner insert into is join key left like limit modify not null on or order outer " +
+                         "primary procedure references rename replace right rollback select set table temporary " +
+                         "then transaction trigger truncate union unique unsigned update use using values view when " +
+                         "where with true false comment row_format", ignoreCase: true),
+        Types = Words("tinyint smallint mediumint int integer bigint float double decimal numeric bit bool boolean " +
+                      "char varchar binary varbinary tinytext text mediumtext longtext tinyblob blob mediumblob " +
+                      "longblob date time datetime timestamp year enum json", ignoreCase: true),
+        LineComments = new[] { "--", "#" },
+        BlockComment = ("/*", "*/"),
+        Quotes = "'\"`",
         IgnoreCase = true
     };
 
