@@ -9,6 +9,9 @@ namespace Urras.App;
 public partial class MainWindow
 {
     private DiffSource? _shownSource;
+    // Lines of a long commit message shown before it's opened, and the height of one as a share of the text size
+    private const int FOLDED_BODY_LINES = 6;
+    private const double BODY_LINE_SPACING = 1.4;
 
     private void InitializeDiffOptions()
     {
@@ -174,11 +177,38 @@ public partial class MainWindow
     // History tab
 
     // What the history diff pane shows: one commit (From is null), or the difference between two revisions
-    private sealed record DiffSource(string Title, string Target, string? From);
+    private sealed record DiffSource(string Title, string Target, string? From, CommitInfo? Commit = null);
 
     private Task ShowCommitAsync(CommitInfo commit)
     {
-        return ShowSourceAsync(new DiffSource(commit.ShortHash + "  " + commit.Subject, commit.Hash, null));
+        return ShowSourceAsync(new DiffSource(commit.ShortHash + "  " + commit.Subject, commit.Hash, null, commit));
+    }
+
+    // The details above the diff: summary, the rest of the message, its people and hash; hidden for comparisons
+    private async Task ShowCommitDetailsAsync(CommitInfo? commit)
+    {
+        CommitDetails.IsVisible = commit is { IsStash: false } && _repository != null;
+        if (commit is not { IsStash: false } || _repository == null)
+            return;
+
+        string message = await _repository.GetCommitMessageAsync(commit.Hash) ?? string.Empty;
+        int firstBreak = message.IndexOf('\n');
+        string body = firstBreak < 0 ? string.Empty : message[(firstBreak + 1)..].Trim('\n', '\r');
+        CommitDetails.DataContext = commit;
+        CommitBody.Text = body;
+        CommitBodyScroll.IsVisible = body.Length > 0;
+        int lines = body.Split('\n').Length;
+        CommitBodyToggle.IsVisible = lines > FOLDED_BODY_LINES;
+        CommitBodyToggle.IsChecked = false;
+        FoldCommitBody();
+    }
+
+    // A long message shows its first few lines until the toggle opens it all
+    private void FoldCommitBody()
+    {
+        double lineHeight = CommitBody.FontSize * BODY_LINE_SPACING;
+        CommitBodyScroll.MaxHeight = CommitBodyToggle.IsChecked == true ? double.PositiveInfinity
+                                                                         : lineHeight * FOLDED_BODY_LINES;
     }
 
     private async Task ShowSourceAsync(DiffSource source)
@@ -187,6 +217,7 @@ public partial class MainWindow
             return;
 
         _shownSource = source;
+        await ShowCommitDetailsAsync(source.From == null ? source.Commit : null);
         if (_settings.FileListMode == FileListMode.Combined)
         {
             string diff = source.From == null ? await _repository.GetCommitDiffAsync(source.Target)
@@ -199,6 +230,7 @@ public partial class MainWindow
                                                      : await _repository.GetCompareFilesAsync(source.From,
                                                                                               source.Target);
         _suppressSelection = true;
+        CommitFilesHeader.Text = files.Count == 1 ? "1 changed file" : files.Count.ToString("N0") + " changed files";
         CommitFilesList.ItemsSource = files;
         CommitFilesList.SelectedItem = files.FirstOrDefault();
         _suppressSelection = false;
@@ -256,6 +288,7 @@ public partial class MainWindow
     {
         _shownSource = null;
         CommitFilesList.ItemsSource = null;
+        CommitDetails.IsVisible = false;
     }
 
     // Images and rendered Markdown replace the text diff until a text file is shown again

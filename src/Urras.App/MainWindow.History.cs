@@ -11,33 +11,45 @@ public partial class MainWindow
 
     private HistoryFilter? _historyFilter;
 
+    // Opens the profile or commit under the pointer; a picture is inside its row, so the person is found first
+    private void OpenLinkUnder(Control host, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(host).Properties.IsLeftButtonPressed)
+            return;
+
+        CommitPerson? person = null;
+        for (Control? control = e.Source as Control; control != null && control != host;
+             control = control.Parent as Control)
+        {
+            if (control is { Tag: "person", DataContext: CommitPerson picked })
+                person = picked;
+            if (control.Tag is not string link || control.DataContext is not CommitInfo commit || commit.IsStash)
+                continue;
+
+            string? url = link != "author" ? CommitUrl(commit.Hash)
+                        : person != null ? PersonUrl(person, commit) : AuthorUrl(commit);
+            if (url == null)
+                return;
+            e.Handled = true;
+            _ = Report(SystemShell.OpenUrl(url));
+            return;
+        }
+    }
+
     private void InitializeHistoryTools()
     {
         // A click on an author's name or picture, or on a commit's hash, opens it on the website instead of selecting
-        HistoryList.AddHandler(PointerPressedEvent, (_, e) =>
+        HistoryList.AddHandler(PointerPressedEvent, (_, e) => OpenLinkUnder(HistoryList, e),
+                               Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        CommitDetails.AddHandler(PointerPressedEvent, (_, e) => OpenLinkUnder(CommitDetails, e),
+                                 Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        CopyCommitHashButton.Click += async (_, _) =>
         {
-            if (!e.GetCurrentPoint(HistoryList).Properties.IsLeftButtonPressed)
-                return;
+            if (CommitDetails.DataContext is CommitInfo shown)
+                await CopyAsync(shown.Hash);
+        };
+        CommitBodyToggle.IsCheckedChanged += (_, _) => FoldCommitBody();
 
-            // A co-author's picture is inside the row, so the person is found first and the commit further up
-            CommitPerson? person = null;
-            for (Control? control = e.Source as Control; control != null && control != HistoryList;
-                 control = control.Parent as Control)
-            {
-                if (control is { Tag: "person", DataContext: CommitPerson picked })
-                    person = picked;
-                if (control.Tag is not string link || control.DataContext is not CommitInfo commit || commit.IsStash)
-                    continue;
-
-                string? url = link != "author" ? CommitUrl(commit.Hash)
-                            : person != null ? PersonUrl(person, commit) : AuthorUrl(commit);
-                if (url == null)
-                    return;
-                e.Handled = true;
-                _ = Report(SystemShell.OpenUrl(url));
-                return;
-            }
-        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
         SearchModeBox.SelectedIndex = 0;
         SearchBox.KeyDown += async (_, e) =>
