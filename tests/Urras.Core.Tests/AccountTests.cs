@@ -138,4 +138,19 @@ public static class AccountTests
                      "a bot's page");
         Assert.Equal("https://github.com/Nyeriah", GitHubClient.ProfileUrl("Nyeriah"), "a person's page");
     }
+
+    public static void LinksEachAccountToItsProfile()
+    {
+        Account github = new Account { Kind = AccountKind.GitHub, ApiUrl = GitHubClient.GITHUB_API, Username = "me" };
+        Assert.Equal("https://github.com/me", github.ProfileUrl, "GitHub");
+        Account gitlab = new Account { Kind = AccountKind.GitLab, ApiUrl = Account.ApiFor(AccountKind.GitLab, null),
+                                       Username = "TheSCREWEDSoftware" };
+        Assert.Equal("https://gitlab.com/TheSCREWEDSoftware", gitlab.ProfileUrl, "gitlab.com");
+        Account own = new Account { Kind = AccountKind.GitLab, Username = "ryan",
+                                    ApiUrl = Account.ApiFor(AccountKind.GitLab, "https://example.org/gitlab") };
+        Assert.Equal("https://example.org/gitlab/ryan", own.ProfileUrl, "a server under a path");
+        Account server = new Account { Kind = AccountKind.BitbucketServer, Username = "ryan",
+                                       ApiUrl = Account.ApiFor(AccountKind.BitbucketServer, "https://git.example.org") };
+        Assert.Equal("https://git.example.org/users/ryan", server.ProfileUrl, "Bitbucket Server");
+    }
 }

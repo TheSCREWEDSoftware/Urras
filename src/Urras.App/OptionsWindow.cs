@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -484,8 +485,42 @@ public sealed class OptionsWindow : Window
             row.Children.Add(avatar);
             row.Children.Add(signOut);
             row.Children.Add(names);
+            OpensProfile(avatar, account);
+            OpensProfile(names, account);
+            row.ContextMenu = ProfileMenu(account);
             _accountList.Children.Add(row);
         }
+    }
+
+    // A click on the picture or names opens the account's page on its website
+    private static void OpensProfile(Control control, Account account)
+    {
+        control.Cursor = new Cursor(StandardCursorType.Hand);
+        // The gaps between the names count too
+        if (control is Panel { Background: null } panel)
+            panel.Background = Brushes.Transparent;
+        ToolTip.SetTip(control, "Open " + account.ProfileUrl);
+        control.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(control).Properties.IsLeftButtonPressed)
+                return;
+            e.Handled = true;
+            SystemShell.OpenUrl(account.ProfileUrl);
+        };
+    }
+
+    // Right-click: open the profile, or copy the username
+    private ContextMenu ProfileMenu(Account account)
+    {
+        MenuItem open = new MenuItem { Header = "Open profile" };
+        open.Click += (_, _) => SystemShell.OpenUrl(account.ProfileUrl);
+        MenuItem copy = new MenuItem { Header = "Copy username" };
+        copy.Click += async (_, _) =>
+        {
+            if (Clipboard != null)
+                await Clipboard.SetTextAsync(account.Username);
+        };
+        return new ContextMenu { ItemsSource = new[] { open, copy } };
     }
 
     private async Task AddAccountAsync(AccountKind kind)

@@ -44,6 +44,38 @@ public sealed class Account
         _ => Host
     };
 
+    // The account's page on its website, such as gitlab.com/TheSCREWEDSoftware
+    [JsonIgnore]
+    public string ProfileUrl
+    {
+        get
+        {
+            string user = Uri.EscapeDataString(Username);
+            return Kind switch
+            {
+                AccountKind.GitHub => "https://github.com/" + user,
+                AccountKind.Bitbucket => "https://bitbucket.org/" + user,
+                AccountKind.BitbucketServer => SiteBefore(BITBUCKET_SERVER_API) + "/users/" + user,
+                AccountKind.GitHubEnterprise => SiteBefore(ENTERPRISE_API) + "/" + user,
+                AccountKind.GitLab => SiteBefore(GITLAB_API) + "/" + user,
+                _ => SiteBefore(GITEA_API) + "/" + user
+            };
+        }
+    }
+
+    private const string ENTERPRISE_API = "/api/v3";
+    private const string GITLAB_API = "/api/v4";
+    private const string GITEA_API = "/api/v1";
+    private const string BITBUCKET_SERVER_API = "/rest/api/1.0";
+
+    // The website address the API sits under, keeping any path a self-hosted server lives at
+    private string SiteBefore(string apiPath)
+    {
+        string api = ApiUrl.TrimEnd('/');
+        return api.EndsWith(apiPath, StringComparison.OrdinalIgnoreCase) ? api[..^apiPath.Length]
+                                                                         : "https://" + WebHost;
+    }
+
     public static string PlatformName(AccountKind kind)
     {
         return kind switch
@@ -61,11 +93,11 @@ public sealed class Account
         return kind switch
         {
             AccountKind.GitHub => GitHubClient.GITHUB_API,
-            AccountKind.GitHubEnterprise => site + "/api/v3",
-            AccountKind.GitLab => (site.Length == 0 ? "https://gitlab.com" : site) + "/api/v4",
-            AccountKind.Gitea => (site.Length == 0 ? "https://codeberg.org" : site) + "/api/v1",
+            AccountKind.GitHubEnterprise => site + ENTERPRISE_API,
+            AccountKind.GitLab => (site.Length == 0 ? "https://gitlab.com" : site) + GITLAB_API,
+            AccountKind.Gitea => (site.Length == 0 ? "https://codeberg.org" : site) + GITEA_API,
             AccountKind.Bitbucket => BitbucketClient.BITBUCKET_API,
-            _ => site + "/rest/api/1.0"
+            _ => site + BITBUCKET_SERVER_API
         };
     }
 
