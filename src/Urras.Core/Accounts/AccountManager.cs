@@ -265,6 +265,8 @@ public sealed class AccountManager
             return own.AvatarUrl;
 
         (long? Id, string Login)? noreply = GitHubClient.FromNoreplyEmail(email);
+        if (noreply == null && GitHubClient.KnownLogin(email) is { } known)
+            noreply = (null, known);
         if (noreply == null)
             return null;
         return noreply.Value.Id is { } githubId

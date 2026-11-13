@@ -237,6 +237,24 @@ public sealed class GitHubClient : PlatformClient
                                 Text(user, "avatar_url"));
     }
 
+    private const string BOT_SUFFIX = "[bot]";
+
+    // Bots that often commit with an address carrying no id, such as GitHub Actions' own commits
+    private static readonly Dictionary<string, long> KnownBots = new Dictionary<string, long>(
+        StringComparer.OrdinalIgnoreCase)
+    {
+        ["github-actions[bot]"] = 41898282,
+        ["dependabot[bot]"] = 49699333,
+        ["renovate[bot]"] = 29139614
+    };
+
+    // Addresses common in co-author lines whose GitHub account is known, so they get its picture and page
+    private static readonly Dictionary<string, string> KnownAddresses = new Dictionary<string, string>(
+        StringComparer.OrdinalIgnoreCase)
+    {
+        ["noreply@anthropic.com"] = "claude"
+    };
+
     // The picture for a GitHub user id, at a size in pixels; works without signing in
     public static string AvatarUrl(long id, int size = AVATAR_SIZE, string host = "avatars.githubusercontent.com")
     {
@@ -253,6 +271,20 @@ public sealed class GitHubClient : PlatformClient
         int plus = local.IndexOf('+');
         if (plus > 0 && long.TryParse(local[..plus], out long id))
             return (id, local[(plus + 1)..]);
-        return (null, local);
+        return (KnownBots.TryGetValue(local, out long botId) ? botId : null, local);
+    }
+
+    // The GitHub account behind an address that isn't a noreply one but that GitHub links to an account
+    public static string? KnownLogin(string email)
+    {
+        return KnownAddresses.GetValueOrDefault(email.Trim());
+    }
+
+    // A bot's page is under /apps; anyone else's is their own
+    public static string ProfileUrl(string login)
+    {
+        return login.EndsWith(BOT_SUFFIX, StringComparison.OrdinalIgnoreCase)
+            ? "https://github.com/apps/" + Uri.EscapeDataString(login[..^BOT_SUFFIX.Length])
+            : "https://github.com/" + Uri.EscapeDataString(login);
     }
 }

@@ -130,5 +130,12 @@ public static class AccountTests
         Assert.Equal("https://github.com/old.png?size=64", manager.AvatarUrlFor("old@users.noreply.github.com"),
                      "older noreply");
         Assert.True(manager.AvatarUrlFor("someone@example.com") == null, "unknown without asking");
+        Assert.Equal("https://avatars.githubusercontent.com/u/41898282?s=64",
+                     manager.AvatarUrlFor("github-actions[bot]@users.noreply.github.com"), "GitHub Actions' picture");
+        Assert.Equal("https://github.com/claude.png?size=64", manager.AvatarUrlFor("noreply@anthropic.com"),
+                     "an address GitHub links to an account");
+        Assert.Equal("https://github.com/apps/github-actions", GitHubClient.ProfileUrl("github-actions[bot]"),
+                     "a bot's page");
+        Assert.Equal("https://github.com/Nyeriah", GitHubClient.ProfileUrl("Nyeriah"), "a person's page");
     }
 }

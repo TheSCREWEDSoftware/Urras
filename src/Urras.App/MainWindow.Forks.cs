@@ -278,7 +278,9 @@ public partial class MainWindow
     private string? PersonUrl(CommitPerson person, CommitInfo commit)
     {
         if (GitHubClient.FromNoreplyEmail(person.Email) is { } user)
-            return "https://github.com/" + Uri.EscapeDataString(user.Login);
+            return GitHubClient.ProfileUrl(user.Login);
+        if (GitHubClient.KnownLogin(person.Email) is { } known)
+            return GitHubClient.ProfileUrl(known);
         return CommitUrl(commit.Hash);
     }
 
