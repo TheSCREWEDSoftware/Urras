@@ -1,5 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
+using Avalonia.Media;
 using Urras.Core.Git;
 using Urras.Core.Settings;
 
@@ -9,6 +11,8 @@ namespace Urras.App;
 public partial class MainWindow
 {
     private DiffSource? _shownSource;
+    private const string STAGED_NOTE = "  (staged)";
+    private const string RENAME_ARROW = "  →  ";
     // Lines of a long commit message shown before it's opened, and the height of one as a share of the text size
     private const int FOLDED_BODY_LINES = 6;
     private const double BODY_LINE_SPACING = 1.4;
@@ -131,14 +135,14 @@ public partial class MainWindow
             return;
         }
 
-        string title = change.DisplayPath + (staged ? "  (staged)" : string.Empty);
+        string title = change.DisplayPath + (staged ? STAGED_NOTE : string.Empty);
         bool markdown = Urras.Core.Markdown.PreviewFiles.CanPreview(change.Path);
         PreviewBox.IsVisible = markdown;
         if (ImageFiles.IsImage(change.Path) || (markdown && _settings.MarkdownPreview))
         {
             (byte[]? before, byte[]? after) = await LoadChangeContentsAsync(change, staged);
             _changesDiffText = null;
-            DiffTitle.Text = title;
+            ShowTitle(DiffTitle, title, change, null, staged ? STAGED_NOTE : null);
             DiffStats.Show(markdown ? await _repository.GetDiffAsync(change, staged) : null);
             if (markdown)
                 ShowMarkdown(MarkdownView, ImageView, DiffList, before, after, change.Path,
@@ -153,6 +157,7 @@ public partial class MainWindow
             diff = change.Kind == ChangeKind.Conflicted ? "Conflicted file: resolve it, then stage it."
                                                         : "No text changes.";
         ShowChangesDiff(diff, title);
+        ShowTitle(DiffTitle, title, change, null, staged ? STAGED_NOTE : null);
     }
 
     // Staged: last commit against the staged copy. Unstaged: staged copy against the file on disk
@@ -265,7 +270,7 @@ public partial class MainWindow
             byte[]? after = file.Kind == ChangeKind.Deleted ? null
                                                             : await _repository.GetBlobAsync(source.Target, file.Path);
             _commitDiffText = null;
-            CommitDiffTitle.Text = title;
+            ShowTitle(CommitDiffTitle, title, file, CommitTitlePrefix(source));
             CommitDiffStats.Show(!markdown ? null
                                  : source.From == null ? await _repository.GetCommitFileDiffAsync(source.Target, file)
                                                        : await _repository.GetCompareDiffAsync(source.From,
@@ -282,6 +287,50 @@ public partial class MainWindow
         string diff = source.From == null ? await _repository.GetCommitFileDiffAsync(source.Target, file)
                                           : await _repository.GetCompareDiffAsync(source.From, source.Target, file);
         ShowCommitDiff(diff, title);
+        ShowTitle(CommitDiffTitle, title, file, CommitTitlePrefix(source));
+    }
+
+    // A single commit's summary is in the details above, so only a comparison names what it compares
+    private static string? CommitTitlePrefix(DiffSource source)
+    {
+        return source.Commit == null ? source.Title + "  ·  " : null;
+    }
+
+    // The plain title goes in Tag, for telling a new file from the same one; a path's folders are dimmed
+    private static void ShowTitle(TextBlock block, string title, FileChange? file = null, string? prefix = null,
+                                  string? suffix = null)
+    {
+        block.Tag = title;
+        block.Inlines?.Clear();
+        if (file == null)
+        {
+            block.Text = title;
+            return;
+        }
+
+        IBrush muted = ThemeBrushes.Get(ThemeColours.MUTED_TEXT);
+        InlineCollection inlines = new InlineCollection();
+        if (prefix != null)
+            inlines.Add(new Run(prefix));
+        if (file.OriginalPath != null)
+        {
+            AddPath(inlines, file.OriginalPath, muted);
+            inlines.Add(new Run(RENAME_ARROW) { Foreground = muted });
+        }
+
+        AddPath(inlines, file.Path, muted);
+        if (suffix != null)
+            inlines.Add(new Run(suffix) { Foreground = muted });
+        block.Inlines = inlines;
+    }
+
+    // "folder/sub/" dimmed, then the file's name
+    private static void AddPath(InlineCollection inlines, string path, IBrush muted)
+    {
+        int slash = path.LastIndexOf('/');
+        if (slash >= 0)
+            inlines.Add(new Run(path[..(slash + 1)]) { Foreground = muted });
+        inlines.Add(new Run(path[(slash + 1)..]));
     }
 
     private void ClearCommitFiles()

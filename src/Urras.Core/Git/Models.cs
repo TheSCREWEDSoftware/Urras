@@ -144,6 +144,9 @@ public sealed class CommitInfo
     // "Crow", "Crow, Claude Opus 5.5" or "3 people"
     public string PeopleText => CommitPerson.Describe(People);
 
+    // For the narrow History column: the author, and "+2" for co-authors (named in the tooltip)
+    public string ShortPeopleText => CoAuthors.Count == 0 ? Author : Author + "  +" + CoAuthors.Count;
+
     // Everyone by name and address, author first
     public string PeopleTip => CoAuthors.Count == 0
         ? "Open their profile, or this commit when the profile isn't known"

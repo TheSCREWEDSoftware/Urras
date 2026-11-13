@@ -15,6 +15,10 @@
     <Style Selector="TextBlock.link:pointerover">
       <Setter Property="TextDecorations" Value="Underline" />
     </Style>
+    <!-- A tooltip belongs to the link under it, so it would inherit the link's underline -->
+    <Style Selector="ToolTip :is(TextBlock)">
+      <Setter Property="TextDecorations" Value="{x:Null}" />
+    </Style>
     <Style Selector="TextBlock.header">
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -515,12 +519,15 @@ Esc clears it" />
                   <ListBox x:Name="UnstagedList" Classes="files" SelectionMode="Multiple">
                     <ListBox.ItemTemplate>
                       <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <local:ChangeKindBadge Change="{Binding}" />
-                          <TextBlock Text="!" FontWeight="Bold" Foreground="{DynamicResource Urras.Warning}"
+                        <!-- The path is cut in the middle so the file's name stays readable; the tooltip has it all -->
+                        <DockPanel>
+                          <local:ChangeKindBadge DockPanel.Dock="Left" Change="{Binding}" Margin="0,0,8,0" />
+                          <TextBlock DockPanel.Dock="Left" Text="!" FontWeight="Bold" Margin="0,0,8,0"
+                                     Foreground="{DynamicResource Urras.Warning}"
                                      IsVisible="{Binding HasWarning}" ToolTip.Tip="{Binding Warning}" />
-                          <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
+                          <TextBlock Text="{Binding Path}" TextTrimming="PrefixCharacterEllipsis"
+                                     ToolTip.Tip="{Binding DisplayPath}" />
+                        </DockPanel>
                       </DataTemplate>
                     </ListBox.ItemTemplate>
                   </ListBox>
@@ -535,12 +542,15 @@ Esc clears it" />
                   <ListBox x:Name="StagedList" Classes="files" SelectionMode="Multiple">
                     <ListBox.ItemTemplate>
                       <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <local:ChangeKindBadge Change="{Binding}" />
-                          <TextBlock Text="!" FontWeight="Bold" Foreground="{DynamicResource Urras.Warning}"
+                        <!-- The path is cut in the middle so the file's name stays readable; the tooltip has it all -->
+                        <DockPanel>
+                          <local:ChangeKindBadge DockPanel.Dock="Left" Change="{Binding}" Margin="0,0,8,0" />
+                          <TextBlock DockPanel.Dock="Left" Text="!" FontWeight="Bold" Margin="0,0,8,0"
+                                     Foreground="{DynamicResource Urras.Warning}"
                                      IsVisible="{Binding HasWarning}" ToolTip.Tip="{Binding Warning}" />
-                          <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
+                          <TextBlock Text="{Binding Path}" TextTrimming="PrefixCharacterEllipsis"
+                                     ToolTip.Tip="{Binding DisplayPath}" />
+                        </DockPanel>
                       </DataTemplate>
                     </ListBox.ItemTemplate>
                   </ListBox>
@@ -735,7 +745,7 @@ Esc clears it" />
                           </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                       </ItemsControl>
-                      <TextBlock Text="{Binding PeopleText}" TextTrimming="CharacterEllipsis" Opacity="0.7"
+                      <TextBlock Text="{Binding ShortPeopleText}" TextTrimming="CharacterEllipsis" Opacity="0.7"
                                  VerticalAlignment="Center" Tag="author" Classes="link"
                                  ToolTip.Tip="{Binding PeopleTip}" />
                     </DockPanel>
@@ -814,10 +824,11 @@ Esc clears it" />
               <ListBox x:Name="CommitFilesList" Classes="files">
                 <ListBox.ItemTemplate>
                   <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <local:ChangeKindBadge Change="{Binding}" />
-                      <TextBlock Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                    <DockPanel>
+                      <local:ChangeKindBadge DockPanel.Dock="Left" Change="{Binding}" Margin="0,0,8,0" />
+                      <TextBlock Text="{Binding Path}" TextTrimming="PrefixCharacterEllipsis"
+                                 ToolTip.Tip="{Binding DisplayPath}" />
+                    </DockPanel>
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ListBox>

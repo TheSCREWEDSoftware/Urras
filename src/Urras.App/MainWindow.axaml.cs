@@ -622,22 +622,22 @@ public partial class MainWindow : Window
     private void ShowChangesDiff(string? text, string title)
     {
         // The same diff already on screen isn't rebuilt, so a refresh doesn't make it jump
-        if (text != null && text == _changesDiffText && title == DiffTitle.Text && DiffList.IsVisible &&
+        if (text != null && text == _changesDiffText && title == DiffTitle.Tag as string && DiffList.IsVisible &&
             DiffList.ItemsSource != null)
             return;
 
-        bool newFile = title != DiffTitle.Text;
+        bool newFile = title != DiffTitle.Tag as string;
         _changesDiffText = text;
-        DiffTitle.Text = title;
+        ShowTitle(DiffTitle, title);
         ShowText(ImageView, MarkdownView, DiffList);
         RenderDiff(DiffList, text, newFile);
     }
 
     private void ShowCommitDiff(string? text, string title)
     {
-        bool newFile = title != CommitDiffTitle.Text;
+        bool newFile = title != CommitDiffTitle.Tag as string;
         _commitDiffText = text;
-        CommitDiffTitle.Text = title;
+        ShowTitle(CommitDiffTitle, title);
         ShowText(CommitImageView, CommitMarkdownView, CommitDiffList);
         RenderDiff(CommitDiffList, text, newFile);
     }
