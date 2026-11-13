@@ -109,6 +109,9 @@ public sealed class AppSettings
     // Opening a file's diff scrolls to its first change
     public bool JumpToFirstChange { get; set; } = true;
 
+    // A blank line before each file's header when a whole commit is shown as one diff
+    public bool CombinedFileGap { get; set; } = true;
+
     // Each repository's first commits, by folder, so forks of one project group together without asking Git again
     public Dictionary<string, List<string>> RootCommits { get; set; } = new Dictionary<string, List<string>>();
 

@@ -91,6 +91,7 @@ public sealed class OptionsWindow : Window
     private readonly ComboBox _timeFormat;
     private readonly ComboBox _tabSize;
     private readonly CheckBox _jumpToChange;
+    private readonly CheckBox _fileGap;
     private readonly ComboBox _previewImages;
     private readonly ComboBox _font;
     private readonly ComboBox _fontSize;
@@ -170,6 +171,7 @@ public sealed class OptionsWindow : Window
                          null);
         _tabSize.SelectedIndex = Math.Max(0, Array.IndexOf(TabSizes, settings.TabSize));
         _jumpToChange = Check("Scroll to the first change when opening a file's diff", settings.JumpToFirstChange);
+        _fileGap = Check("Leave a gap before each file in the Combined view", settings.CombinedFileGap);
         _previewImages = Combo(new List<string>
         {
             "Don't show pictures", "Pictures from the repository", "Pictures from the repository and the internet"
@@ -331,6 +333,7 @@ public sealed class OptionsWindow : Window
         _tracker.Track(APPEARANCE, "Time format", () => Selected(_timeFormat));
         _tracker.Track(APPEARANCE, "Tab size", () => Selected(_tabSize));
         _tracker.Track(APPEARANCE, "Scroll to the first change", () => OnOff(_jumpToChange));
+        _tracker.Track(APPEARANCE, "Gap before each file", () => OnOff(_fileGap));
         _tracker.Track(APPEARANCE, "Pictures in previews", () => Selected(_previewImages));
         _tracker.Track(APPEARANCE, "Font", () => Selected(_font));
         _tracker.Track(APPEARANCE, "Text size", () => Selected(_fontSize));
@@ -612,7 +615,7 @@ public sealed class OptionsWindow : Window
                          "the other themes' own choices. Fonts are the ones installed on this computer."),
                     Heading("Formatting"), Label("Date format"), _dateFormat, Label("Time format"), _timeFormat,
                     Heading("Diffs"), Label("Tab size"), _tabSize,
-                    _jumpToChange,
+                    _jumpToChange, _fileGap,
                     Label("Pictures in Markdown and HTML previews"), _previewImages,
                     Note("Pictures from the internet, such as README badges, are downloaded when shown, so their " +
                          "sites can see that. SVG pictures show as their description."),
@@ -889,6 +892,7 @@ public sealed class OptionsWindow : Window
         _settings.TimeFormat = DisplayFormats.Times[Math.Max(0, _timeFormat.SelectedIndex)];
         _settings.TabSize = TabSizes[Math.Max(0, _tabSize.SelectedIndex)];
         _settings.JumpToFirstChange = _jumpToChange.IsChecked == true;
+        _settings.CombinedFileGap = _fileGap.IsChecked == true;
         _settings.PreviewImages = (PreviewImages)Math.Max(0, _previewImages.SelectedIndex);
         _settings.FontFamily = TextLook.ChosenFont(_font) ?? string.Empty;
         _settings.FontSize = TextLook.ChosenSize(_fontSize, false) ?? AppSettings.DEFAULT_FONT_SIZE;

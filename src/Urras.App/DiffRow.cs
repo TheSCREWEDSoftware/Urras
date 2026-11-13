@@ -12,6 +12,8 @@ public sealed class DiffRow
     private const int MAX_ROWS = 20000;
     // Spaces shown for a tab; set from Options
     public static int TabWidth { get; set; } = 4;
+    // A blank row before every file's header but the first, so files in one diff stand apart; set from Options
+    public static bool FileGap { get; set; } = true;
 
     private static IBrush NormalBrush => ThemeBrushes.Get(ThemeColours.TEXT);
     private static IBrush MutedBrush => ThemeBrushes.Get(ThemeColours.MUTED_TEXT);
@@ -124,6 +126,7 @@ public sealed class DiffRow
             DiffRow row = line.IsCode ? UnifiedCode(line, words.GetValueOrDefault(line),
                                                     syntax.GetValueOrDefault(line), showWhitespace)
                                       : FullWidth(line);
+            AddGapBefore(rows, line);
             rows.Add(row.WithLines(line));
         }
 
@@ -148,6 +151,7 @@ public sealed class DiffRow
 
             if (splitRow.Full != null)
             {
+                AddGapBefore(rows, splitRow.Full);
                 rows.Add(FullWidth(splitRow.Full).WithLines(splitRow.Full));
                 continue;
             }
@@ -328,6 +332,12 @@ public sealed class DiffRow
         IBrush? background = style.Trailing ? TrailingWhitespaceBackground :
                              style.Changed ? wordBackground : null;
         return new TextSegment(text, style.Whitespace ? WhitespaceBrush : SyntaxBrush(style.Kind), background);
+    }
+
+    private static void AddGapBefore(List<DiffRow> rows, DiffLine line)
+    {
+        if (FileGap && line.Kind == DiffLineKind.FileHeader && rows.Count > 0)
+            rows.Add(new DiffRow());
     }
 
     private static DiffRow FullWidth(DiffLine line)

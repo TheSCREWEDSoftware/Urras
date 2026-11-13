@@ -22,6 +22,7 @@ public partial class MainWindow
 
         OptionsWindow window = new OptionsWindow(_settings, _accounts, AddAccountAsync, section);
         int tabSize = _settings.TabSize;
+        bool fileGap = _settings.CombinedFileGap;
         if (!await window.ShowDialog<bool>(this))
             return;
 
@@ -33,8 +34,9 @@ public partial class MainWindow
         UpdateAssistantButtons();
         SetStatus("Options saved.", false);
         await RefreshAsync();
-        // The open commit was laid out with the old tab size; the Changes diff is redrawn by the refresh
-        if (_settings.TabSize != tabSize && HistoryList.SelectedItem is CommitInfo commit)
+        // The open commit was laid out with the old tab size or file gaps; the refresh redraws the Changes diff
+        if ((_settings.TabSize != tabSize || _settings.CombinedFileGap != fileGap) &&
+            HistoryList.SelectedItem is CommitInfo commit)
             await ShowCommitAsync(commit);
         await UpdateNotificationCountAsync();
     }
@@ -108,6 +110,7 @@ public partial class MainWindow
         DisplayFormats.TimeFormat = DisplayFormats.Times.Contains(_settings.TimeFormat) ? _settings.TimeFormat
                                                                                         : DisplayFormats.DEFAULT_TIME;
         DiffRow.TabWidth = Math.Clamp(_settings.TabSize, 1, 16);
+        DiffRow.FileGap = _settings.CombinedFileGap;
         if (Application.Current != null)
         {
             Application.Current.RequestedThemeVariant = _settings.Theme switch
