@@ -10,6 +10,7 @@ namespace Urras.App;
 public static partial class Dialogs
 {
     private const double DIALOG_WIDTH = 480;
+    private const double WIDE_CHOICE_WIDTH = 640;
     // Room around a dialog's text and between its parts, and around the footer's buttons
     private const double BODY_MARGIN = 20;
     private const double BODY_SPACING = 14;
@@ -80,6 +81,9 @@ public static partial class Dialogs
                                                   IReadOnlyList<string>? details, params string[] actions)
     {
         Window dialog = CreateWindow(title);
+        // Three choices and Cancel don't fit in a row at the usual width
+        if (actions.Length > 2)
+            dialog.Width = WIDE_CHOICE_WIDTH;
         StackPanel buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,

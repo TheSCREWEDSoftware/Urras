@@ -203,6 +203,7 @@ public partial class MainWindow
         int firstBreak = message.IndexOf('\n');
         string body = firstBreak < 0 ? string.Empty : message[(firstBreak + 1)..].Trim('\n', '\r');
         CommitBody.Text = body;
+        _ = ShowChecksAsync(commit);
         CommitBodyToggle.IsVisible = body.Length > 0;
         FoldCommitBody();
     }

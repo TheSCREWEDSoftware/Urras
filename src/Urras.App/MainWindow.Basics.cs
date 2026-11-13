@@ -289,6 +289,7 @@ public partial class MainWindow
 
             string fullPath = Path.Combine(_repository.Path, change.Path);
             AddConflictItems(menu, change);
+            AddIgnoreItems(menu, change);
             AddFileHistoryItems(menu, change);
             AddCustomCommandItems(menu, Urras.Core.Commands.CommandScope.File, CurrentContext(file: change.Path));
             if (change.Kind != ChangeKind.Deleted)

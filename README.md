@@ -179,7 +179,9 @@ demo repository with branches, beside Urras's own projects.
 - Co-authors on commits (Co-authored-by lines), picked from people in the history, typed as `Name <email>`, or
   found as @username with a GitHub account
 - Stage, unstage or discard single lines or whole hunks: select lines in the diff and right-click
-- Commit with summary and description, amend the last commit (Ctrl+Enter to commit)
+- Commit with summary and description, amend the last commit (Ctrl+Enter to commit), and Undo right after
+  committing, like GitHub Desktop: the changes go back to staged and the message back in the boxes
+- Ignore a new file, every file of its kind, or its folder from its right-click menu (written to `.gitignore`)
 - Filter the change list, hide untracked files, and see line-ending problems (checked against `.gitattributes`
   and `.editorconfig`) before they are committed
 - Commit message helpers: summary length counter, recent messages, and the repository's commit template
@@ -348,7 +350,8 @@ demo repository with branches, beside Urras's own projects.
 <details>
 <summary><b>Branches, syncing and publishing</b></summary>
 
-- Branches: switch, create, delete, check out remote branches
+- Branches: switch, create, rename (on the remote too), delete, check out remote branches; remotes added,
+  renamed, pointed elsewhere or removed (Branch > Remotes)
 - Fetch, pull and push from one button, like GitHub Desktop's: an arrow up or down, the ahead and behind counts,
   and when it last fetched; the first push publishes the branch
 - Publish repository: a repository with no remote is made on GitHub, GitLab or Gitea (under your account or an
@@ -356,7 +359,9 @@ demo repository with branches, beside Urras's own projects.
 - Force push after a rewrite: when a pushed branch's commits were rewritten (authors fixed, amended, rebased), Sync
   offers to replace the remote's old copies instead of pulling them back in; force pushes use --force-with-lease
 - Background fetching of every repository (Settings)
-- Tags, checking out a commit, revert, cherry-pick, stashes, merge and rebase
+- Tags, checking out a commit, revert, reset the branch to a commit (keeping the changes staged or unstaged, or
+  throwing them away after tagging where it was), cherry-pick, stashes, merge and rebase
+- CI results in a commit's details (GitHub checks and statuses, GitLab pipelines) when you're signed in
 - Bisect from History with a banner to mark commits; submodules, worktrees and Git LFS (with locks) from
   the Branch menu
 - Interactive rebase from History: reorder, reword, edit, squash, fix up or drop commits, with a backup tag

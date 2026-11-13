@@ -113,6 +113,7 @@ public partial class MainWindow : Window
         InitializeDiffOptions();
         InitializeActions();
         InitializeHistoryTools();
+        InitializeManageTools();
         InitializeLineStaging();
         InitializeBisect();
         InitializeAccounts();
@@ -215,6 +216,7 @@ public partial class MainWindow : Window
             await ApplyLineEndingWarningsAsync(status);
             await UpdateOperationBannerAsync(status);
             _status = status;
+            UpdateUndoBar();
             _history = history;
             UpdateSearchState();
             await UpdateBisectBannerAsync();
@@ -436,10 +438,12 @@ public partial class MainWindow : Window
 
         string message = CoAuthor.Append(description.Length == 0 ? summary : summary + "\n\n" + description,
                                          _coAuthors);
+        List<CoAuthor> coAuthors = _coAuthors.ToList();
         bool success = await RunGitAsync("Committing…", repository => repository.CommitAsync(message, amend),
                                          amend ? "Amended the last commit." : "Committed.");
         if (success)
         {
+            await RememberCommitAsync(summary, description, coAuthors);
             SummaryBox.Text = string.Empty;
             DescriptionBox.Text = string.Empty;
             AmendBox.IsChecked = false;

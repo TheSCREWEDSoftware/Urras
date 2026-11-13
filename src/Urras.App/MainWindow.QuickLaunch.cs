@@ -54,7 +54,9 @@ public partial class MainWindow
                 return Task.CompletedTask;
             });
             AddCommand(items, "New branch…", CreateBranchAsync);
+            AddCommand(items, "Rename branch…", RenameBranchAsync);
             AddCommand(items, "Delete branch…", DeleteBranchAsync);
+            AddCommand(items, "Remotes…", ManageRemotesAsync);
             AddCommand(items, "Merge a branch into the current one…", MergeBranchAsync);
             AddCommand(items, "Rebase the current branch onto…", RebaseBranchAsync);
             AddCommand(items, "Compare with a branch…", CompareWithBranchAsync);

@@ -615,6 +615,16 @@ Esc clears it" />
                             ToolTip.Tip="Commit (Ctrl+Enter)" />
                     <CheckBox x:Name="AmendBox" Content="Amend last commit" />
                   </DockPanel>
+                  <!-- Right after a commit, as in GitHub Desktop: what was committed, and a way to take it back -->
+                  <Border x:Name="UndoCommitBar" IsVisible="False" Margin="0,8,0,0" Padding="10,6" CornerRadius="6"
+                          Background="{DynamicResource Urras.Raised}">
+                    <DockPanel>
+                      <Button x:Name="UndoCommitButton" DockPanel.Dock="Right" Content="Undo" Margin="8,0,0,0"
+                              ToolTip.Tip="Take the commit back: its changes stay staged and its message returns" />
+                      <TextBlock x:Name="UndoCommitText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                 Opacity="0.8" />
+                    </DockPanel>
+                  </Border>
                 </StackPanel>
               </Grid>
 
@@ -806,6 +816,13 @@ Esc clears it" />
                                Tag="commit" ToolTip.Tip="Open this commit on the website" />
                     <Button x:Name="CopyCommitHashButton" Content="⧉" Padding="6,0" VerticalAlignment="Center"
                             ToolTip.Tip="Copy the full hash" />
+                    <!-- CI for this commit (GitHub checks, GitLab pipelines), loaded in the background -->
+                    <StackPanel x:Name="CommitChecksPanel" Orientation="Horizontal" Spacing="6" Margin="8,0,0,0"
+                                VerticalAlignment="Center" IsVisible="False" Background="Transparent"
+                                Cursor="Hand">
+                      <Ellipse x:Name="CommitChecksDot" Width="8" Height="8" VerticalAlignment="Center" />
+                      <TextBlock x:Name="CommitChecksText" Classes="link" VerticalAlignment="Center" />
+                    </StackPanel>
                     <!-- The parent (two for a merge); a click selects it in the history -->
                     <TextBlock Text="parent" Opacity="0.6" VerticalAlignment="Center" Margin="8,0,0,0"
                                IsVisible="{Binding HasParents}" />

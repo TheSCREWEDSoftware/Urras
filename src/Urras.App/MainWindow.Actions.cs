@@ -26,6 +26,7 @@ public partial class MainWindow
         ContextMenu menu = new ContextMenu();
         AddMenuItem(menu, "All branches (every remote)…", ChooseAnyBranchAsync);
         AddMenuItem(menu, "New branch…", CreateBranchAsync);
+        AddMenuItem(menu, "Rename branch…", RenameBranchAsync);
         AddMenuItem(menu, "Delete branch…", DeleteBranchAsync);
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Merge a branch into the current one…", MergeBranchAsync);
@@ -34,6 +35,7 @@ public partial class MainWindow
         AddMenuItem(menu, "Pull requests…", ShowPullRequestsAsync);
         menu.Items.Add(new Separator());
         AddMenuItem(menu, "Tags…", ManageTagsAsync);
+        AddMenuItem(menu, "Remotes…", ManageRemotesAsync);
         AddMenuItem(menu, "Reflog (find lost commits)…", ShowReflogAsync);
         AddMenuItem(menu, "Submodules…", ManageSubmodulesAsync);
         AddMenuItem(menu, "Worktrees…", ManageWorktreesAsync);
@@ -72,6 +74,7 @@ public partial class MainWindow
         AddMenuItem(menu, "Create tag here…", () => CreateTagAsync(commit));
         AddMenuItem(menu, "Check out this commit…", () => CheckoutCommitAsync(commit));
         AddMenuItem(menu, "Revert this commit…", () => RevertCommitAsync(commit));
+        AddMenuItem(menu, "Reset the current branch to this commit…", () => ResetToCommitAsync(commit));
         AddMenuItem(menu, "Cherry-pick into the current branch…", () => CherryPickAsync(commit));
         AddMenuItem(menu, "Interactive rebase of the commits after this one…", () => InteractiveRebaseAsync(commit));
     }
