@@ -256,8 +256,13 @@
           Background="Transparent">
       <Image x:Name="TitleIcon" Grid.Column="0" Source="/Assets/urras.png" Width="16" Height="16"
              Margin="12,0,4,0" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="False" />
-      <TextBlock x:Name="WindowTitle" Grid.Column="2" Classes="windowTitle" Text="Urras" IsVisible="False"
-                 HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
+      <!-- The site's icon (GitHub, GitLab...) before the title, when the repository has a remote and the icon loads -->
+      <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6"
+                  IsVisible="{Binding #WindowTitle.IsVisible}">
+        <Image x:Name="TitlePlatformIcon" Width="14" Height="14" VerticalAlignment="Center" IsVisible="False" />
+        <TextBlock x:Name="WindowTitle" Classes="windowTitle" Text="Urras" IsVisible="False"
+                   VerticalAlignment="Center" IsHitTestVisible="False" />
+      </StackPanel>
       <Button x:Name="UpdateButton" Grid.Column="3" Classes="accent" Padding="10,3" Margin="0,0,6,0"
               VerticalAlignment="Center" IsVisible="False" />
       <Button x:Name="NotificationsButton" Grid.Column="4" Content="Notifications" Classes="subtle"

@@ -75,24 +75,38 @@ public partial class MainWindow
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     }
 
-    // "AC 335 (GitHub) - Urras": where the repository lives, so similar names on different hosts stand apart
+    // "AC 335 (GitHub) - Urras"; Urras's own title bar shows the site's icon in place of the name when it has one
     private void ShowWindowTitle(string? repository, string? path = null)
     {
-        string where = path == null ? string.Empty : " (" + WhereItLives(path) + ")";
+        string? host = path == null ? null : RemoteHost(path);
+        string where = path == null ? string.Empty : " (" + (host == null ? "Local" : PlatformNameFor(host)) + ")";
         string title = string.IsNullOrEmpty(repository) ? "Urras" : repository + where + " - Urras";
         Title = title;
         WindowTitle.Text = title;
+        TitlePlatformIcon.IsVisible = false;
+        if (host != null && !string.IsNullOrEmpty(repository))
+            _ = ShowTitleIconAsync(host, title, repository + " - Urras");
     }
 
-    // GitHub, GitLab, Bitbucket or another host from the origin remote (or the first), or "Local" with none
-    private string WhereItLives(string path)
+    private async Task ShowTitleIconAsync(string host, string title, string shortTitle)
+    {
+        // Another repository may have been opened while the icon loaded
+        if (await SiteIcons.GetAsync(host) is not { } icon || Title != title)
+            return;
+        TitlePlatformIcon.Source = icon;
+        TitlePlatformIcon.IsVisible = true;
+        ToolTip.SetTip(TitlePlatformIcon, PlatformNameFor(host));
+        WindowTitle.Text = shortTitle;
+    }
+
+    // The host of the origin remote (or the first remote), or null for a repository with none
+    private static string? RemoteHost(string path)
     {
         Dictionary<string, RemoteIdentity> remotes = RemoteIdentity.ReadAll(path);
         if (remotes.Count == 0)
-            return "Local";
-        RemoteIdentity remote = remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin)
-            ? origin
-            : remotes.Values.First();
-        return PlatformNameFor(remote.Host);
+            return null;
+        return remotes.TryGetValue(RemoteIdentity.ORIGIN, out RemoteIdentity? origin)
+            ? origin.Host
+            : remotes.Values.First().Host;
     }
 }

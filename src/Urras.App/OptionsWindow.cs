@@ -38,12 +38,15 @@ public sealed class OptionsWindow : Window
     private readonly AccountManager _accounts;
     private readonly Func<Window, AccountKind, Task> _addAccount;
     private readonly ContentControl _page = new ContentControl();
-    // Space around each page, inside its scroll area (the scroll area's own padding cut off the end of long lines)
     private const double BADGE_RADIUS = 4;
     private const double BADGE_PADDING_X = 6;
     private const double BADGE_PADDING_Y = 1;
     private const double BADGE_FONT_SIZE = 11;
+    // A site's own icon beside the account's name
+    private const double SITE_ICON_SIZE = 18;
+    private const double BUTTON_ICON_SIZE = 16;
 
+    // Space around each page, inside its scroll area (the scroll area's own padding cut off the end of long lines)
     private static readonly Thickness PagePadding = new Thickness(16, 0, 8, 0);
 
     private readonly Dictionary<string, Control> _pages = new Dictionary<string, Control>();
@@ -392,8 +395,19 @@ public sealed class OptionsWindow : Window
         WrapPanel signIn = new WrapPanel();
         foreach (AccountKind kind in Enum.GetValues<AccountKind>())
         {
-            Button button = new Button { Content = "Sign in to " + Account.PlatformName(kind) + "…",
-                                         Margin = new Thickness(0, 0, 8, 8) };
+            Image icon = new Image
+            {
+                Width = BUTTON_ICON_SIZE,
+                Height = BUTTON_ICON_SIZE,
+                VerticalAlignment = VerticalAlignment.Center,
+                IsVisible = false
+            };
+            StackPanel content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            content.Children.Add(icon);
+            content.Children.Add(new TextBlock { Text = "Sign in to " + Account.PlatformName(kind) + "…",
+                                                 VerticalAlignment = VerticalAlignment.Center });
+            Button button = new Button { Content = content, Margin = new Thickness(0, 0, 8, 8) };
+            _ = ShowSiteIconAsync(KnownHost(kind), icon, null);
             button.Click += async (_, _) => await AddAccountAsync(kind);
             signIn.Children.Add(button);
         }
@@ -415,32 +429,56 @@ public sealed class OptionsWindow : Window
                          "fork's own choice, in its Repository settings, always comes first."));
     }
 
-    // A coloured label with the platform's name, so accounts on different sites are told apart at a glance
-    private static Border PlatformBadge(Account account)
+    // The site's own icon, or a badge with the platform's name in the theme's colours until or unless it loads
+    private static Control PlatformBadge(Account account)
     {
         AccountKind kind = account.Kind;
-        Color colour = kind switch
+        // Codeberg runs Forgejo, a kind of Gitea, but is better known by its own name
+        string name = kind == AccountKind.Gitea && account.WebHost == "codeberg.org" ? "Codeberg"
+                                                                                      : Account.PlatformName(kind);
+        Border badge = new Border
         {
-            AccountKind.GitHub or AccountKind.GitHubEnterprise => Color.Parse("#3D444D"),
-            AccountKind.GitLab => Color.Parse("#C2410C"),
-            AccountKind.Gitea => Color.Parse("#4D7C0F"),
-            _ => Color.Parse("#1D4ED8")
-        };
-        return new Border
-        {
-            Background = new SolidColorBrush(colour),
+            Background = ThemeBrushes.Get(ThemeColours.BADGE),
             CornerRadius = new CornerRadius(BADGE_RADIUS),
             Padding = new Thickness(BADGE_PADDING_X, BADGE_PADDING_Y),
             VerticalAlignment = VerticalAlignment.Center,
-            Child = new TextBlock
-            {
-                // Codeberg runs Forgejo, a kind of Gitea, but is better known by its own name
-                Text = kind == AccountKind.Gitea && account.WebHost == "codeberg.org" ? "Codeberg"
-                                                                                       : Account.PlatformName(kind),
-                FontSize = BADGE_FONT_SIZE,
-                FontWeight = FontWeight.SemiBold,
-                Foreground = Brushes.White
-            }
+            Child = new TextBlock { Text = name, FontSize = BADGE_FONT_SIZE, FontWeight = FontWeight.SemiBold }
+        };
+        Image icon = new Image
+        {
+            Width = SITE_ICON_SIZE,
+            Height = SITE_ICON_SIZE,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsVisible = false
+        };
+        Panel mark = new Panel { VerticalAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(mark, name + " (" + account.WebHost + ")");
+        mark.Children.Add(badge);
+        mark.Children.Add(icon);
+        _ = ShowSiteIconAsync(account.WebHost, icon, badge);
+        return mark;
+    }
+
+    // The site's icon in place of, or beside, its name when it loads; the name stays when it doesn't
+    private static async Task ShowSiteIconAsync(string host, Image icon, Control? badge)
+    {
+        if (await SiteIcons.GetAsync(host) is not { } picture)
+            return;
+        icon.Source = picture;
+        icon.IsVisible = true;
+        if (badge != null)
+            badge.IsVisible = false;
+    }
+
+    // Where a platform's icon comes from; a self-hosted kind borrows its public site's
+    private static string KnownHost(AccountKind kind)
+    {
+        return kind switch
+        {
+            AccountKind.GitHub or AccountKind.GitHubEnterprise => "github.com",
+            AccountKind.GitLab => "gitlab.com",
+            AccountKind.Gitea => "gitea.com",
+            _ => "bitbucket.org"
         };
     }
 
