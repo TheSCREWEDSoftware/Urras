@@ -224,9 +224,9 @@ public static class GitParsers
         };
     }
 
-    // The last field is the co-authors from "Co-authored-by:" lines, as GitHub reads them
+    // Then the co-authors from "Co-authored-by:" lines, as GitHub reads them, and the committer
     public const string LOG_FORMAT = "%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%s%x1f%D%x1f%P%x1f" +
-                                     "%(trailers:key=Co-authored-by,valueonly,separator=%x1d)%x1e";
+                                     "%(trailers:key=Co-authored-by,valueonly,separator=%x1d)%x1f%cn%x1f%ce%x1e";
 
     public static List<CommitInfo> ParseLog(string output)
     {
@@ -250,7 +250,8 @@ public static class GitParsers
                 Parents = fields.Length > 7 ? fields[7].Split(' ', StringSplitOptions.RemoveEmptyEntries)
                                             : Array.Empty<string>(),
                 CoAuthors = fields.Length > 8 ? CommitPerson.ParseCoAuthors(fields[8], fields[3])
-                                              : Array.Empty<CommitPerson>()
+                                              : Array.Empty<CommitPerson>(),
+                Committer = fields.Length > 10 ? new CommitPerson(fields[9], fields[10]) : null
             });
         }
 

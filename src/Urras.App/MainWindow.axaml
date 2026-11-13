@@ -797,6 +797,8 @@ Esc clears it" />
                     </ItemsControl>
                     <TextBlock Text="{Binding PeopleText}" Opacity="0.8" VerticalAlignment="Center" Tag="author"
                                Classes="link" ToolTip.Tip="{Binding PeopleTip}" />
+                    <TextBlock Text="{Binding CommitterText}" IsVisible="{Binding HasOtherCommitter}" Opacity="0.6"
+                               VerticalAlignment="Center" ToolTip.Tip="{Binding Committer}" />
                     <!-- GitHub's commit mark: a ring on a line -->
                     <Path Data="M0,6 H4 M12,6 H16 M8,2.5 A3.5,3.5 0 1 1 7.99,2.5" StrokeThickness="1.5"
                           Stroke="{DynamicResource Urras.MutedText}" VerticalAlignment="Center" Margin="8,0,0,0" />
@@ -804,6 +806,22 @@ Esc clears it" />
                                Tag="commit" ToolTip.Tip="Open this commit on the website" />
                     <Button x:Name="CopyCommitHashButton" Content="⧉" Padding="6,0" VerticalAlignment="Center"
                             ToolTip.Tip="Copy the full hash" />
+                    <!-- The parent (two for a merge); a click selects it in the history -->
+                    <TextBlock Text="parent" Opacity="0.6" VerticalAlignment="Center" Margin="8,0,0,0"
+                               IsVisible="{Binding HasParents}" />
+                    <ItemsControl ItemsSource="{Binding ParentLinks}" VerticalAlignment="Center">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <StackPanel Orientation="Horizontal" Spacing="6" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding ShortHash}" Classes="mono link" Tag="parent"
+                                     ToolTip.Tip="Show this commit" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
                   <ToggleButton x:Name="CommitBodyToggle" DockPanel.Dock="Right" VerticalAlignment="Top"
                                 Content="⇕" Padding="6,2" Margin="8,0,0,0"

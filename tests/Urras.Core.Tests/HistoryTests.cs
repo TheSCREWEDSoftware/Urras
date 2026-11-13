@@ -145,4 +145,24 @@ public static class HistoryTests
         Assert.Equal("Urras Test", CommitPerson.Describe(commit.People.Take(1).ToList()), "one");
         Assert.Equal("Urras Test, Kitty", CommitPerson.Describe(new[] { commit.People[0], commit.People[2] }), "two");
     }
+
+    public static async Task ReadsWhoCommittedAndTheParents()
+    {
+        using TempRepository repository = await TempRepository.CreateAsync();
+        repository.Write("a.txt", "a");
+        await repository.CommitAllAsync("first");
+        repository.Write("a.txt", "b");
+        Assert.Success(await repository.Repository.StageAllAsync(), "stage");
+        Assert.Success(await GitRunner.RunAsync(repository.Path, "-c", "user.name=GitHub", "-c",
+                                                "user.email=noreply@github.com", "commit", "-q", "-m", "second",
+                                                "--author", "Crow <crow@example.com>"), "commit as someone else");
+
+        List<CommitInfo> history = await repository.Repository.GetHistoryAsync(10);
+        Assert.True(history[0].HasOtherCommitter, "committed by someone other than the author");
+        Assert.Equal("committed by GitHub", history[0].CommitterText, "named");
+        Assert.True(!history[1].HasOtherCommitter, "the author committed it themselves");
+        Assert.Equal(history[1].Hash, history[0].ParentLinks[0].Hash, "parent");
+        Assert.Equal(history[1].ShortHash.Length >= 7, true, "short form");
+        Assert.True(!history[1].HasParents, "the first commit has none");
+    }
 }

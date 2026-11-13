@@ -21,6 +21,13 @@ public partial class MainWindow
         for (Control? control = e.Source as Control; control != null && control != host;
              control = control.Parent as Control)
         {
+            if (control is { Tag: "parent", DataContext: ParentLink parent })
+            {
+                e.Handled = true;
+                ShowCommitInHistory(parent.Hash);
+                return;
+            }
+
             if (control is { Tag: "person", DataContext: CommitPerson picked })
                 person = picked;
             if (control.Tag is not string link || control.DataContext is not CommitInfo commit || commit.IsStash)
@@ -34,6 +41,21 @@ public partial class MainWindow
             _ = Report(SystemShell.OpenUrl(url));
             return;
         }
+    }
+
+    // Selects a commit in the history and scrolls to it; one not loaded yet is named in the status line
+    private void ShowCommitInHistory(string hash)
+    {
+        if (HistoryList.ItemsSource is not IEnumerable<CommitInfo> commits ||
+            commits.FirstOrDefault(commit => commit.Hash == hash) is not { } found)
+        {
+            SetStatus(Hashes.Short(hash) + " isn't in the history loaded so far; Show more history loads older " +
+                      "commits.", false);
+            return;
+        }
+
+        HistoryList.SelectedItem = found;
+        HistoryList.ScrollIntoView(found);
     }
 
     private void InitializeHistoryTools()

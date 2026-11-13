@@ -84,6 +84,12 @@ public sealed class RepositoryStatus
     public bool HasChanges => Staged.Count > 0 || Unstaged.Count > 0;
 }
 
+// A parent commit, shown by its short hash in a commit's details
+public sealed record ParentLink(string Hash)
+{
+    public string ShortHash => Hashes.Short(Hash);
+}
+
 public sealed class CommitInfo
 {
     public CommitInfo(string hash, string shortHash, string author, string email, DateTimeOffset date, string subject)
@@ -129,6 +135,20 @@ public sealed class CommitInfo
     // Refs split into badges: the checked-out branch, other local branches, remote branches and tags
     public IReadOnlyList<RefBadge> RefBadges => _refBadges ??= RefBadge.Parse(Refs);
     private List<RefBadge>? _refBadges;
+
+    // Who made the commit, which differs from the author after a rebase, a cherry-pick or a merge on GitHub
+    public CommitPerson? Committer { get; init; }
+
+    public bool HasOtherCommitter => Committer is { } committer &&
+                                     !committer.Email.Equals(Email, StringComparison.OrdinalIgnoreCase) &&
+                                     committer.Name != Author;
+
+    // "committed by GitHub"
+    public string CommitterText => HasOtherCommitter ? "committed by " + Committer!.Name : string.Empty;
+
+    // The parent commits, short and full, for the links in the commit's details
+    public IReadOnlyList<ParentLink> ParentLinks => Parents.Select(parent => new ParentLink(parent)).ToList();
+    public bool HasParents => Parents.Count > 0;
 
     // People named in "Co-authored-by:" lines, besides the author
     public IReadOnlyList<CommitPerson> CoAuthors { get; init; } = Array.Empty<CommitPerson>();
