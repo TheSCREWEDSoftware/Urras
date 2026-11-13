@@ -45,7 +45,7 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
         return new SyncState(SyncKind.Fetch, "Fetch " + remote, fetched, 0, 0);
     }
 
-    // Beside the branch name: "↑13 ↓2", "up to date", "not published", or nothing for a detached HEAD
+    // Beside the branch name: "13 ↑  2 ↓" as on the push button, "up to date", "not published", or nothing
     public static string BranchCounts(RepositoryStatus status)
     {
         if (status.IsDetached)
@@ -54,13 +54,24 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
             return "not published";
         if (status.Ahead == 0 && status.Behind == 0)
             return "up to date";
+        return Counts(status.Ahead, status.Behind);
+    }
 
+    // Whether BranchCounts is numbers, drawn in a badge, rather than words
+    public static bool BranchHasCounts(RepositoryStatus status)
+    {
+        return !status.IsDetached && status.Upstream != null && (status.Ahead > 0 || status.Behind > 0);
+    }
+
+    // "13 ↑  2 ↓": the number, then the arrow, the same on the branch and push buttons
+    private static string Counts(int ahead, int behind)
+    {
         List<string> parts = new List<string>();
-        if (status.Ahead > 0)
-            parts.Add("↑" + status.Ahead);
-        if (status.Behind > 0)
-            parts.Add("↓" + status.Behind);
-        return string.Join(" ", parts);
+        if (ahead > 0)
+            parts.Add(ahead + " ↑");
+        if (behind > 0)
+            parts.Add(behind + " ↓");
+        return string.Join("  ", parts);
     }
 
     // Above the branch name: "Current branch · fetched 5 minutes ago"
@@ -79,16 +90,5 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
     }
 
     // The counts beside the title: "13 ↑", "164 ↓" or both; empty when there's nothing to move
-    public string Badge
-    {
-        get
-        {
-            List<string> parts = new List<string>();
-            if (Ahead > 0)
-                parts.Add(Ahead + " ↑");
-            if (Behind > 0)
-                parts.Add(Behind + " ↓");
-            return string.Join("  ", parts);
-        }
-    }
+    public string Badge => Counts(Ahead, Behind);
 }

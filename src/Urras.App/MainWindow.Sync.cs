@@ -240,12 +240,16 @@ public partial class MainWindow
             ToolTip.SetTip(SyncButton, null);
             BranchCaption.Text = "Current branch";
             BranchCounts.Text = string.Empty;
+            BranchCountsBadge.IsVisible = false;
             return;
         }
 
         _sync = SyncState.For(status, lastFetched, DateTimeOffset.Now, _hasRemote, _rewritten, RemoteMissing);
         BranchCaption.Text = SyncState.BranchCaption(lastFetched, DateTimeOffset.Now);
-        BranchCounts.Text = SyncState.BranchCounts(status);
+        bool counts = SyncState.BranchHasCounts(status);
+        BranchCountsBadgeText.Text = counts ? SyncState.BranchCounts(status) : string.Empty;
+        BranchCountsBadge.IsVisible = counts;
+        BranchCounts.Text = counts ? string.Empty : SyncState.BranchCounts(status);
         SyncTitle.Text = _sync.Title;
         SyncDetail.Text = _sync.Detail;
         SyncIcon.Data = _sync.Kind switch
