@@ -137,4 +137,125 @@ public sealed partial class GitRepository
     {
         return Run("remote", "remove", name);
     }
+
+    // Stashes only these files, new ones included, and leaves every other change where it is
+    public Task<GitResult> StashFilesAsync(IEnumerable<string> paths, string? message)
+    {
+        List<string> arguments = new List<string> { "stash", "push", "--include-untracked" };
+        if (!string.IsNullOrWhiteSpace(message))
+            arguments.AddRange(new[] { "-m", message });
+        arguments.Add("--");
+        arguments.AddRange(paths);
+        return Run(arguments);
+    }
+
+    // Local branches worth deleting: merged into the main branch, or whose branch on the remote is gone
+    public async Task<List<BranchCleanup>> GetCleanupCandidatesAsync()
+    {
+        string main = await GetDefaultBranchAsync();
+        string target = (await Run("rev-parse", "--verify", "-q", "refs/remotes/origin/" + main)).Success
+            ? "origin/" + main
+            : main;
+        HashSet<string> merged = (await Run("branch", "--format=%(refname:short)", "--merged", target)).Output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.Ordinal);
+        string current = (await Run("branch", "--show-current")).Output.Trim();
+
+        List<BranchCleanup> candidates = new List<BranchCleanup>();
+        GitResult branches = await Run("for-each-ref", "--format=%(refname:short)%1f%(upstream:track)", "refs/heads");
+        foreach (string line in branches.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] fields = line.TrimEnd('\r').Split(GitParsers.FIELD_SEPARATOR);
+            string name = fields[0];
+            bool gone = fields.Length > 1 && fields[1].Contains("gone", StringComparison.Ordinal);
+            bool isMerged = merged.Contains(name);
+            if (name != current && name != main && (gone || isMerged))
+                candidates.Add(new BranchCleanup(name, isMerged, gone));
+        }
+
+        return candidates;
+    }
+
+    // A commit as a patch file with its message and author, as git format-patch writes it
+    public async Task<GitResult> SaveCommitPatchAsync(string hash, string file)
+    {
+        // format-patch names its own file, so it writes into a folder of its own and the file is moved after
+        string folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                               "urras-patch-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            GitResult result = await Run("format-patch", "-1", "--binary", "-o", folder, hash);
+            if (!result.Success)
+                return result;
+            string made = Directory.EnumerateFiles(folder).Single();
+            File.Move(made, file, true);
+            return result;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                                              or InvalidOperationException)
+        {
+            return new GitResult(-1, string.Empty, "Couldn't save the patch: " + exception.Message);
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+        }
+    }
+
+    // Changes not yet committed (staged or not) to these files, as a patch file
+    public Task<GitResult> SaveChangesPatchAsync(IEnumerable<string> paths, bool staged, string file)
+    {
+        List<string> arguments = new List<string> { "diff", "--binary", "--output=" + file };
+        if (staged)
+            arguments.Add("--cached");
+        arguments.Add("--");
+        arguments.AddRange(paths);
+        return Run(arguments);
+    }
+
+    // A patch made by format-patch can become commits (git am); any patch can be applied as changes
+    public static bool IsMailPatch(string file)
+    {
+        try
+        {
+            using StreamReader reader = new StreamReader(file);
+            return reader.ReadLine()?.StartsWith("From ", StringComparison.Ordinal) == true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    // As commits, a failed patch is backed out whole; as changes, a three-way merge leaves conflicts to resolve
+    public async Task<GitResult> ApplyPatchAsync(string file, bool asCommits)
+    {
+        if (asCommits)
+        {
+            GitResult applied = await RunWithoutEditor("am", "--3way", file);
+            if (!applied.Success)
+                await Run("am", "--abort");
+            return applied;
+        }
+
+        GitResult plain = await Run("apply", "--whitespace=nowarn", file);
+        return plain.Success ? plain : await Run("apply", "--3way", "--whitespace=nowarn", file);
+    }
+
+    // The files exactly as they were at a commit, as a zip
+    public Task<GitResult> ExportZipAsync(string hash, string file)
+    {
+        return Run("archive", "--format=zip", "--output=" + file, hash);
+    }
+}
+
+// A branch the clean-up offers to delete, and why
+public sealed record BranchCleanup(string Name, bool Merged, bool Gone)
+{
+    public override string ToString()
+    {
+        string why = Merged && Gone ? "merged, gone from the remote" : Merged ? "merged" : "gone from the remote";
+        return Name + "  (" + why + ")";
+    }
 }

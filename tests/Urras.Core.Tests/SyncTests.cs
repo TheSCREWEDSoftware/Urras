@@ -119,6 +119,10 @@ public static class SyncTests
         Assert.Equal("164 ↓", SyncState.BranchCounts(Status("origin/master", 0, 164)), "only to pull");
         Assert.Equal("up to date", SyncState.BranchCounts(Status("origin/main", 0, 0)), "nothing to move");
         Assert.Equal("not published", SyncState.BranchCounts(Status(null, 0, 0)), "no upstream");
+        RepositoryStatus unpublished = Status(null, 0, 0);
+        unpublished.Unpublished = 14;
+        Assert.Equal("14 ↑", SyncState.UnpublishedCounts(unpublished), "commits a publish would send");
+        Assert.Equal(14, SyncState.For(unpublished, null, DateTimeOffset.Now).Ahead, "on the publish button too");
         Assert.Equal(string.Empty, SyncState.BranchCounts(Status(null, 0, 0, null)), "detached");
         Assert.Equal("Current branch · fetched 1 minute ago", SyncState.BranchCaption(Now.AddMinutes(-1), Now),
                      "when it last fetched");

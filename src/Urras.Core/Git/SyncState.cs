@@ -34,7 +34,8 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
             : "Never fetched";
 
         if (!status.IsDetached && status.Upstream == null)
-            return new SyncState(SyncKind.Publish, "Publish branch", "Publish this branch to " + remote, 0, 0);
+            return new SyncState(SyncKind.Publish, "Publish branch", "Publish this branch to " + remote,
+                                 status.Unpublished, 0);
         if (rewritten && status.Ahead > 0 && status.Behind > 0)
             return new SyncState(SyncKind.ForcePush, "Force push " + remote, "Replace the remote's old copies",
                                  status.Ahead, status.Behind);
@@ -55,6 +56,14 @@ public sealed record SyncState(SyncKind Kind, string Title, string Detail, int A
         if (status.Ahead == 0 && status.Behind == 0)
             return "up to date";
         return Counts(status.Ahead, status.Behind);
+    }
+
+    // A branch not published yet: how many of its commits a publish would send, for the badge beside it
+    public static string UnpublishedCounts(RepositoryStatus status)
+    {
+        return !status.IsDetached && status.Upstream == null && status.Unpublished > 0
+            ? Counts(status.Unpublished, 0)
+            : string.Empty;
     }
 
     // Whether BranchCounts is numbers, drawn in a badge, rather than words

@@ -77,6 +77,8 @@ public sealed class RepositoryStatus
     public bool IsDetached => Branch == null;
     public string? Upstream { get; set; }
     public int Ahead { get; set; }
+    // For a branch not published yet: its commits that aren't on any remote, which a publish would send
+    public int Unpublished { get; set; }
     public int Behind { get; set; }
     public List<FileChange> Staged { get; } = new List<FileChange>();
     public List<FileChange> Unstaged { get; } = new List<FileChange>();

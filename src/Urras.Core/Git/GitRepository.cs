@@ -91,7 +91,14 @@ public sealed partial class GitRepository
         if (!result.Success)
             throw new GitException(result.Message);
 
-        return GitParsers.ParseStatus(result.Output);
+        RepositoryStatus status = GitParsers.ParseStatus(result.Output);
+        if (status is { IsDetached: false, Upstream: null, IsUnborn: false })
+        {
+            GitResult count = await Run("rev-list", "--count", "HEAD", "--not", "--remotes");
+            status.Unpublished = count.Success && int.TryParse(count.Output.Trim(), out int commits) ? commits : 0;
+        }
+
+        return status;
     }
 
     public Task<GitResult> StageAsync(IEnumerable<string> paths)
