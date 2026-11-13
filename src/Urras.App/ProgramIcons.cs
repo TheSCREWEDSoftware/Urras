@@ -13,6 +13,10 @@ public static class ProgramIcons
     private const byte OPAQUE = 255;
     private const uint DIB_RGB_COLORS = 0;
     private const double SCREEN_DPI = 96;
+    private const uint SHGFI_ICON = 0x100;
+    private const uint SHGFI_LARGEICON = 0x0;
+    private const int MAX_PATH = 260;
+    private const int TYPE_NAME_LENGTH = 80;
 
     private static readonly Dictionary<string, Task<Bitmap?>> Icons = new Dictionary<string, Task<Bitmap?>>();
     private static readonly Dictionary<string, string?> Found = new Dictionary<string, string?>();
@@ -138,9 +142,17 @@ public static class ProgramIcons
         IntPtr icon = IntPtr.Zero;
         try
         {
-            if (ExtractIconEx(program, 0, out icon, IntPtr.Zero, 1) == 0 || icon == IntPtr.Zero)
-                return null;
-            return ToBitmap(icon);
+            // The program's own icon; failing that, the one Explorer shows (which follows stand-ins such as wt.exe)
+            if (ExtractIconEx(program, 0, out icon, IntPtr.Zero, 1) == 0 || icon == IntPtr.Zero ||
+                ToBitmap(icon) is not { } stored)
+            {
+                if (icon != IntPtr.Zero)
+                    DestroyIcon(icon);
+                icon = ShellIcon(program);
+                return icon == IntPtr.Zero ? null : ToBitmap(icon);
+            }
+
+            return stored;
         }
         catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException
                                               or ExternalException)
@@ -152,6 +164,14 @@ public static class ProgramIcons
             if (icon != IntPtr.Zero)
                 DestroyIcon(icon);
         }
+    }
+
+    private static IntPtr ShellIcon(string program)
+    {
+        ShellFileInfo info = new ShellFileInfo();
+        IntPtr found = SHGetFileInfo(program, 0, ref info, (uint)Marshal.SizeOf<ShellFileInfo>(),
+                                     SHGFI_ICON | SHGFI_LARGEICON);
+        return found == IntPtr.Zero ? IntPtr.Zero : info.Icon;
     }
 
     private static Bitmap? ToBitmap(IntPtr icon)
@@ -212,6 +232,18 @@ public static class ProgramIcons
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct ShellFileInfo
+    {
+        public IntPtr Icon;
+        public int IconIndex;
+        public uint Attributes;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
+        public string DisplayName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = TYPE_NAME_LENGTH)]
+        public string TypeName;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct IconInfo
     {
@@ -255,6 +287,10 @@ public static class ProgramIcons
 
     [DllImport("user32.dll")]
     private static extern bool DestroyIcon(IntPtr icon);
+
+    [DllImport("shell32.dll", EntryPoint = "SHGetFileInfoW", CharSet = CharSet.Unicode)]
+    private static extern IntPtr SHGetFileInfo(string path, uint attributes, ref ShellFileInfo info, uint size,
+                                               uint flags);
 
     [DllImport("user32.dll")]
     private static extern bool GetIconInfo(IntPtr icon, out IconInfo info);
